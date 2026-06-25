@@ -143,8 +143,8 @@ write.csv(toutes_les_modalites,
 
 library(ggplot2)
 
-# 1. Calcul de la structure en pourcentage (très stable malgré les doublons géographiques)
-structure_reelle <- dossier_complet %>%
+# 1 On sélectionne par communes afin d'éviter les doublons avec les dép et régions
+nombre_total <- dossier_complet %>%
   filter(
     TIME_PERIOD == "2022" & 
       GEO_OBJECT_LABEL == "Commune" & 
@@ -158,23 +158,24 @@ structure_reelle <- dossier_complet %>%
         "Population – 80 ans ou plus"
       )
   ) %>%
-  group_by(TAB_MEASURE_LABEL) %>%
-  summarise(total_brut = sum(OBS_VALUE, na.rm = TRUE)) %>%
+  group_by(TAB_MEASURE_LABEL) %>% 
+  summarise(total_brut = sum(OBS_VALUE, na.rm = TRUE)) %>% # Nombre de personnes par âges en France
   collect() %>%
-  # On calcule la part de chaque tranche d'âge
+#View(structure_reelle)
+  # On calcule le pourcentage de chaque tranche d'âge
   mutate(part_pourcentage = (total_brut / sum(total_brut))) %>%
   
-  # 2. REDRESSEMENT : On applique la structure sur la vraie population Insee 2022 (67 900 000)
-  mutate(population_exacte = round(part_pourcentage * 67900000)) %>%
+  # 2. ON détermine le nombre grâce à la population en 2022
+  mutate(population_exacte = round(part_pourcentage * 68000000)) %>%
   select(TAB_MEASURE_LABEL, population_exacte)
 
-# Affichage du tableau propre
-print(structure_reelle)
+# Tableau du nombre de personnes par tranches d'âge
+print(nombre_total)
 
 
 # Calcul de la répartition des différentes tranches d'âge par ville
 
-# ÉTAPE 1 : On calcule la vraie population totale de chaque ville (en additionnant ses quartiers)
+# ÉTAPE 1 : On calcule la population totale de chaque ville
 pop_totale_villes <- dossier_complet %>%
   filter(
     TIME_PERIOD == "2022" & 
@@ -184,7 +185,7 @@ pop_totale_villes <- dossier_complet %>%
   group_by(GEO_LABEL) %>%
   summarise(population_totale_ville = sum(OBS_VALUE, na.rm = TRUE))
 
-# ÉTAPE 2 : On additionne les tranches d'âge par ville (on fusionne les quartiers de Saint-Rémy, Valence, etc.)
+# ÉTAPE 2 : On additionne les tranches d'âge par ville 
 structure_villes_propres <- dossier_complet %>%
   filter(
     TIME_PERIOD == "2022" & 
@@ -199,24 +200,24 @@ structure_villes_propres <- dossier_complet %>%
         "Population – 80 ans ou plus"
       )
   ) %>%
-  # On groupe par ville et par tranche pour écraser les doublons de quartiers
+  # On regroupe les résultats par ville et par tranche d'âge
   group_by(GEO_LABEL, TAB_MEASURE_LABEL) %>%
-  summarise(total_brut_quartiers = sum(OBS_VALUE, na.rm = TRUE)) %>%
+  summarise(total_ville_age = sum(OBS_VALUE, na.rm = TRUE)) %>%
   
-  # On ramène la population totale calculée à l'étape 1
+  # On joint avec la population totale de chaque ville
   left_join(pop_totale_villes, by = "GEO_LABEL") %>%
   
-  # On applique notre méthode de redressement pour éviter les biais
+  # On applique notre méthode de redressement 
   group_by(GEO_LABEL) %>%
-  mutate(part_locale = total_brut_quartiers / sum(total_brut_quartiers)) %>%
+  mutate(part_locale = total_ville_age / sum(total_ville_age)) %>%
   mutate(population_exacte_ville = round(part_locale * population_totale_ville)) %>%
   
-  # Tri et nettoyage final
+  # Données finales
   select(GEO_LABEL, TAB_MEASURE_LABEL, population_exacte_ville) %>%
   arrange(GEO_LABEL, TAB_MEASURE_LABEL) %>%
   collect()
 
-# Vérification du résultat
+# Résultat
 View(structure_villes_propres)
 
 # Calcul de la répartition des différentes tranches d'âge par département
@@ -305,19 +306,19 @@ structure_regions <- dossier_complet %>%
   mutate(part_regionale = total_brut_reg / sum(total_brut_reg)) %>%
   mutate(population_exacte_region = round(part_regionale * population_totale_reg)) %>%
   
-  # Sélection finale
+  # Résultat final
   select(GEO_LABEL, TAB_MEASURE_LABEL, population_exacte_region) %>%
   arrange(GEO_LABEL, TAB_MEASURE_LABEL) %>%
   collect()
 
 View(structure_regions)
 
-# Pie chart pour la répartition de la population en tranches d'âge 
+# Diagramme en cammenbert pour la répartition de la population en tranches d'âge 
 
 library(ggplot2)
 library(scales) 
 
-# 1. Le code de base pour récupérer les données exactes nationale
+# 1. On récupère les données nationales
 structure_reelle <- dossier_complet %>%
   filter(
     TIME_PERIOD == "2022" & 
@@ -336,9 +337,9 @@ structure_reelle <- dossier_complet %>%
   summarise(total_brut = sum(OBS_VALUE, na.rm = TRUE)) %>%
   collect() %>%
   mutate(part_pourcentage = (total_brut / sum(total_brut))) %>%
-  mutate(population_exacte = round(part_pourcentage * 67900000))
+  mutate(population_exacte = round(part_pourcentage * 68000000))
 
-# 2 Forcer l'ordre chronologique des âges pour la légende et le graphique
+# 2 Ordre chronologique des âges pour la légende et le graphique
 Ordre_Ages <- c(
   "Population – Moins de 15 ans",
   "Population – De 15 à 24 ans ",
@@ -355,27 +356,21 @@ structure_reelle <- structure_reelle %>%
 # 3 Création du diagramme en camembert
 ggplot(structure_reelle, aes(x = "", y = population_exacte, fill = TAB_MEASURE_LABEL)) +
   geom_col(width = 1, color = "white") + 
-  coord_polar("y", start = 0) +         
+  coord_polar("y", start = 0, direction = -1) +         
+  scale_fill_brewer(palette = "Blues", name = "Tranches d'âge") +
   
-  # Palette de couleurs viridis
-  scale_fill_viridis_d(option = "plasma", name = "Tranches d'âge") +
-  
-  # Ajout du pourcentage directement sur les parts
+  # Ajout du pourcentage sur les parts
   geom_text(aes(label = percent(part_pourcentage, accuracy = 0.1)), 
             position = position_stack(vjust = 0.5), 
-            color = "white", 
+            color = "black", 
             fontface = "bold",
-            size = 2.8) +
-  
-  # Titres et mise en page
+            size = 2.1) +
   labs(
     title = "Répartition de la population française par tranche d'âge",
     subtitle = "Source : Recensement Insee 2022 (Données redressées sur base de 67,9M)",
     x = NULL,
     y = NULL
   ) +
-  
-  # Nettoyage du fond
   theme_minimal() +
   theme(
     axis.line = element_blank(),

@@ -26,24 +26,24 @@
 "Nombre de nouvelles unités légales enregistrées – Société par actions simplifiée",303226
 "Nombre de nouvelles unités légales enregistrées – Société à responsabilité limitée (SARL)",297272
 "Population – Moins de 15 ans",291670
+"Population – De 6 à 10 ans",250620
 "Population – Inscrit x De 11 à 14 ans",250620
-"Population – De 11 à 14 ans",250620
-"Population – Baccalauréat, brevet professionnel ou équivalent",250620
 "Population – Inscrit x De 15 à 17 ans",250620
+"Population – Baccalauréat, brevet professionnel ou équivalent",250620
 "Population – Inscrit x De 18 à 24 ans",250620
-"Population – CAP, BEP ou diplôme de niveau équivalent",250620
-"Population – Inscrit x De 6 à 10 ans",250620
-"Population – De 15 à 17 ans",250620
-"Population – Inscrit x 30 ans ou plus",250620
 "Population – De 18 à 24 ans",250620
+"Population – Inscrit x 30 ans ou plus",250620
+"Population – 30 ans ou plus",250620
+"Population – De 15 à 17 ans",250620
+"Population – CAP, BEP ou diplôme de niveau équivalent",250620
+"Population – Inscrit x De 25 à 29 ans",250620
+"Population – Inscrit x De 2 à 5 ans",250620
 "Population – De 25 à 29 ans",250620
 "Population – De 2 à 5 ans",250620
-"Population – Inscrit x De 2 à 5 ans",250620
-"Population – De 6 à 10 ans",250620
-"Population – Inscrit x De 25 à 29 ans",250620
-"Population – 30 ans ou plus",250620
-"Nombre de pièces – Résidences principales",250554
+"Population – Inscrit x De 6 à 10 ans",250620
+"Population – De 11 à 14 ans",250620
 "Population des ménages – Résidences principales",250554
+"Nombre de pièces – Résidences principales",250554
 "Logements – Résidences principales x Avant 1919",249768
 "Logements – Résidences principales x De 1971 à 1990",249135
 "Logements – Résidences principales x De 1991 à 2005",247653
@@ -59,10 +59,10 @@
 "Population – 15 ans ou plus x Cadres et professions intellectuelles supérieures",183306
 "Population – 15 ans ou plus x Artisans, commerçants et chefs d’entreprise",182285
 "Établissements",167244
-"Population – BEPC, brevet élémentaire, brevet des collèges, DNB",167080
 "Population – Enseignement supérieur de cycle court : BTS, DUT, Deug, Deust, diplôme de la santé ou du social de niveau bac+2, diplôme",167080
-"Population – Homme",167070
+"Population – BEPC, brevet élémentaire, brevet des collèges, DNB",167080
 "Population – Femme",167070
+"Population – Homme",167070
 "Population des ménages",167018
 "Population – De 15 à 64 ans x Retraités ou préretraités",166072
 "Population – De 15 à 64 ans x Élèves étudiants stagiaires non rémunéré de 14 ans ou plus",164394
@@ -77,51 +77,51 @@
 "Nombre d’emplois – Employés",140530
 "Nombre d’emplois – Artisans, commerçants et chefs d’entreprise",134121
 "Nombre d’emplois – Professions intermédiaires",130668
+"Établissements – Construction",125431
 "Établissements – Administration publique, enseignement, santé humaine et action sociale",125431
 "Établissements – Industrie manufacturière, industries extractives et autres",125431
-"Établissements – Construction",125431
-"Population – Inscrit x De 15 à 17 ans x Homme",125310
-"Population – Inscrit x 30 ans ou plus x Homme",125310
-"Population – De 18 à 24 ans x Femme",125310
-"Population – Inscrit x De 6 à 10 ans x Homme",125310
-"Population – Baccalauréat, brevet professionnel ou équivalent x Homme",125310
-"Population – Inscrit x De 11 à 14 ans x Femme",125310
-"Population – Inscrit x De 11 à 14 ans x Homme",125310
-"Population – De 15 à 17 ans x Femme",125310
+"Population – De 2 à 5 ans x Femme",125310
 "Population – De 11 à 14 ans x Homme",125310
+"Population – Inscrit x De 18 à 24 ans x Homme",125310
+"Population – 30 ans ou plus x Femme",125310
+"Population – Baccalauréat, brevet professionnel ou équivalent x Homme",125310
+"Population – Inscrit x De 6 à 10 ans x Femme",125310
+"Population – Inscrit x De 11 à 14 ans x Homme",125310
+"Population – Inscrit x De 15 à 17 ans x Homme",125310
+"Population – Baccalauréat, brevet professionnel ou équivalent x Femme",125310
+"Population – CAP, BEP ou diplôme de niveau équivalent x Homme",125310
+"Population – CAP, BEP ou diplôme de niveau équivalent x Femme",125310
+"Population – Inscrit x 30 ans ou plus x Homme",125310
 "Population – Inscrit x De 25 à 29 ans x Femme",125310
 "Population – Inscrit x De 2 à 5 ans x Homme",125310
-"Population – Inscrit x De 6 à 10 ans x Femme",125310
-"Population – 30 ans ou plus x Femme",125310
+"Population – Inscrit x De 15 à 17 ans x Femme",125310
+"Population – Inscrit x De 25 à 29 ans x Homme",125310
 "Population – Inscrit x De 2 à 5 ans x Femme",125310
-"Population – De 25 à 29 ans x Homme",125310
-"Population – Baccalauréat, brevet professionnel ou équivalent x Femme",125310
-"Population – De 15 à 17 ans x Homme",125310
+"Population – Inscrit x De 11 à 14 ans x Femme",125310
+"Population – Inscrit x De 18 à 24 ans x Femme",125310
+"Population – 30 ans ou plus x Homme",125310
+"Population – Inscrit x 30 ans ou plus x Femme",125310
+"Population – De 25 à 29 ans x Femme",125310
+"Population – De 15 à 17 ans x Femme",125310
 "Population – De 2 à 5 ans x Homme",125310
-"Population – De 2 à 5 ans x Femme",125310
+"Population – De 18 à 24 ans x Femme",125310
+"Population – De 25 à 29 ans x Homme",125310
 "Population – De 11 à 14 ans x Femme",125310
 "Population – De 6 à 10 ans x Homme",125310
-"Population – CAP, BEP ou diplôme de niveau équivalent x Femme",125310
 "Population – De 18 à 24 ans x Homme",125310
 "Population – De 6 à 10 ans x Femme",125310
-"Population – 30 ans ou plus x Homme",125310
-"Population – Inscrit x De 25 à 29 ans x Homme",125310
-"Population – Inscrit x 30 ans ou plus x Femme",125310
-"Population – CAP, BEP ou diplôme de niveau équivalent x Homme",125310
-"Population – De 25 à 29 ans x Femme",125310
-"Population – Inscrit x De 18 à 24 ans x Homme",125310
-"Population – Inscrit x De 15 à 17 ans x Femme",125310
-"Population – Inscrit x De 18 à 24 ans x Femme",125310
-"Logements – Suroccupation modérée",125285
-"Logements – Sous-occupation très accentuée",125285
-"Logements – Suroccupation accentuée",125285
+"Population – De 15 à 17 ans x Homme",125310
+"Population – Inscrit x De 6 à 10 ans x Homme",125310
 "Logements – Occupation dans la norme",125285
-"Logements – Sous-occupation modérée",125285
+"Logements – Suroccupation modérée",125285
 "Logements – Sous-occupation accentuée",125285
+"Logements – Sous-occupation très accentuée",125285
+"Logements – Sous-occupation modérée",125285
+"Logements – Suroccupation accentuée",125285
 "Logements – Maison",125280
+"Logements – Résidences principales x Maison",125277
 "Population – 1 an ou plus",125277
 "Nombre de pièces – Résidences principales x Maison",125277
-"Logements – Résidences principales x Maison",125277
 "Population – 15 ans ou plus x Actif occupé",125271
 "Population – 1 an ou plus x Dans le même logement",125270
 "Population des ménages – Résidences principales x Propriétaire",125268
@@ -131,20 +131,20 @@
 "Nombre d’emplois – Agriculteurs",125255
 "Logements – Résidences principales x 5 pièces ou plus",125252
 "Population – Dans une autre commune",125248
-"Logements – Résidences principales x Ménage disposant de deux voitures ou plus",125246
 "Logements – Résidences principales x Oui",125246
-"Population des ménages – Ménage comprenant une famille",125199
+"Logements – Résidences principales x Ménage disposant de deux voitures ou plus",125246
 "Nombre de famille",125199
+"Population des ménages – Ménage comprenant une famille",125199
 "Logements – Ménage comprenant une famille",125199
-"Population des ménages – Résidences principales x 30 ans ou plus",125174
-"Nombre de pièces – Résidences principales x 30 ans ou plus",125174
 "Logements – Résidences principales x 30 ans ou plus",125174
+"Nombre de pièces – Résidences principales x 30 ans ou plus",125174
+"Population des ménages – Résidences principales x 30 ans ou plus",125174
 "Logements – Résidences principales x 4 pièces",125159
 "Population – De 40 à 54 ans x Oui",125125
 "Population – Actif",125094
 "Nombre de pièces – Résidences principales x De 10 à 19 ans",125089
-"Logements – Résidences principales x De 10 à 19 ans",125089
 "Population des ménages – Résidences principales x De 10 à 19 ans",125089
+"Logements – Résidences principales x De 10 à 19 ans",125089
 "Population – De 55 à 64 ans x Oui",125083
 "Population – Actif occupé",125031
 "Population – De 65 à 79 ans x Oui",125028
@@ -152,31 +152,31 @@
 "Logements – Résidences principales x Non",124989
 "Nombre de famille – Aucun enfant de moins de 24 ans",124875
 "Nombre de pièces – Résidences principales x De 5 à 9 ans",124852
-"Logements – Résidences principales x De 5 à 9 ans",124852
 "Population des ménages – Résidences principales x De 5 à 9 ans",124852
+"Logements – Résidences principales x De 5 à 9 ans",124852
 "Population des ménages – Ménage à une personne",124787
 "Logements – Ménage à une personne",124787
-"Population des ménages – Résidences principales x De 20 à 29 ans",124758
-"Nombre de pièces – Résidences principales x De 20 à 29 ans",124758
 "Logements – Résidences principales x De 20 à 29 ans",124758
+"Nombre de pièces – Résidences principales x De 20 à 29 ans",124758
+"Population des ménages – Résidences principales x De 20 à 29 ans",124758
 "Population – De 25 à 39 ans x Oui",124748
 "Population des ménages – Résidences principales x De 2 à 4 ans",124721
 "Nombre de pièces – Résidences principales x De 2 à 4 ans",124721
 "Logements – Résidences principales x De 2 à 4 ans",124721
 "Nombre de famille – Famille comprenant un couple sans enfant résident",124633
-"Population des ménages – Famille principale couple sans enfants",124632
 "Logements – Famille principale couple sans enfants",124632
+"Population des ménages – Famille principale couple sans enfants",124632
 "Population – De 15 à 24 ans  x Non",124572
 "Logements – Résidences principales x 3 pièces",124540
 "Logements – Résidences principales x Autres (bois, solaire, géothermie, etc.)",124510
-"Logements – Résidences principales x Locataire de logement parc privé vide",124504
 "Population des ménages – Résidences principales x Locataire de logement parc privé vide",124504
+"Logements – Résidences principales x Locataire de logement parc privé vide",124504
 "Population – De 65 à 79 ans x Non",124476
 "Population – De 40 à 54 ans x Non",124426
 "Population – 15 ans ou plus x Salariés x Temps partiel x Femme",124377
 "Nombre de famille – Famille comprenant un couple avec enfant résident",124032
-"Logements – Famille principale couple avec enfants",124024
 "Population des ménages – Famille principale couple avec enfants",124024
+"Logements – Famille principale couple avec enfants",124024
 "Nombre de personnes seules – 1 personne x De 65 à 79 ans",123979
 "Population – 15 ans ou plus x Chômeur",123897
 "Population – De 55 à 64 ans x Non",123873
@@ -184,9 +184,9 @@
 "Logements – Résidences principales x Electricité",123771
 "Population – De 25 à 39 ans x Non",123697
 "Population – 80 ans ou plus x Non",123554
-"Population des ménages – Résidences principales x Moins de 2 ans",123278
 "Nombre de pièces – Résidences principales x Moins de 2 ans",123278
 "Logements – Résidences principales x Moins de 2 ans",123278
+"Population des ménages – Résidences principales x Moins de 2 ans",123278
 "Logements – Résidences principales x Ménage ne disposant d’aucune voiture",122622
 "Nombre de personnes seules – 1 personne x De 55 à 64 ans",122576
 "Nombre de personnes seules – 1 personne x 80 ans ou plus",122413
@@ -198,8 +198,8 @@
 "Population – Actif occupé x Ouvriers",121049
 "Population – Actif x Professions intermédiaires",120722
 "Population – 80 ans ou plus x Oui",120246
-"Logements – Homme seul",120184
 "Population des ménages – Homme seul",120184
+"Logements – Homme seul",120184
 "Population – Actif occupé x Professions intermédiaires",120089
 "Population – 1 an ou plus x Autre commune du département",120021
 "Population – 15 ans ou plus x Autres inactifs",119943
@@ -222,8 +222,8 @@
 "Nombre d’emplois – Services principalement marchands",108911
 "Population – Actif x Artisans, commerçants et chefs d’entreprise",108855
 "Nombre d’emplois – Cadres et professions intellectuelles supérieures",108685
-"Nombre de pièces – Résidences principales x Appartement",108681
 "Logements – Résidences principales x Appartement",108681
+"Nombre de pièces – Résidences principales x Appartement",108681
 "Population – Actif occupé x Cadres et professions intellectuelles supérieures",108370
 "Population des ménages – Famille principale monoparentale",108015
 "Logements – Famille principale monoparentale",108015
@@ -243,22 +243,22 @@
 "Nombre d’emplois – Construction",91918
 "Logements – Résidences principales x Locataire de logement meublé",85986
 "Population des ménages – Résidences principales x Locataire de logement meublé",85986
-"Établissements – 500 salariés et plus",83626
-"Établissements – Services principalement marchands",83626
-"Établissements – 1 à 4 salariés",83626
 "Établissements – 0 salarié",83626
-"Établissements – 5 à 9 salariés",83626
+"Établissements – 1 à 4 salariés",83626
+"Établissements – Agriculture, sylviculture et pêche",83626
+"Établissements – 100 à 199 salariés",83626
+"Établissements – 10 à 19 salariés",83626
+"Établissements – Services principalement marchands",83626
 "Établissements – 20 à 49 salariés",83626
 "Établissements – 50 à 99 salariés",83626
 "Établissements – 200 à 499 salariés",83626
-"Établissements – 10 à 19 salariés",83626
-"Établissements – 100 à 199 salariés",83626
-"Établissements – Agriculture, sylviculture et pêche",83626
+"Établissements – 500 salariés et plus",83626
+"Établissements – 5 à 9 salariés",83626
+"Population – Aucun diplôme ou certificat d'études primaires",83540
 "Population – Enseignement supérieur de cycle court : BTS, DUT, Deug, Deust, diplôme de la santé ou du social de niveau bac+2, diplôme x Homme",83540
+"Population – BEPC, brevet élémentaire, brevet des collèges, DNB x Homme",83540
 "Population – BEPC, brevet élémentaire, brevet des collèges, DNB x Femme",83540
 "Population – Enseignement supérieur de cycle court : BTS, DUT, Deug, Deust, diplôme de la santé ou du social de niveau bac+2, diplôme x Femme",83540
-"Population – BEPC, brevet élémentaire, brevet des collèges, DNB x Homme",83540
-"Population – Aucun diplôme ou certificat d'études primaires",83540
 "Population – De 20 à 64 ans x Homme",83516
 "Population – 15 ans ou plus x Homme",83507
 "Population – De 20 à 64 ans x Femme",83506
@@ -286,8 +286,8 @@
 "Population – 15 ans ou plus x Etudiants ou élèves",80882
 "Nombre de famille – Famille avec un père seul",78908
 "Population – Autre logement dans la même commune x De 1 à 14 ans",77862
-"Population des ménages – Ménage sans famille à plusieurs personnes ",75435
 "Logements – Ménage sans famille à plusieurs personnes ",75435
+"Population des ménages – Ménage sans famille à plusieurs personnes ",75435
 "Nombre de pièces – Résidences principales x Autres logements de métropole",73359
 "Logements – Résidences principales x Autres logements de métropole",73359
 "Logements – Résidences principales x Locataire de logement parc social vide",73092
@@ -305,206 +305,206 @@
 "Logements – Résidences principales x De 1971 à 1990 x Appartement",51440
 "Nombre d’emplois – Salariés x Construction",50604
 "Nombre d’emplois – Salariés x Industrie manufacturière, industries extractives et autres",49960
+"Salaire net EQTP mensuel moyen",49428
 "Salaire net EQTP mensuel moyen – Femme",49428
 "Salaire net EQTP mensuel moyen – Homme",49428
-"Salaire net EQTP mensuel moyen",49428
 "Logements – Résidences principales x De 1919 à 1945 x Appartement",48668
 "Logements – Résidences principales x De 2006 à AAAA x Appartement",46391
 "Nombre d’emplois – Salariés x Agriculture, sylviculture et pêche",45574
-"Établissements – Administration publique, enseignement, santé humaine et action sociale x 20 à 49 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Agriculture, sylviculture et pêche x 50 à 99 salariés",41813
-"Établissements – Industrie manufacturière, industries extractives et autres x 20 à 49 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Construction x 10 à 19 salariés",41813
-"Établissements – Industrie manufacturière, industries extractives et autres x 100 à 199 salariés",41813
-"Établissements – Administration publique, enseignement, santé humaine et action sociale x 50 à 99 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Industrie manufacturière, industries extractives et autres x 1 à 4 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Administration publique, enseignement, santé humaine et action sociale x 1 à 4 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Construction x 100 à 199 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Construction x 1 à 4 salariés",41813
-"Établissements – Construction x 20 à 49 salariés",41813
-"Établissements – Agriculture, sylviculture et pêche x 5 à 9 salariés",41813
-"Établissements – Services principalement marchands x 50 à 99 salariés",41813
-"Établissements – Services principalement marchands x 0 salarié",41813
-"Établissements – Services principalement marchands x 5 à 9 salariés",41813
+"Établissements – Ensemble hors particuliers employeurs x Établissements appartenant à la sphère productive",41813
+"Effectifs présents la dernière semaine de décembre – Ensemble hors particuliers employeurs x Établissements appartenant à la sphère productive",41813
+"Établissements – Ensemble hors particuliers employeurs",41813
 "Effectifs présents la dernière semaine de décembre – 10 à 19 salariés",41813
 "Effectifs présents la dernière semaine de décembre – Industrie manufacturière, industries extractives et autres x 200 à 499 salariés",41813
-"Établissements – Industrie manufacturière, industries extractives et autres x 10 à 19 salariés",41813
-"Établissements – Industrie manufacturière, industries extractives et autres x 1 à 4 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Agriculture, sylviculture et pêche x 10 à 19 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Administration publique, enseignement, santé humaine et action sociale x 20 à 49 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Agriculture, sylviculture et pêche x 200 à 499 salariés",41813
-"Établissements – Ensemble hors particuliers employeurs",41813
-"Établissements – Construction x 100 à 199 salariés",41813
-"Établissements – Administration publique, enseignement, santé humaine et action sociale x 100 à 199 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Services principalement marchands",41813
-"Établissements – Ensemble hors particuliers employeurs x Établissements appartenant à la sphère productive",41813
-"Effectifs présents la dernière semaine de décembre – Administration publique, enseignement, santé humaine et action sociale",41813
-"Effectifs présents la dernière semaine de décembre – Services principalement marchands x 500 salariés et plus",41813
+"Établissements – Services principalement marchands x 5 à 9 salariés",41813
 "Établissements – Administration publique, enseignement, santé humaine et action sociale x 1 à 4 salariés",41813
-"Effectifs présents la dernière semaine de décembre – 5 à 9 salariés",41813
-"Effectifs présents la dernière semaine de décembre – 100 à 199 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Ensemble hors particuliers employeurs x Établissements appartenant à la sphère productive",41813
-"Établissements – Construction x 0 salarié",41813
-"Effectifs présents la dernière semaine de décembre – Services principalement marchands x 100 à 199 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Services principalement marchands x 1 à 4 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Industrie manufacturière, industries extractives et autres x 5 à 9 salariés",41813
-"Effectifs présents la dernière semaine de décembre – 20 à 49 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Services principalement marchands x 200 à 499 salariés",41813
 "Établissements – Industrie manufacturière, industries extractives et autres x 0 salarié",41813
-"Effectifs présents la dernière semaine de décembre – 500 salariés et plus",41813
-"Établissements – Services principalement marchands x 200 à 499 salariés",41813
+"Effectifs présents la dernière semaine de décembre – Agriculture, sylviculture et pêche x 100 à 199 salariés",41813
+"Établissements – Industrie manufacturière, industries extractives et autres x 20 à 49 salariés",41813
+"Établissements – Industrie manufacturière, industries extractives et autres x 10 à 19 salariés",41813
+"Effectifs présents la dernière semaine de décembre – Construction x 5 à 9 salariés",41813
+"Effectifs présents la dernière semaine de décembre – 200 à 499 salariés",41813
+"Établissements – Administration publique, enseignement, santé humaine et action sociale x 500 salariés et plus",41813
+"Établissements – Industrie manufacturière, industries extractives et autres x 50 à 99 salariés",41813
+"Établissements – Construction x 1 à 4 salariés",41813
+"Établissements – Services principalement marchands x 100 à 199 salariés",41813
+"Effectifs présents la dernière semaine de décembre – Agriculture, sylviculture et pêche x 500 salariés et plus",41813
+"Effectifs présents la dernière semaine de décembre – Industrie manufacturière, industries extractives et autres",41813
+"Effectifs présents la dernière semaine de décembre – Administration publique, enseignement, santé humaine et action sociale x 5 à 9 salariés",41813
+"Établissements – Fonction Publique x Établissements appartenant à la sphère productive",41813
+"Établissements – Agriculture, sylviculture et pêche x 50 à 99 salariés",41813
+"Établissements – Administration publique, enseignement, santé humaine et action sociale x 200 à 499 salariés",41813
+"Établissements – Construction x 5 à 9 salariés",41813
+"Établissements – Services principalement marchands x 20 à 49 salariés",41813
+"Effectifs présents la dernière semaine de décembre – Ensemble hors particuliers employeurs",41813
+"Établissements – Construction x 50 à 99 salariés",41813
+"Effectifs présents la dernière semaine de décembre – 50 à 99 salariés",41813
+"Établissements – Industrie manufacturière, industries extractives et autres x 200 à 499 salariés",41813
+"Établissements – Agriculture, sylviculture et pêche x 1 à 4 salariés",41813
 "Effectifs présents la dernière semaine de décembre",41813
 "Établissements – Administration publique, enseignement, santé humaine et action sociale x 5 à 9 salariés",41813
-"Établissements – Administration publique, enseignement, santé humaine et action sociale x 10 à 19 salariés",41813
-"Établissements – Agriculture, sylviculture et pêche x 0 salarié",41813
-"Effectifs présents la dernière semaine de décembre – Construction x 200 à 499 salariés",41813
-"Établissements – Fonction Publique x Établissements appartenant à la sphère présentielle",41813
-"Effectifs présents la dernière semaine de décembre – Services principalement marchands x 10 à 19 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Construction x 20 à 49 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Industrie manufacturière, industries extractives et autres x 20 à 49 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Administration publique, enseignement, santé humaine et action sociale x 10 à 19 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Agriculture, sylviculture et pêche x 5 à 9 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Construction x 5 à 9 salariés",41813
-"Établissements – Agriculture, sylviculture et pêche x 20 à 49 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Ensemble hors particuliers employeurs",41813
-"Effectifs présents la dernière semaine de décembre – 200 à 499 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Services principalement marchands x 50 à 99 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Industrie manufacturière, industries extractives et autres x 50 à 99 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Agriculture, sylviculture et pêche x 100 à 199 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Administration publique, enseignement, santé humaine et action sociale x 500 salariés et plus",41813
-"Effectifs présents la dernière semaine de décembre – Agriculture, sylviculture et pêche x 20 à 49 salariés",41813
-"Établissements – Agriculture, sylviculture et pêche x 200 à 499 salariés",41813
-"Effectifs présents la dernière semaine de décembre – 1 à 4 salariés",41813
-"Établissements – Industrie manufacturière, industries extractives et autres x 5 à 9 salariés",41813
-"Établissements – Construction x 500 salariés et plus",41813
+"Effectifs présents la dernière semaine de décembre – 100 à 199 salariés",41813
+"Effectifs présents la dernière semaine de décembre – 5 à 9 salariés",41813
+"Effectifs présents la dernière semaine de décembre – Services principalement marchands x 500 salariés et plus",41813
 "Établissements – Agriculture, sylviculture et pêche x 10 à 19 salariés",41813
-"Établissements – Construction x 50 à 99 salariés",41813
-"Établissements – Agriculture, sylviculture et pêche x 1 à 4 salariés",41813
-"Établissements – Industrie manufacturière, industries extractives et autres x 200 à 499 salariés",41813
+"Établissements – Agriculture, sylviculture et pêche x 200 à 499 salariés",41813
 "Établissements – Agriculture, sylviculture et pêche x 100 à 199 salariés",41813
-"Effectifs présents la dernière semaine de décembre – 50 à 99 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Administration publique, enseignement, santé humaine et action sociale x 100 à 199 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Agriculture, sylviculture et pêche x 500 salariés et plus",41813
-"Établissements – Ensemble hors particuliers employeurs x Établissements appartenant à la sphère présentielle",41813
-"Établissements – Construction x 5 à 9 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Agriculture, sylviculture et pêche",41813
-"Effectifs présents la dernière semaine de décembre – Industrie manufacturière, industries extractives et autres x 100 à 199 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Administration publique, enseignement, santé humaine et action sociale x 200 à 499 salariés",41813
-"Établissements – Administration publique, enseignement, santé humaine et action sociale x 0 salarié",41813
-"Établissements – Administration publique, enseignement, santé humaine et action sociale x 200 à 499 salariés",41813
-"Établissements – Services principalement marchands x 10 à 19 salariés",41813
-"Établissements – Services principalement marchands x 1 à 4 salariés",41813
-"Établissements – Services principalement marchands x 20 à 49 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Ensemble hors particuliers employeurs x Établissements appartenant à la sphère présentielle",41813
-"Effectifs présents la dernière semaine de décembre – Fonction Publique x Établissements appartenant à la sphère productive",41813
-"Établissements – Construction x 200 à 499 salariés",41813
-"Établissements – Services principalement marchands x 100 à 199 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Administration publique, enseignement, santé humaine et action sociale x 5 à 9 salariés",41813
+"Établissements – Construction x 0 salarié",41813
+"Effectifs présents la dernière semaine de décembre – Services principalement marchands",41813
 "Effectifs présents la dernière semaine de décembre – Administration publique, enseignement, santé humaine et action sociale x 50 à 99 salariés",41813
-"Établissements – Administration publique, enseignement, santé humaine et action sociale x 500 salariés et plus",41813
-"Effectifs présents la dernière semaine de décembre – Industrie manufacturière, industries extractives et autres x 10 à 19 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Services principalement marchands x 20 à 49 salariés",41813
-"Établissements – Fonction Publique x Établissements appartenant à la sphère productive",41813
-"Établissements – Construction x 1 à 4 salariés",41813
-"Établissements – Industrie manufacturière, industries extractives et autres x 50 à 99 salariés",41813
+"Effectifs présents la dernière semaine de décembre – Administration publique, enseignement, santé humaine et action sociale x 500 salariés et plus",41813
+"Effectifs présents la dernière semaine de décembre – Administration publique, enseignement, santé humaine et action sociale x 100 à 199 salariés",41813
+"Établissements – Construction x 200 à 499 salariés",41813
 "Effectifs présents la dernière semaine de décembre – Construction x 500 salariés et plus",41813
 "Effectifs présents la dernière semaine de décembre – Agriculture, sylviculture et pêche x 1 à 4 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Industrie manufacturière, industries extractives et autres",41813
-"Établissements – Agriculture, sylviculture et pêche x 50 à 99 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Fonction Publique x Établissements appartenant à la sphère présentielle",41813
-"Établissements – Industrie manufacturière, industries extractives et autres x 500 salariés et plus",41813
-"Effectifs présents la dernière semaine de décembre – Construction",41813
-"Effectifs présents la dernière semaine de décembre – Construction x 50 à 99 salariés",41813
-"Effectifs présents la dernière semaine de décembre – Services principalement marchands x 5 à 9 salariés",41813
-"Établissements – Construction x 10 à 19 salariés",41813
-"Établissements – Services principalement marchands x 500 salariés et plus",41813
-"Établissements – Agriculture, sylviculture et pêche x 500 salariés et plus",41813
+"Effectifs présents la dernière semaine de décembre – Industrie manufacturière, industries extractives et autres x 10 à 19 salariés",41813
+"Effectifs présents la dernière semaine de décembre – Services principalement marchands x 20 à 49 salariés",41813
+"Effectifs présents la dernière semaine de décembre – Fonction Publique x Établissements appartenant à la sphère productive",41813
+"Effectifs présents la dernière semaine de décembre – Services principalement marchands x 100 à 199 salariés",41813
+"Effectifs présents la dernière semaine de décembre – Services principalement marchands x 200 à 499 salariés",41813
+"Effectifs présents la dernière semaine de décembre – Construction x 10 à 19 salariés",41813
+"Établissements – Administration publique, enseignement, santé humaine et action sociale x 100 à 199 salariés",41813
+"Établissements – Administration publique, enseignement, santé humaine et action sociale x 20 à 49 salariés",41813
+"Effectifs présents la dernière semaine de décembre – Agriculture, sylviculture et pêche x 5 à 9 salariés",41813
+"Effectifs présents la dernière semaine de décembre – Administration publique, enseignement, santé humaine et action sociale x 10 à 19 salariés",41813
+"Établissements – Services principalement marchands x 0 salarié",41813
+"Effectifs présents la dernière semaine de décembre – Agriculture, sylviculture et pêche x 200 à 499 salariés",41813
 "Effectifs présents la dernière semaine de décembre – Industrie manufacturière, industries extractives et autres x 500 salariés et plus",41813
-"Nombre d'unités légales – Administration publique, enseignement, santé humaine et action sociale",41805
-"Nombre d'unités légales – Construction",41805
-"Établissements – Activités immobilières",41805
+"Effectifs présents la dernière semaine de décembre – Services principalement marchands x 5 à 9 salariés",41813
+"Établissements – Services principalement marchands x 500 salariés et plus",41813
+"Établissements – Industrie manufacturière, industries extractives et autres x 500 salariés et plus",41813
+"Effectifs présents la dernière semaine de décembre – Construction x 50 à 99 salariés",41813
+"Établissements – Construction x 10 à 19 salariés",41813
+"Effectifs présents la dernière semaine de décembre – Fonction Publique x Établissements appartenant à la sphère présentielle",41813
+"Effectifs présents la dernière semaine de décembre – Services principalement marchands x 1 à 4 salariés",41813
+"Effectifs présents la dernière semaine de décembre – Industrie manufacturière, industries extractives et autres x 5 à 9 salariés",41813
+"Effectifs présents la dernière semaine de décembre – Services principalement marchands x 10 à 19 salariés",41813
+"Effectifs présents la dernière semaine de décembre – Agriculture, sylviculture et pêche x 10 à 19 salariés",41813
+"Effectifs présents la dernière semaine de décembre – Construction x 20 à 49 salariés",41813
+"Effectifs présents la dernière semaine de décembre – Industrie manufacturière, industries extractives et autres x 20 à 49 salariés",41813
+"Effectifs présents la dernière semaine de décembre – Agriculture, sylviculture et pêche x 50 à 99 salariés",41813
+"Établissements – Industrie manufacturière, industries extractives et autres x 1 à 4 salariés",41813
+"Effectifs présents la dernière semaine de décembre – 20 à 49 salariés",41813
+"Établissements – Administration publique, enseignement, santé humaine et action sociale x 50 à 99 salariés",41813
+"Établissements – Construction x 100 à 199 salariés",41813
+"Établissements – Agriculture, sylviculture et pêche x 500 salariés et plus",41813
+"Effectifs présents la dernière semaine de décembre – Construction",41813
+"Établissements – Construction x 500 salariés et plus",41813
+"Effectifs présents la dernière semaine de décembre – Industrie manufacturière, industries extractives et autres x 50 à 99 salariés",41813
+"Effectifs présents la dernière semaine de décembre – Services principalement marchands x 50 à 99 salariés",41813
+"Effectifs présents la dernière semaine de décembre – Administration publique, enseignement, santé humaine et action sociale x 1 à 4 salariés",41813
+"Effectifs présents la dernière semaine de décembre – 1 à 4 salariés",41813
+"Établissements – Industrie manufacturière, industries extractives et autres x 5 à 9 salariés",41813
+"Établissements – Agriculture, sylviculture et pêche x 20 à 49 salariés",41813
+"Établissements – Construction x 20 à 49 salariés",41813
+"Effectifs présents la dernière semaine de décembre – Industrie manufacturière, industries extractives et autres x 1 à 4 salariés",41813
+"Établissements – Agriculture, sylviculture et pêche x 5 à 9 salariés",41813
+"Effectifs présents la dernière semaine de décembre – Construction x 1 à 4 salariés",41813
+"Effectifs présents la dernière semaine de décembre – Construction x 100 à 199 salariés",41813
+"Établissements – Services principalement marchands x 50 à 99 salariés",41813
+"Effectifs présents la dernière semaine de décembre – Agriculture, sylviculture et pêche x 20 à 49 salariés",41813
+"Établissements – Services principalement marchands x 10 à 19 salariés",41813
+"Effectifs présents la dernière semaine de décembre – Industrie manufacturière, industries extractives et autres x 100 à 199 salariés",41813
+"Effectifs présents la dernière semaine de décembre – 500 salariés et plus",41813
+"Effectifs présents la dernière semaine de décembre – Agriculture, sylviculture et pêche",41813
+"Effectifs présents la dernière semaine de décembre – Administration publique, enseignement, santé humaine et action sociale x 200 à 499 salariés",41813
+"Effectifs présents la dernière semaine de décembre – Ensemble hors particuliers employeurs x Établissements appartenant à la sphère présentielle",41813
+"Établissements – Ensemble hors particuliers employeurs x Établissements appartenant à la sphère présentielle",41813
+"Établissements – Services principalement marchands x 1 à 4 salariés",41813
+"Établissements – Administration publique, enseignement, santé humaine et action sociale x 0 salarié",41813
+"Établissements – Services principalement marchands x 200 à 499 salariés",41813
+"Effectifs présents la dernière semaine de décembre – Administration publique, enseignement, santé humaine et action sociale x 20 à 49 salariés",41813
+"Établissements – Administration publique, enseignement, santé humaine et action sociale x 10 à 19 salariés",41813
+"Établissements – Industrie manufacturière, industries extractives et autres x 100 à 199 salariés",41813
+"Effectifs présents la dernière semaine de décembre – Administration publique, enseignement, santé humaine et action sociale",41813
+"Effectifs présents la dernière semaine de décembre – Construction x 200 à 499 salariés",41813
+"Établissements – Fonction Publique x Établissements appartenant à la sphère présentielle",41813
+"Établissements – Agriculture, sylviculture et pêche x 0 salarié",41813
 "Nombre d'unités légales",41805
-"Établissements – Activités spécialisées, scientifiques et techniques et activités de services administratifs et de soutien",41805
-"Établissements – Activités financières et d'assurance",41805
-"Établissements – Commerce de gros et de détail, transports, hébergement et restauration",41805
-"Nombre d'unités légales – Activités spécialisées, scientifiques et techniques et activités de services administratifs et de soutien",41805
-"Nombre d'unités légales – Autres activités de services",41805
-"Établissements – Autres activités de services",41805
-"Nombre d'unités légales – Information et communication",41805
-"Nombre d'unités légales – Commerce de gros et de détail, transports, hébergement et restauration",41805
-"Nombre d'unités légales – Activités financières et d'assurance",41805
 "Nombre d'unités légales – Industrie manufacturière, industries extractives et autres",41805
 "Nombre d'unités légales – Activités immobilières",41805
+"Nombre d'unités légales – Activités financières et d'assurance",41805
+"Nombre d'unités légales – Commerce de gros et de détail, transports, hébergement et restauration",41805
+"Établissements – Autres activités de services",41805
+"Établissements – Activités spécialisées, scientifiques et techniques et activités de services administratifs et de soutien",41805
 "Établissements – Information et communication",41805
-"Établissements – Hôtels et hébergement similaire x 2 étoiles",41770
-"Nombre de places – Hôtels et hébergement similaire x 1 étoile",41770
-"Population – Aucun diplôme",41770
-"Population – Aucun diplôme x Femme",41770
-"Population – CEP (certificat d’études primaires)",41770
-"Établissements – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x 5 étoiles",41770
-"Population – Diplôme d'études supérieures x Femme",41770
-"Population – Diplôme universitaire 2e ou 3e cycle",41770
-"Nombre de places – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x 5 étoiles",41770
-"Population – CEP (certificat d’études primaires) x Homme",41770
-"Nombre de places – Hôtels et hébergement similaire x Non classé",41770
-"Population – Aucun diplôme ou certificat d'études primaires x Femme",41770
-"Établissements – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x 3 étoiles",41770
+"Établissements – Activités financières et d'assurance",41805
+"Établissements – Activités immobilières",41805
+"Nombre d'unités légales – Autres activités de services",41805
+"Nombre d'unités légales – Activités spécialisées, scientifiques et techniques et activités de services administratifs et de soutien",41805
+"Établissements – Commerce de gros et de détail, transports, hébergement et restauration",41805
+"Nombre d'unités légales – Information et communication",41805
+"Nombre d'unités légales – Construction",41805
+"Nombre d'unités légales – Administration publique, enseignement, santé humaine et action sociale",41805
+"Population – Aucun diplôme ou BEPC, brevet des collèges, DNB x Femme",41770
 "Établissements – Hôtels et hébergement similaire x 1 étoile",41770
-"Nombre de places – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x 4 étoiles",41770
-"Nombre de places – Hôtels et hébergement similaire x 5 étoiles",41770
+"Établissements – Hôtels et hébergement similaire x Non classé",41770
+"Nombre de places – Hôtels et hébergement similaire x 1 étoile",41770
 "Établissements – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x Non classé",41770
-"Population – Aucun diplôme x Homme",41770
-"Établissements – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x 4 étoiles",41770
-"Superficie",41770
-"Population – Diplôme de niveau bac + 5 ou plus x Femme",41770
 "Nombre de place-lits – Hébergement touristique et autre hébergement de courte durée",41770
-"Établissements – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x 1 étoile",41770
-"Nombre de places – Hôtels et hébergement similaire x 4 étoiles",41770
-"Établissements – Hôtels et hébergement similaire",41770
 "Population – Diplôme d'études supérieures x Homme",41770
 "Nombre de places – Terrains de camping et parcs pour caravanes ou véhicules de loisirs",41770
-"Population – Aucun diplôme ou BEPC, brevet des collèges, DNB x Femme",41770
-"Population – Aucun diplôme ou certificat d'études primaires x Homme",41770
-"Établissements – Hôtels et hébergement similaire x 4 étoiles",41770
-"Population – Diplôme de niveau bac + 5 ou plus x Homme",41770
-"Nombre de places – Hôtels et hébergement similaire x 2 étoiles",41770
-"Nombre de place-lits – Résidences de tourisme – Résidences hôtelières",41770
-"Établissements – Hôtels et hébergement similaire x 5 étoiles",41770
+"Population – Baccalauréat universitaire ou équivalent : Licence, licence pro, maîtrise, diplôme équivalent de niveau bac+3 ou bac+4",41770
 "Établissements – Villages vacances et maisons familiales",41770
-"Population – Diplôme universitaire 2e ou 3e cycle x Femme",41770
-"Population – Baccalauréat universitaire ou équivalent : Licence, licence pro, maîtrise, diplôme équivalent de niveau bac+3 ou bac+4 x Homme",41770
-"Nombre de places – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x Non classé",41770
-"Nombre de places – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x 2 étoiles",41770
-"Établissements – Hôtels et hébergement similaire x Non classé",41770
-"Nombre de places – Hôtels et hébergement similaire x 3 étoiles",41770
-"Établissements – Résidences de tourisme – Résidences hôtelières",41770
-"Population – Diplôme d'études supérieures",41770
-"Nombre de places – Hôtels et hébergement similaire",41770
-"Nombre de places – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x 1 étoile",41770
-"Population – Diplôme de niveau bac + 5 ou plus",41770
-"Établissements – Auberges de jeunesse et centres sportifs",41770
-"Population – CEP (certificat d’études primaires) x Femme",41770
-"Population – Aucun diplôme ou BEPC, brevet des collèges, DNB",41770
-"Nombre de place-lits – Villages vacances et maisons familiales",41770
-"Établissements – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x 2 étoiles",41770
-"Population – Aucun diplôme ou BEPC, brevet des collèges, DNB x Homme",41770
-"Établissements – Terrains de camping et parcs pour caravanes ou véhicules de loisirs",41770
-"Établissements – Hébergement touristique et autre hébergement de courte durée",41770
+"Établissements – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x 3 étoiles",41770
+"Population – Diplôme universitaire 2e ou 3e cycle",41770
 "Population – Diplôme universitaire 2e ou 3e cycle x Homme",41770
-"Nombre de place-lits – Auberges de jeunesse et centres sportifs",41770
 "Nombre de places – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x 3 étoiles",41770
+"Établissements – Hébergement touristique et autre hébergement de courte durée",41770
+"Population – Aucun diplôme x Homme",41770
+"Établissements – Hôtels et hébergement similaire x 2 étoiles",41770
+"Superficie",41770
+"Nombre de place-lits – Auberges de jeunesse et centres sportifs",41770
+"Nombre de places – Hôtels et hébergement similaire x 4 étoiles",41770
+"Établissements – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x 1 étoile",41770
+"Population – Aucun diplôme ou certificat d'études primaires x Femme",41770
+"Nombre de places – Hôtels et hébergement similaire x 5 étoiles",41770
+"Population – Diplôme d'études supérieures x Femme",41770
 "Population – Baccalauréat universitaire ou équivalent : Licence, licence pro, maîtrise, diplôme équivalent de niveau bac+3 ou bac+4 x Femme",41770
 "Établissements – Hôtels et hébergement similaire x 3 étoiles",41770
-"Population – Baccalauréat universitaire ou équivalent : Licence, licence pro, maîtrise, diplôme équivalent de niveau bac+3 ou bac+4",41770
+"Établissements – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x 5 étoiles",41770
+"Nombre de places – Hôtels et hébergement similaire x 3 étoiles",41770
+"Nombre de places – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x 5 étoiles",41770
+"Établissements – Auberges de jeunesse et centres sportifs",41770
+"Population – Aucun diplôme ou certificat d'études primaires x Homme",41770
+"Population – Aucun diplôme",41770
+"Établissements – Hôtels et hébergement similaire x 5 étoiles",41770
+"Établissements – Terrains de camping et parcs pour caravanes ou véhicules de loisirs",41770
+"Population – Aucun diplôme ou BEPC, brevet des collèges, DNB",41770
+"Population – Aucun diplôme ou BEPC, brevet des collèges, DNB x Homme",41770
+"Établissements – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x 2 étoiles",41770
+"Nombre de place-lits – Villages vacances et maisons familiales",41770
+"Population – CEP (certificat d’études primaires)",41770
+"Établissements – Hôtels et hébergement similaire",41770
+"Population – Diplôme universitaire 2e ou 3e cycle x Femme",41770
+"Nombre de places – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x Non classé",41770
+"Population – Baccalauréat universitaire ou équivalent : Licence, licence pro, maîtrise, diplôme équivalent de niveau bac+3 ou bac+4 x Homme",41770
+"Nombre de places – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x 2 étoiles",41770
+"Nombre de place-lits – Résidences de tourisme – Résidences hôtelières",41770
+"Population – Diplôme de niveau bac + 5 ou plus x Homme",41770
+"Établissements – Hôtels et hébergement similaire x 4 étoiles",41770
+"Nombre de places – Hôtels et hébergement similaire x 2 étoiles",41770
+"Nombre de places – Hôtels et hébergement similaire",41770
+"Population – Diplôme d'études supérieures",41770
+"Population – CEP (certificat d’études primaires) x Femme",41770
+"Nombre de places – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x 1 étoile",41770
+"Établissements – Résidences de tourisme – Résidences hôtelières",41770
+"Population – Diplôme de niveau bac + 5 ou plus",41770
+"Population – CEP (certificat d’études primaires) x Homme",41770
+"Population – Aucun diplôme x Femme",41770
+"Nombre de places – Hôtels et hébergement similaire x Non classé",41770
+"Nombre de places – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x 4 étoiles",41770
+"Population – Diplôme de niveau bac + 5 ou plus x Femme",41770
+"Établissements – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x 4 étoiles",41770
+"Établissements – Accueil de jeunes enfants",41768
 "Établissements – Aide à domicile ; Accueil de jeunes enfants ; Activités des ménages en tant qu'employeurs de personnel domestique",41768
 "Établissements – Aide à domicile et Activités des ménages en tant qu'employeurs de personnel domestique",41768
-"Établissements – Accueil de jeunes enfants",41768
 "Population – De 15 à 64 ans x Homme",41758
-"Population – 15 ans ou plus x Marié",41755
 "Population – 15 ans ou plus x Homme x Actif occupé",41755
-"Population – De 15 à 64 ans x Femme",41754
-"Population – Voiture, camion ou fourgonnette",41754
+"Population – 15 ans ou plus x Marié",41755
 "Population – De 15 à 64 ans x Actif occupé x Homme",41754
+"Population – Voiture, camion ou fourgonnette",41754
+"Population – De 15 à 64 ans x Femme",41754
 "Population – 15 ans ou plus x Salariés",41750
 "Population – 15 ans ou plus x Célibataire",41749
 "Population – De 25 à 54 ans x Actif occupé",41748
@@ -516,8 +516,8 @@
 "Population – De 25 à 54 ans x Femme",41741
 "Population – De 25 à 54 ans x Actif occupé x Homme",41731
 "Population – De 25 à 54 ans x Actif occupé x Femme",41729
-"Population – 15 ans ou plus x Salariés x Femme",41728
 "Population – 15 ans ou plus x Femme x Salariés",41728
+"Population – 15 ans ou plus x Salariés x Femme",41728
 "Population – Salariés x De 15 à 64 ans x Femme",41727
 "Population – De 65 à 79 ans x Homme",41723
 "Population – 15 ans ou plus x Homme x Salariés",41722
@@ -527,8 +527,8 @@
 "Population – De 65 à 79 ans x Femme",41710
 "Population – De 40 à 54 ans x Homme",41708
 "Population – 15 ans ou plus x Non Salariés",41705
-"Population – Salariés x De 25 à 54 ans x Femme",41698
 "Population des ménages – De 25 à 39 ans",41698
+"Population – Salariés x De 25 à 54 ans x Femme",41698
 "Population – 15 ans ou plus x Homme x Emploi à durée indéterminée (CDI, fonctionnaires)",41694
 "Population – De 15 à 64 ans x Actif occupé x CAP, BEP ou diplôme de niveau équivalent",41686
 "Population – De 40 à 54 ans x Femme",41684
@@ -681,33 +681,33 @@
 "Nombre d’emplois – Non Salariés x Femme x Services principalement marchands",25055
 "Nombre de nouvelles unités légales enregistrées – Autres activités de services",24891
 "Nombre d’emplois – Non Salariés x Construction",24887
-"Salaire net EQTP mensuel moyen – Homme x De 50 à 54 ans",24714
 "Salaire net EQTP mensuel moyen – Ouvriers",24714
-"Salaire net EQTP mensuel moyen – Moins de 25 ans",24714
-"Salaire net EQTP mensuel moyen – Femme x 55 ans ou plus",24714
-"Salaire net EQTP mensuel moyen – Professions intermédiaires",24714
-"Salaire net EQTP mensuel moyen – Femme x De 25 à 39 ans",24714
-"Salaire net EQTP mensuel moyen – Homme x De 40 à 49 ans",24714
-"Salaire net EQTP mensuel moyen – Femme x Ouvriers",24714
-"Salaire net EQTP mensuel moyen – Homme x De 25 à 39 ans",24714
 "Salaire net EQTP mensuel moyen – Femme x Cadres y compris chefs d’entreprises",24714
-"Salaire net EQTP mensuel moyen – De 25 à 39 ans",24714
-"Salaire net EQTP mensuel moyen – Homme x Professions intermédiaires",24714
-"Salaire net EQTP mensuel moyen – Femme x De 50 à 54 ans",24714
-"Salaire net EQTP mensuel moyen – Employés",24714
-"Salaire net EQTP mensuel moyen – Femme x Employés",24714
-"Salaire net EQTP mensuel moyen – Femme x De 40 à 49 ans",24714
-"Salaire net EQTP mensuel moyen – Homme x Moins de 25 ans",24714
-"Salaire net EQTP mensuel moyen – Homme x Ouvriers",24714
-"Salaire net EQTP mensuel moyen – De 40 à 49 ans",24714
-"Salaire net EQTP mensuel moyen – Homme x Cadres y compris chefs d’entreprises",24714
 "Salaire net EQTP mensuel moyen – Homme x Employés",24714
+"Salaire net EQTP mensuel moyen – De 25 à 39 ans",24714
+"Salaire net EQTP mensuel moyen – Moins de 25 ans",24714
+"Salaire net EQTP mensuel moyen – Homme x 55 ans ou plus",24714
+"Salaire net EQTP mensuel moyen – Femme x Ouvriers",24714
+"Salaire net EQTP mensuel moyen – Homme x Ouvriers",24714
+"Salaire net EQTP mensuel moyen – Femme x Professions intermédiaires",24714
+"Salaire net EQTP mensuel moyen – Homme x Cadres y compris chefs d’entreprises",24714
+"Salaire net EQTP mensuel moyen – Homme x Professions intermédiaires",24714
+"Salaire net EQTP mensuel moyen – Homme x Moins de 25 ans",24714
+"Salaire net EQTP mensuel moyen – Femme x De 40 à 49 ans",24714
+"Salaire net EQTP mensuel moyen – Homme x De 25 à 39 ans",24714
+"Salaire net EQTP mensuel moyen – Femme x Employés",24714
+"Salaire net EQTP mensuel moyen – Employés",24714
+"Salaire net EQTP mensuel moyen – Homme x De 40 à 49 ans",24714
+"Salaire net EQTP mensuel moyen – 55 ans ou plus",24714
+"Salaire net EQTP mensuel moyen – Femme x De 50 à 54 ans",24714
 "Salaire net EQTP mensuel moyen – Femme x Moins de 25 ans",24714
 "Salaire net EQTP mensuel moyen – Cadres y compris chefs d’entreprises",24714
-"Salaire net EQTP mensuel moyen – 55 ans ou plus",24714
+"Salaire net EQTP mensuel moyen – Femme x De 25 à 39 ans",24714
+"Salaire net EQTP mensuel moyen – Homme x De 50 à 54 ans",24714
 "Salaire net EQTP mensuel moyen – De 50 à 54 ans",24714
-"Salaire net EQTP mensuel moyen – Femme x Professions intermédiaires",24714
-"Salaire net EQTP mensuel moyen – Homme x 55 ans ou plus",24714
+"Salaire net EQTP mensuel moyen – De 40 à 49 ans",24714
+"Salaire net EQTP mensuel moyen – Professions intermédiaires",24714
+"Salaire net EQTP mensuel moyen – Femme x 55 ans ou plus",24714
 "Nombre de nouvelles unités légales enregistrées – Industrie manufacturière, industries extractives et autres x Entrepreneur individuel",24597
 "Nombre de nouvelles unités légales enregistrées – Autres activités de services x Entrepreneur individuel",24420
 "Population – De 15 à 24 ans  x Professions intermédiaires",24227
@@ -811,8 +811,8 @@
 "Logements – Maisons ou immeubles en dur",752
 "Logements – Eau froide et chaude",751
 "Logements – Habitation de fortune",749
-"Logements – Raccordement à un puisard",747
-"Logements – Raccordement au réseau d'égouts",747
 "Logements – Cases traditionnelles",747
+"Logements – Raccordement au réseau d'égouts",747
+"Logements – Raccordement à un puisard",747
 "Nombre d'équipements – Sgt section d’enseignement général et technologique",560
 "Nombre de nouvelles unités légales enregistrées – Information et communication x Autres sociétés",428
