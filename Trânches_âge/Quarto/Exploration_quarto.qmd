@@ -1,9 +1,6 @@
 ---
-title: "Analyse des données territoriales françaises"
-subtitle: "Exploration et visualisation du fichier dossier_complet (SSP Cloud)"
-author: "Sarah Beaucamp"
-date: today
-lang: fr
+title: "Premières explorations"
+subtitle: "Fichier dossier complet"
 format:
   html:
     toc: true
@@ -176,7 +173,7 @@ tranches_age <- c(
   "Population – 80 ans ou plus"
 )
 
-structure_reelle <- dossier_complet %>%
+nombre_total <- dossier_complet %>%
   filter(
     TIME_PERIOD == "2022",
     GEO_OBJECT_LABEL == "Commune",
@@ -187,7 +184,7 @@ structure_reelle <- dossier_complet %>%
   collect() %>%
   mutate(
     part_pourcentage  = total_brut / sum(total_brut),
-    population_exacte = round(part_pourcentage * 67900000),
+    population_exacte = round(part_pourcentage * 68000000),
     TAB_MEASURE_LABEL = factor(TAB_MEASURE_LABEL, levels = tranches_age)
   ) %>%
   arrange(TAB_MEASURE_LABEL)

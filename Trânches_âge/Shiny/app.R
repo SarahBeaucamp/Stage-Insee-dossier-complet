@@ -5,7 +5,7 @@ library(shiny)
 library(ggplot2)
 library(scales)
 
-# ── Connexion S3 ──────────────────────────────────────────────────────────────
+#Initialisation et accès à la base de données
 con <- dbConnect(duckdb(), dbdir = "base.duckdb")
 dbExecute(con, "INSTALL httpfs; LOAD httpfs;")
 dbExecute(con, "INSTALL aws;   LOAD aws;")
@@ -27,7 +27,7 @@ tranches_age <- c(
   "Population – 80 ans ou plus"
 )
 
-# ── On récupère juste la liste des villes (léger) ────────────────────────────
+#ON récupère la liste des villes 
 villes <- dossier_complet %>%
   filter(TIME_PERIOD == "2022", GEO_OBJECT_LABEL == "Commune") %>%
   distinct(GEO_LABEL) %>%
@@ -35,7 +35,7 @@ villes <- dossier_complet %>%
   arrange(GEO_LABEL) %>%
   pull(GEO_LABEL)
 
-# ── UI ────────────────────────────────────────────────────────────────────────
+#UI
 ui <- fluidPage(
   titlePanel("Répartition de la population par tranche d'âge — INSEE 2022"),
   sidebarLayout(
@@ -48,7 +48,7 @@ ui <- fluidPage(
   )
 )
 
-# ── Server ────────────────────────────────────────────────────────────────────
+#server
 server <- function(input, output) {
   
   donnees <- reactive({
