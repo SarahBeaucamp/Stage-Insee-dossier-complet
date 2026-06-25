@@ -1,0 +1,336 @@
+---
+title: "Analyse des données territoriales françaises"
+subtitle: "Exploration et visualisation du fichier dossier_complet (SSP Cloud)"
+author: "Sarah Beaucamp"
+date: today
+lang: fr
+format:
+  html:
+    toc: true
+    toc-title: "Sommaire"
+    toc-depth: 3
+    number-sections: true
+    theme: cosmo
+    code-fold: true
+    code-summary: "Afficher le code"
+    embed-resources: true
+execute:
+  warning: false
+  message: false
+  echo: true
+---
+
+## Connexion à la base de données
+
+On se connecte à DuckDB et on charge les extensions nécessaires pour lire les données depuis le S3 du SSP Cloud.
+
+```{r}
+#| label: connexion-duckdb
+
+library(DBI)
+library(duckdb)
+library(dplyr)
+
+con <- dbConnect(duckdb(), dbdir = "base.duckdb")
+
+dbExecute(con, "INSTALL httpfs;")
+dbExecute(con, "LOAD httpfs;")
+dbExecute(con, "INSTALL aws;")
+dbExecute(con, "LOAD aws;")
+
+dbExecute(con, "CREATE OR REPLACE SECRET (
+  TYPE S3,
+  PROVIDER CREDENTIAL_CHAIN,
+  ENDPOINT 'minio.lab.sspcloud.fr',
+  URL_STYLE 'path'
+);")
+
+chemin_s3 <- "s3://sarahbeaucamp/dossier_complet.parquet"
+dossier_complet <- tbl(con, paste0("read_parquet('", chemin_s3, "')"))
+```
+
+## Exploration de la base de données
+
+### Aperçu général
+
+```{r}
+#| label: apercu-donnees
+
+debut <- dossier_complet %>%
+  head(10) %>%
+  collect()
+
+knitr::kable(debut, caption = "10 premières lignes du fichier dossier_complet")
+```
+
+La base contient **16 colonnes** :
+
+| Colonne             | Type | Description                                 |
+|---------------------|------|---------------------------------------------|
+| `GEO_REF`           | chr  | Année de référence géographique             |
+| `GEO_OBJECT`        | chr  | Code du type d'aire urbaine (AAV2020, etc.) |
+| `GEO_OBJECT_LABEL`  | chr  | Libellé du type d'aire urbaine              |
+| `GEO`               | chr  | Code du département (ex : `001`)            |
+| `GEO_LABEL`         | chr  | Nom de la ville ou territoire               |
+| `TIME_PERIOD`       | chr  | Année de la donnée (ex : `2022`)            |
+| `ID_TAB`            | chr  | Identifiant du tableau (ex : `TOU_T1`)      |
+| `ID_TAB_LABEL`      | chr  | Libellé du tableau                          |
+| `DS`                | chr  | Identifiant du dataset (ex : `DS_TOUR_CAP`) |
+| `TAB_MEASURE`       | chr  | Code de la mesure                           |
+| `TAB_MEASURE_LABEL` | chr  | Libellé de la mesure                        |
+| `OBS_VALUE`         | dbl  | Valeur observée                             |
+| `OBS_STATUS`        | chr  | Statut de l'observation (A, O, W, K ou NA)  |
+| `UNIT_MULT`         | int  | Multiplicateur d'unité (0 ou NA)            |
+| `UNIT_MEASURE`      | chr  | Unité de mesure (NA, PT, EUR_YR)            |
+| `CONF_STATUS`       | chr  | Statut de confidentialité (NA, F, C)        |
+
+### Distribution des variables clés
+
+```{r}
+#| label: exploration-geo-ref
+
+geo_ref <- dossier_complet %>%
+  count(GEO_REF, sort = TRUE) %>%
+  collect()
+
+knitr::kable(geo_ref, caption = "Répartition par GEO_REF")
+```
+
+```{r}
+#| label: exploration-geo-object
+
+geo_object <- dossier_complet %>%
+  count(GEO_OBJECT, sort = TRUE) %>%
+  collect()
+
+knitr::kable(geo_object, caption = "Types d'aires urbaines — 13 modalités")
+```
+
+```{r}
+#| label: exploration-geo-object-label
+
+geo_object_label <- dossier_complet %>%
+  count(GEO_OBJECT_LABEL, sort = TRUE) %>%
+  collect()
+
+knitr::kable(geo_object_label, caption = "Libellés des aires urbaines")
+```
+
+```{r}
+#| label: exploration-time-period
+
+time_period <- dossier_complet %>%
+  count(TIME_PERIOD, sort = TRUE) %>%
+  collect()
+
+knitr::kable(time_period, caption = "Années disponibles — 22 années")
+```
+
+```{r}
+#| label: exploration-statuts
+
+conf <- dossier_complet %>% count(CONF_STATUS,  sort = TRUE) %>% collect()
+obs  <- dossier_complet %>% count(OBS_STATUS,   sort = TRUE) %>% collect()
+unit <- dossier_complet %>% count(UNIT_MEASURE, sort = TRUE) %>% collect()
+mult <- dossier_complet %>% count(UNIT_MULT,    sort = TRUE) %>% collect()
+
+knitr::kable(conf, caption = "CONF_STATUS")
+knitr::kable(obs,  caption = "OBS_STATUS")
+knitr::kable(unit, caption = "UNIT_MEASURE")
+knitr::kable(mult, caption = "UNIT_MULT")
+```
+
+### Export des modalités de TAB_MEASURE_LABEL
+
+```{r}
+#| label: export-mesures
+
+toutes_les_modalites <- dossier_complet %>%
+  count(TAB_MEASURE_LABEL, sort = TRUE) %>%
+  collect()
+
+# write.csv(toutes_les_modalites, file = "modalites_tab_measure.csv", row.names = FALSE)
+
+knitr::kable(
+  head(toutes_les_modalites, 30),
+  caption = "30 premières modalités de TAB_MEASURE_LABEL"
+)
+```
+
+## Analyse démographique — Tranches d'âge
+
+### Structure nationale
+
+```{r}
+#| label: structure-nationale
+
+library(scales)
+
+tranches_age <- c(
+  "Population – Moins de 15 ans",
+  "Population – De 15 à 24 ans ",
+  "Population – De 25 à 39 ans",
+  "Population – De 40 à 54 ans",
+  "Population – De 55 à 64 ans",
+  "Population – De 65 à 79 ans",
+  "Population – 80 ans ou plus"
+)
+
+structure_reelle <- dossier_complet %>%
+  filter(
+    TIME_PERIOD == "2022",
+    GEO_OBJECT_LABEL == "Commune",
+    TAB_MEASURE_LABEL %in% tranches_age
+  ) %>%
+  group_by(TAB_MEASURE_LABEL) %>%
+  summarise(total_brut = sum(OBS_VALUE, na.rm = TRUE)) %>%
+  collect() %>%
+  mutate(
+    part_pourcentage  = total_brut / sum(total_brut),
+    population_exacte = round(part_pourcentage * 67900000),
+    TAB_MEASURE_LABEL = factor(TAB_MEASURE_LABEL, levels = tranches_age)
+  ) %>%
+  arrange(TAB_MEASURE_LABEL)
+
+knitr::kable(
+  structure_reelle %>%
+    select(TAB_MEASURE_LABEL, population_exacte, part_pourcentage) %>%
+    mutate(part_pourcentage = percent(part_pourcentage, accuracy = 0.1)),
+  col.names = c("Tranche d'âge", "Population estimée", "Part (%)"),
+  caption = "Répartition nationale par tranche d'âge — INSEE 2022"
+)
+```
+
+### Diagramme en camembert
+
+```{r}
+#| label: camembert-age
+#| fig-cap: "Répartition de la population française par tranche d'âge (2022)"
+#| fig-width: 9
+#| fig-height: 6
+
+library(ggplot2)
+
+ggplot(structure_reelle, aes(x = "", y = population_exacte, fill = TAB_MEASURE_LABEL)) +
+  geom_col(width = 1, color = "white") +
+  coord_polar("y", start = 0) +
+  scale_fill_viridis_d(option = "plasma", name = "Tranches d'âge") +
+  geom_text(
+    aes(label = percent(part_pourcentage, accuracy = 0.1)),
+    position = position_stack(vjust = 0.5),
+    color = "white", fontface = "bold", size = 2.8
+  ) +
+  labs(
+    title    = "Répartition de la population française par tranche d'âge",
+    subtitle = "Source : Recensement INSEE 2022 (données redressées sur base de 67,9M)",
+    x = NULL, y = NULL
+  ) +
+  theme_minimal() +
+  theme(
+    axis.line     = element_blank(),
+    axis.text     = element_blank(),
+    axis.ticks    = element_blank(),
+    plot.title    = element_text(face = "bold",   size = 14, hjust = 0.5),
+    plot.subtitle = element_text(face = "italic", size = 10, hjust = 0.5),
+    legend.position = "right"
+  )
+```
+
+### Par ville
+
+```{r}
+#| label: structure-villes
+
+pop_totale_villes <- dossier_complet %>%
+  filter(TIME_PERIOD == "2022", GEO_OBJECT_LABEL == "Commune",
+         TAB_MEASURE_LABEL == "Population") %>%
+  group_by(GEO_LABEL) %>%
+  summarise(population_totale_ville = sum(OBS_VALUE, na.rm = TRUE))
+
+structure_villes_propres <- dossier_complet %>%
+  filter(TIME_PERIOD == "2022", GEO_OBJECT_LABEL == "Commune",
+         TAB_MEASURE_LABEL %in% tranches_age) %>%
+  group_by(GEO_LABEL, TAB_MEASURE_LABEL) %>%
+  summarise(total_brut_quartiers = sum(OBS_VALUE, na.rm = TRUE)) %>%
+  left_join(pop_totale_villes, by = "GEO_LABEL") %>%
+  group_by(GEO_LABEL) %>%
+  mutate(
+    part_locale             = total_brut_quartiers / sum(total_brut_quartiers),
+    population_exacte_ville = round(part_locale * population_totale_ville)
+  ) %>%
+  select(GEO_LABEL, TAB_MEASURE_LABEL, population_exacte_ville) %>%
+  arrange(GEO_LABEL, TAB_MEASURE_LABEL) %>%
+  collect()
+
+knitr::kable(
+  head(structure_villes_propres, 30),
+  col.names = c("Ville", "Tranche d'âge", "Population estimée"),
+  caption = "Structure par tranche d'âge par ville — 30 premières lignes"
+)
+```
+
+### Par département
+
+```{r}
+#| label: structure-departements
+
+pop_totale_dept <- dossier_complet %>%
+  filter(TIME_PERIOD == "2022", GEO_OBJECT_LABEL == "Département",
+         TAB_MEASURE_LABEL == "Population") %>%
+  group_by(GEO_LABEL) %>%
+  summarise(population_totale_dept = sum(OBS_VALUE, na.rm = TRUE))
+
+structure_departements <- dossier_complet %>%
+  filter(TIME_PERIOD == "2022", GEO_OBJECT_LABEL == "Département",
+         TAB_MEASURE_LABEL %in% tranches_age) %>%
+  group_by(GEO_LABEL, TAB_MEASURE_LABEL) %>%
+  summarise(total_brut_dept = sum(OBS_VALUE, na.rm = TRUE)) %>%
+  left_join(pop_totale_dept, by = "GEO_LABEL") %>%
+  group_by(GEO_LABEL) %>%
+  mutate(
+    part_departementale    = total_brut_dept / sum(total_brut_dept),
+    population_exacte_dept = round(part_departementale * population_totale_dept)
+  ) %>%
+  select(GEO_LABEL, TAB_MEASURE_LABEL, population_exacte_dept) %>%
+  arrange(GEO_LABEL, TAB_MEASURE_LABEL) %>%
+  collect()
+
+knitr::kable(
+  head(structure_departements, 30),
+  col.names = c("Département", "Tranche d'âge", "Population estimée"),
+  caption = "Structure par tranche d'âge par département — 30 premières lignes"
+)
+```
+
+### Par région
+
+```{r}
+#| label: structure-regions
+
+pop_totale_region <- dossier_complet %>%
+  filter(TIME_PERIOD == "2022", GEO_OBJECT_LABEL == "Région",
+         TAB_MEASURE_LABEL == "Population") %>%
+  group_by(GEO_LABEL) %>%
+  summarise(population_totale_reg = sum(OBS_VALUE, na.rm = TRUE))
+
+structure_regions <- dossier_complet %>%
+  filter(TIME_PERIOD == "2022", GEO_OBJECT_LABEL == "Région",
+         TAB_MEASURE_LABEL %in% tranches_age) %>%
+  group_by(GEO_LABEL, TAB_MEASURE_LABEL) %>%
+  summarise(total_brut_reg = sum(OBS_VALUE, na.rm = TRUE)) %>%
+  left_join(pop_totale_region, by = "GEO_LABEL") %>%
+  group_by(GEO_LABEL) %>%
+  mutate(
+    part_regionale           = total_brut_reg / sum(total_brut_reg),
+    population_exacte_region = round(part_regionale * population_totale_reg)
+  ) %>%
+  select(GEO_LABEL, TAB_MEASURE_LABEL, population_exacte_region) %>%
+  arrange(GEO_LABEL, TAB_MEASURE_LABEL) %>%
+  collect()
+
+knitr::kable(
+  head(structure_regions, 30),
+  col.names = c("Région", "Tranche d'âge", "Population estimée"),
+  caption = "Structure par tranche d'âge par région — 30 premières lignes"
+)
+```
