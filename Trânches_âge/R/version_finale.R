@@ -157,13 +157,82 @@ nombre_total <- dossier_complet %>%
         "Population – 80 ans ou plus"
       )
   ) %>%
+  select(GEO_LABEL, TAB_MEASURE_LABEL, OBS_VALUE) %>%
   collect()
 # Tableau du nombre de personnes par tranches d'âge
 View(nombre_total)
-#Trouver comment afficher juste les 2 lignes que je veux
+
+# DIAGRAMME EN CAMEMBERT POUR LA REPARTITION DE L'AGE 
+
+library(ggplot2)
+library(scales) 
+
+# 1. On récupère les données nationales
+nombre_total <- dossier_complet %>%
+  filter(
+    TIME_PERIOD == "2022" & 
+      GEO_OBJECT_LABEL == "France" & 
+      GEO_LABEL == "France" &
+      ID_TAB == "POP_T0" &
+      TAB_MEASURE_LABEL %in% c(
+        "Population – Moins de 15 ans",
+        "Population – De 15 à 24 ans ",
+        "Population – De 25 à 39 ans",
+        "Population – De 40 à 54 ans",
+        "Population – De 55 à 64 ans",
+        "Population – De 65 à 79 ans",
+        "Population – 80 ans ou plus"
+      )
+  ) %>%
+  select(GEO_LABEL, TAB_MEASURE_LABEL, OBS_VALUE) %>%
+  collect() %>%
+  mutate(part_pourcentage = (OBS_VALUE / sum(OBS_VALUE))) %>%
+  mutate(population_exacte = round(part_pourcentage * OBS_VALUE))
+
+# 2 Ordre chronologique des âges pour la légende et le graphique
+Ordre_Ages <- c(
+  "Population – Moins de 15 ans",
+  "Population – De 15 à 24 ans ",
+  "Population – De 25 à 39 ans",
+  "Population – De 40 à 54 ans",
+  "Population – De 55 à 64 ans",
+  "Population – De 65 à 79 ans",
+  "Population – 80 ans ou plus"
+)
+
+nombre_total <- nombre_total %>%
+  mutate(TAB_MEASURE_LABEL = factor(TAB_MEASURE_LABEL, levels = Ordre_Ages))
+
+# 3 Création du diagramme en camembert
+ggplot(nombre_total, aes(x = "", y = population_exacte, fill = TAB_MEASURE_LABEL)) +
+  geom_col(width = 1, color = "white") + 
+  coord_polar("y", start = 0, direction = -1) +         
+  scale_fill_brewer(palette = "Blues", name = "Tranches d'âge") +
+  
+  # Ajout du pourcentage sur les parts
+  geom_text(aes(label = percent(part_pourcentage, accuracy = 0.1)), 
+            position = position_stack(vjust = 0.5), 
+            color = "black", 
+            fontface = "bold",
+            size = 2.1) +
+  labs(
+    title = "Répartition de la population française par tranche d'âge",
+    subtitle = "Source : Recensement Insee 2022 (Données redressées sur base de 67,9M)",
+    x = NULL,
+    y = NULL
+  ) +
+  theme_minimal() +
+  theme(
+    axis.line = element_blank(),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+    plot.subtitle = element_text(face = "italic", size = 10, hjust = 0.5),
+    legend.position = "right"
+  )
 
 
-# Calcul de la répartition des différentes tranches d'âge par ville
+# REPARTITION DES DIFFERENTES TRANCHES D'AGE PAR VILLE
 
 # ÉTAPE 1 : On calcule la population totale de chaque ville
 pop_totale_villes <- dossier_complet %>%
@@ -212,7 +281,7 @@ structure_villes_propres <- dossier_complet %>%
 View(structure_villes_propres)
 
 
-# Calcul de la répartition des différentes tranches d'âge par département
+# REPARTITION DES DIFFERENTES TRANCHES D'AGE PAR DEPARTEMENT
 
 # 1 : Population totale par département
 pop_totale_dept <- dossier_complet %>%
@@ -260,7 +329,7 @@ structure_departements <- dossier_complet %>%
 View(structure_departements)
 
 
-# Calcul de la répartition des différentes tranches d'âge par région
+# REPARTITION DES DIFFERENTES TRANCHES D'AGE PAR REGION
 
 # 1 : Population totale par région
 pop_totale_region <- dossier_complet %>%
