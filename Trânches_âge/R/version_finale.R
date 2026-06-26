@@ -143,33 +143,10 @@ dossier_complet %>%
 
 nombre_total <- dossier_complet %>%
   filter(
-    #TIME_PERIOD == "2022" & 
-      GEO_OBJECT_LABEL == "Commune" & 
-      ID_TAB == "POP_T1" &
-      TAB_MEASURE_LABEL %in% c(
-        "Population – Moins de 15 ans",
-        "Population – De 15 à 24 ans ",
-        "Population – De 25 à 39 ans",
-        "Population – De 40 à 54 ans",
-        "Population – De 55 à 64 ans",
-        "Population – De 65 à 79 ans",
-        "Population – 80 ans ou plus"
-      )
-  ) %>%
-  collect()
-# Tableau du nombre de personnes par tranches d'âge
-print(nombre_total)
-
-# Cela nous donne un tableau vide ce qui n'est pas étonnant étant donné que le 
-# tableau POP_T1 ddu dossier complet pour la France sur Insee.fr est vide
-
-# Méthode du filtrage par communes 
-
-nombre_total <- dossier_complet %>%
-  filter(
     TIME_PERIOD == "2022" & 
-      GEO_OBJECT_LABEL == "Commune" & 
-      ID_TAB == "POP_T1" &
+      GEO_OBJECT_LABEL == "France" & 
+      GEO_LABEL == "France" &
+      ID_TAB == "POP_T0" &
       TAB_MEASURE_LABEL %in% c(
         "Population – Moins de 15 ans",
         "Population – De 15 à 24 ans ",
@@ -180,14 +157,10 @@ nombre_total <- dossier_complet %>%
         "Population – 80 ans ou plus"
       )
   ) %>%
-  # Étape de nettoyage par code commune unique
-  # distinct(GEO, TAB_MEASURE_LABEL, OBS_VALUE) %>%
-  group_by(TAB_MEASURE_LABEL) %>% 
-  summarise(population_brute = sum(OBS_VALUE, na.rm = TRUE)) %>% 
   collect()
-
 # Tableau du nombre de personnes par tranches d'âge
-print(nombre_total)
+View(nombre_total)
+#Trouver comment afficher juste les 2 lignes que je veux
 
 
 # Calcul de la répartition des différentes tranches d'âge par ville

@@ -135,8 +135,25 @@ print(nombre_total)
 
 structure_villes_propres <- dossier_complet %>%
   filter(
+      GEO_OBJECT_LABEL == "Commune" & 
+      ID_TAB == "POP_T1"
+  ) %>%
+  collect()
+  # Unicité stricte par couple Code Commune / Tranche
+  distinct(GEO, TAB_MEASURE_LABEL, .keep_all = TRUE) %>%
+  group_by(GEO, GEO_LABEL, TAB_MEASURE_LABEL) %>%
+  summarise(population_brute_ville = sum(OBS_VALUE, na.rm = TRUE)) %>%
+  arrange(GEO_LABEL, TAB_MEASURE_LABEL) %>%
+  collect()
+
+# Résultat
+View(structure_villes_propres)
+
+structure_villes_propres <- dossier_complet %>%
+  filter(
     TIME_PERIOD == "2022" & 
       GEO_OBJECT_LABEL == "Commune" & 
+      ID_TAB == "POP_T1" &
       TAB_MEASURE_LABEL %in% c(
         "Population – Moins de 15 ans",
         "Population – De 15 à 24 ans ",
