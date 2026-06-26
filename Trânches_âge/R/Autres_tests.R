@@ -15,9 +15,9 @@ nombre_total <- dossier_complet %>%
       )
   ) %>%
   # Étape de nettoyage par code commune unique
-  distinct(GEO, TAB_MEASURE_LABEL, OBS_VALUE) %>%
-  group_by(TAB_MEASURE_LABEL) %>% 
-  summarise(population_brute = sum(OBS_VALUE, na.rm = TRUE)) %>% 
+  #distinct(GEO, TAB_MEASURE_LABEL, OBS_VALUE) %>%
+  #group_by(TAB_MEASURE_LABEL) %>% 
+  #summarise(population_brute = sum(OBS_VALUE, na.rm = TRUE)) %>% 
   collect()
 
 # Tableau du nombre de personnes par tranches d'âge
