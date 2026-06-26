@@ -79,11 +79,11 @@ server <- function(input, output) {
     d <- donnees()
     ggplot(d, aes(x = "", y = population_exacte, fill = TAB_MEASURE_LABEL)) +
       geom_col(width = 1, color = "white") +
-      coord_polar("y", start = 0) +
-      scale_fill_viridis_d(option = "plasma", name = "Tranche d'âge") +
+      coord_polar("y", start = 0, direction = -1) +
+      scale_fill_brewer(palette = "Blues", name = "Tranches d'âge") +
       geom_text(aes(label = percent(part, accuracy = 0.1)),
                 position = position_stack(vjust = 0.5),
-                color = "white", fontface = "bold", size = 3.5) +
+                color = "black", fontface = "bold", size = 3.5) +
       labs(title    = paste("Structure par âge —", input$ville),
            subtitle = "Source : INSEE 2022",
            x = NULL, y = NULL) +
