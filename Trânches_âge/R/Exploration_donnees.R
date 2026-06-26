@@ -87,7 +87,34 @@ dossier_complet %>%
 dossier_complet %>%
   count(GEO, sort = TRUE) %>%
   collect()
-#id de communes
+#id de communes, # Lorque l'on regarde quelles sont les communes qui se répètent le plus c'est
+#un peu surprennant car ce ne sont pas nécessairement des communes parmis les plus grandes / attractives de France
+# Par exemple la commune Saint-Etienne-du-Grès (13103) de 2489 habitants a n = 5376 entrées c'est ainsi la 6ème commune de France avec le plus d'entrées dans cette base de données 
+
+commune_6 <- dossier_complet %>%
+  filter(
+    TIME_PERIOD == "2022" & 
+      GEO == "13103" & 
+      TAB_MEASURE_LABEL %in% c(
+        "Population – Moins de 15 ans",
+        "Population – De 15 à 24 ans ",
+        "Population – De 25 à 39 ans",
+        "Population – De 40 à 54 ans",
+        "Population – De 55 à 64 ans",
+        "Population – De 65 à 79 ans",
+        "Population – 80 ans ou plus"
+      )
+  ) %>%
+  # Étape de nettoyage par code commune unique
+  group_by(TAB_MEASURE_LABEL) %>% 
+  summarise(population_brute = sum(OBS_VALUE, na.rm = TRUE)) %>% 
+  collect()
+# Tableau du nombre de personnes par tranches d'âge
+print(commune_6)
+# Population bien plus grande dans notre résultat que dans la réalité. Globalement ici, on trouve que cette 
+# commune a. On retrouve ici 459 953 habitants contre 2490 en réalité. 
+
+
 
 dossier_complet %>%
   count(GEO_LABEL, sort = TRUE) %>%
