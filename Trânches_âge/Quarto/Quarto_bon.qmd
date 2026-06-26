@@ -1,26 +1,70 @@
 ---
-title: "Quarto_bon"
-format: html
-editor: visual
+title: "Premières explorations"
+subtitle: "Fichier dossier complet"
+format:
+  html:
+    toc: true
+    toc-title: "Sommaire"
+    toc-depth: 3
+    number-sections: true
+    theme: cosmo
+    code-fold: true
+    code-summary: "Afficher le code"
+    embed-resources: true
+execute:
+  warning: false
+  message: false
+  echo: true
 ---
 
-## Quarto
+## Connexion à la base de données
 
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
-
-## Running Code
-
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+On se connecte à DuckDB et on charge les extensions nécessaires pour lire les données depuis le S3 du SSP Cloud.
 
 ```{r}
-1 + 1
+#| label: connexion-duckdb
+
+library(duckdb)
+library(dplyr)
+
+con <- dbConnect(duckdb(), dbdir = "base.duckdb")
+
+dbExecute(con, "INSTALL httpfs;")
+dbExecute(con, "LOAD httpfs;")
+dbExecute(con, "INSTALL aws;")
+dbExecute(con, "LOAD aws;")
+
+dbExecute(con, "CREATE OR REPLACE SECRET (
+  TYPE S3,
+  PROVIDER CREDENTIAL_CHAIN,
+  ENDPOINT 'minio.lab.sspcloud.fr',
+  URL_STYLE 'path'
+);")
+
+chemin_s3 <- "s3://sarahbeaucamp/dossier_complet.parquet"
+dossier_complet <- tbl(con, paste0("read_parquet('", chemin_s3, "')"))
 ```
 
-You can add options to executable code like this
+## Exploration de la base de données
+
+### Aperçu général
+
+On commence par afficher les 10 premières lignes de notre base de données
 
 ```{r}
-#| echo: false
-2 * 2
+#| label: apercu-donnees
+
+debut <- dossier_complet %>%
+  head(10) %>%
+  collect()
+
+knitr::kable(debut, caption = "10 premières lignes du fichier dossier_complet")
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+On souhaite un apperçu des valeurs
+
+```{r}
+#| label: colonnes
+
+knitr::kable(glimpse(dossier_complet), caption = "Apperçu des colonnes")
+```

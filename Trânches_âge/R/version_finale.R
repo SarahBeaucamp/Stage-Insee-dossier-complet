@@ -1,7 +1,6 @@
 library(DBI)
 library(duckdb)
-
-# Dans ce fichier, jeu sur les proportion qui donne les bonnes proportions à la fin mais des chiffres bien trop importants au début.
+library(dplyr)
 
 # 1. Créer ou ouvrir une base DuckDB locale (elle sera stockée dans un fichier 'base.duckdb')
 con <- dbConnect(duckdb(), dbdir = "base.duckdb")
@@ -24,7 +23,6 @@ URL_STYLE 'path'
 # 4. Définir l'adresse de votre fichier sur le S3 du SSP Cloud
 chemin_s3 <- "s3://sarahbeaucamp/dossier_complet.parquet"
 
-library(dplyr)
 # Créer une table virtuelle
 dossier_complet <- tbl(con, paste0("read_parquet('", chemin_s3, "')"))
 
