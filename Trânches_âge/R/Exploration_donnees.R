@@ -58,17 +58,6 @@ glimpse(dossier_complet)
 # CONF_STATUS : chr : Na sur les 10 premiers 
 
 dossier_complet %>%
-  summarise(
-    minimum = min(GEO_REF, na.rm = TRUE),
-    maximum = max(GEO_REF, na.rm = TRUE),
-    nb_valeurs_uniques = n_distinct(GEO_REF)
-  ) %>%
-  collect()
-#Erreur, j'i traité ça comme des entiers alors que ce sont des chaînes de caractères 
-#La seule année présente est 2025
-
-#Putôt
-dossier_complet %>%
   count(GEO_REF, sort = TRUE) %>%
   collect()
 
@@ -77,7 +66,6 @@ dossier_complet %>%
   collect()
 
 # Il y en a 13 différents. Ce sont des abréviations des différents types d'aires urbaines
-# Utiliser Quarto pour les afficher 
 
 dossier_complet %>%
   count(GEO_OBJECT_LABEL, sort = TRUE) %>%
@@ -209,7 +197,8 @@ pop_totale_villes <- dossier_complet %>%
   filter(
     TIME_PERIOD == "2022" & 
       GEO_OBJECT_LABEL == "Commune" & 
-      TAB_MEASURE_LABEL == "Population"
+      TAB_MEASURE_LABEL == "Population" &
+      ID_TAB == "POP_T1"
   ) %>%
   group_by(GEO_LABEL) %>%
   summarise(population_totale_ville = sum(OBS_VALUE, na.rm = TRUE))
