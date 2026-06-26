@@ -190,7 +190,7 @@ nombre_total <- dossier_complet %>%
   arrange(TAB_MEASURE_LABEL)
 
 knitr::kable(
-  structure_reelle %>%
+  nombre_total %>%
     select(TAB_MEASURE_LABEL, population_exacte, part_pourcentage) %>%
     mutate(part_pourcentage = percent(part_pourcentage, accuracy = 0.1)),
   col.names = c("Tranche d'âge", "Population estimée", "Part (%)"),
@@ -208,14 +208,14 @@ knitr::kable(
 
 library(ggplot2)
 
-ggplot(structure_reelle, aes(x = "", y = population_exacte, fill = TAB_MEASURE_LABEL)) +
+ggplot(nombre_total, aes(x = "", y = population_exacte, fill = TAB_MEASURE_LABEL)) +
   geom_col(width = 1, color = "white") +
-  coord_polar("y", start = 0) +
-  scale_fill_viridis_d(option = "plasma", name = "Tranches d'âge") +
+  coord_polar("y", start = 0, direction = -1) +
+  scale_fill_brewer(palette = "Blues", name = "Tranches d'âge") +
   geom_text(
     aes(label = percent(part_pourcentage, accuracy = 0.1)),
     position = position_stack(vjust = 0.5),
-    color = "white", fontface = "bold", size = 2.8
+    color = "black", fontface = "bold", size = 2.1
   ) +
   labs(
     title    = "Répartition de la population française par tranche d'âge",

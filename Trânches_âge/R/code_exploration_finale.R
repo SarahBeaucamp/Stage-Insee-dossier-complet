@@ -54,6 +54,7 @@ dossier_complet %>%
   count(GEO_OBJECT_LABEL, sort = TRUE) %>%
   collect()
 
+
 dossier_complet %>%
   count(GEO, sort = TRUE) %>%
   collect()
