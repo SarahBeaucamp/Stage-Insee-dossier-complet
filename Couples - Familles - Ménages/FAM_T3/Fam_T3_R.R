@@ -35,3 +35,85 @@ r <- dossier_complet %>%
 
 View(r)
 
+# Composition des familles
+
+Ordre_Var <- c(
+  "Moins de 15 ans",
+  "15-24 ans",
+  "25-39 ans",
+  "40-54 ans",
+  "55-64 ans",
+  "65-79 ans",
+  "80 ans et plus"
+)
+
+compo_fam <- dossier_complet %>%
+  filter(
+    TIME_PERIOD == "2022",
+    GEO_OBJECT_LABEL == "Commune",
+    GEO == "44109",
+    ID_TAB == "FAM_T3",
+    TAB_MEASURE_LABEL %in% c(
+      "Nombre de famille – Famille avec un père seul",
+      "Nombre de famille – Famille comprenant un couple sans enfant résident",
+      "Nombre de famille – Famille avec une mère seule",
+      "Nombre de famille – Famille comprenant un couple avec enfant résident"
+    )
+  ) %>%
+  
+  mutate (
+    Situation_f = case_when(
+      TAB_MEASURE_LABEL == "Nombre de famille – Famille comprenant un couple avec enfant résident" ~ "Couple avec enfant(s)",
+      TAB_MEASURE_LABEL == "Nombre de famille – Famille comprenant un couple sans enfant résident" ~ "Couple sans enfant(s)",
+      TAB_MEASURE_LABEL == "Nombre de famille – Famille avec une mère seule" ~ "Femmes seules avec enfant(s)",
+      TAB_MEASURE_LABEL == "Nombre de famille – Famille avec un père seul" ~ "Hommes seuls avec enfant(s)"
+    )
+  ) %>%
+  
+  group_by(Situation_f) %>%
+  summarise(total_groupe = sum(OBS_VALUE, na.rm = TRUE)) %>%
+  
+  collect() %>%
+  
+  mutate(
+    total = sum(total_groupe),
+    part_groupe = (total_groupe / total) * 100
+  )
+
+View(compo_fam)
+
+# Diagramme
+
+
+compo_fam <- compo_fam %>%
+  mutate(
+    part_pourcentage = total_groupe / sum(total_groupe)
+  )
+
+ggplot(compo_fam, aes(x = "", y = total_groupe, fill = Situation_f)) +
+  geom_col(width = 1, color = "white") + 
+  coord_polar("y", start = 0, direction = -1) +         
+  scale_fill_brewer(palette = "Blues", direction = -1, name = "Situation familiale") +
+  
+  geom_text(aes(label = scales::percent(part_pourcentage, accuracy = 0.1)), 
+            position = position_stack(vjust = 0.5), 
+            color = "black", 
+            fontface = "bold",
+            size = 2.5) +
+  labs(
+    title = "Composition des familles",
+    subtitle = "Source : Recensement Insee 2022",
+    x = NULL,
+    y = NULL
+  ) +
+  theme_minimal() +
+  theme(
+    axis.line = element_blank(),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    panel.grid = element_blank(), 
+    plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+    plot.subtitle = element_text(face = "italic", size = 10, hjust = 0.5),
+    legend.position = "right"
+  )
+
