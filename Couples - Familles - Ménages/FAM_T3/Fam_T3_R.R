@@ -36,17 +36,6 @@ r <- dossier_complet %>%
 View(r)
 
 # Composition des familles
-
-Ordre_Var <- c(
-  "Moins de 15 ans",
-  "15-24 ans",
-  "25-39 ans",
-  "40-54 ans",
-  "55-64 ans",
-  "65-79 ans",
-  "80 ans et plus"
-)
-
 compo_fam <- dossier_complet %>%
   filter(
     TIME_PERIOD == "2022",
