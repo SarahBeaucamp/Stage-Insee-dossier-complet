@@ -215,7 +215,7 @@ ggplot(nombre_total, aes(x = "", y = population_exacte, fill = TAB_MEASURE_LABEL
             size = 2.1) +
   labs(
     title = "Répartition de la population française par tranche d'âge",
-    subtitle = "Source : Recensement Insee 2022 (Données redressées sur base de 67,9M)",
+    subtitle = "Source : Recensement Insee 2022",
     x = NULL,
     y = NULL
   ) +
