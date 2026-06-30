@@ -106,21 +106,21 @@ ggplot(csp, aes(x = catégories, y = part_groupe)) +
   
   scale_x_discrete(
     limits = rev(levels(csp$catégories)),
-    labels = function(x) str_wrap(x, width = 30) 
+    labels = function(x) str_wrap(x, width = 28) 
   ) +
   
   scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
   
   labs(
-    title = "Répartition de la population par CSP en 2022",
-    subtitle = "Source : Recensement Insee 2022",
-    x = "Catégories Socioprofessionnelles",
-    y = "Pourcentage (%)"
+    title = "Population de 15 ans ou plus selon le groupe socioprofessionnel",
+    x = "",
+    y = "%"
   ) +
   
   theme_minimal() +
   theme(
-    plot.title = element_text(face = "bold", size = 14),
+    plot.title = element_text(face = "bold", size = 10),
+    plot.title.position = "plot",
     axis.title = element_text(face = "bold"),
     axis.text.y = element_text(lineheight = 0.9) 
   )
