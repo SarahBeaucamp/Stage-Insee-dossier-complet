@@ -72,35 +72,44 @@ déménagements <- dossier_complet %>%
   ) %>%
   
   group_by(Lieu_de_résidence) %>%
-#  summarise(total_groupe = sum(OBS_VALUE), na.rm = TRUE) %>%
+  summarise(total_groupe = sum(OBS_VALUE, na.rm = TRUE)) %>%
   
-mutate(
-  total = sum(total_groupe),
-  part_groupe = (total_groupe / total) * 100
-)
+  collect() %>%
+  
+  mutate(
+    total = sum(total_groupe),
+    part_groupe = (total_groupe / total) * 100
+  )
 
 View(déménagements)
 
-#r <- dossier_complet %>%
-#  filter(GEO == "44109", ID_TAB == "POP_T4") %>%
- # distinct(TAB_MEASURE_LABEL) %>%
-  #collect()
+r <- dossier_complet %>%
+  filter(GEO == "44109", GEO_OBJECT_LABEL == "Commune", ID_TAB == "POP_T4") %>%
+  #distinct(TAB_MEASURE_LABEL) %>%
+  collect()
 
-#View(r)
+View(r)
 
 # Diagramme en camembert
 
-ggplot(nombre_total, aes(x = "", y = total, fill = Lieu_de_résidence)) +
+library(ggplot2)
+library(scales) 
+
+déménagements <- déménagements %>%
+  mutate(
+    part_pourcentage = total_groupe / sum(total_groupe)
+  )
+
+ggplot(déménagements, aes(x = "", y = total_groupe, fill = Lieu_de_résidence)) +
   geom_col(width = 1, color = "white") + 
   coord_polar("y", start = 0, direction = -1) +         
-  scale_fill_brewer(palette = "Blues", name = "Lieu de résidence") +
+  scale_fill_brewer(palette = "Blues", direction = -1, name = "Lieu de résidence") +
   
-  # Ajout du pourcentage sur les parts
-  geom_text(aes(label = percent(part_pourcentage, accuracy = 0.1)), 
+  geom_text(aes(label = scales::percent(part_pourcentage, accuracy = 0.1)), 
             position = position_stack(vjust = 0.5), 
             color = "black", 
             fontface = "bold",
-            size = 2.1) +
+            size = 2.5) +
   labs(
     title = "Lieu de résidence 1 an auparavant",
     subtitle = "Source : Recensement Insee 2022",
@@ -112,10 +121,9 @@ ggplot(nombre_total, aes(x = "", y = total, fill = Lieu_de_résidence)) +
     axis.line = element_blank(),
     axis.text = element_blank(),
     axis.ticks = element_blank(),
+    panel.grid = element_blank(), 
     plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
     plot.subtitle = element_text(face = "italic", size = 10, hjust = 0.5),
     legend.position = "right"
   )
-
-
   
