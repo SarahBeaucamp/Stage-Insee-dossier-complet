@@ -1,0 +1,179 @@
+---
+title: "Base du dossier complet"
+format: 
+  dashboard:
+    nav-buttons: []
+---
+
+```{ojs config}
+//| output: false
+
+// 1. Créer ou ouvrir une connexion DuckDB (équivalent dbConnect(duckdb(), ...) en R)
+db = DuckDBClient.of({})
+
+// 4. Définir l'adresse de votre fichier sur le S3 du SSP Cloud (équivalent chemin_s3 en R)
+chemin_s3 = "https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet"
+```
+
+# Recherche géographique {.sidebar width="30%"}
+
+```{ojs geo}
+//| output: false
+
+// Liste des communes disponibles, pour le sélecteur (pas dans le R d'origine,
+// car en R la commune était codée en dur avec GEO == "44109")
+geo = db.query(`
+  SELECT DISTINCT GEO, GEO_LABEL
+  FROM read_parquet('${chemin_s3}')
+  WHERE ID_TAB = 'EQUIP_T1' AND GEO_OBJECT_LABEL = 'Commune'
+  ORDER BY GEO_LABEL
+`)
+```
+
+```{ojs geo2}
+viewof search_geo = Inputs.search(
+  geo, {
+    width: "60%",
+    label: "Territoire",
+    placeholder: "Rechercher un territoire...",
+  })
+
+viewof selection_geo = Inputs.table(
+  search_geo, {
+    multiple: false,
+    value: search_geo.length > 0 ? search_geo[0] : null,
+    rows: 15,
+    columns: ["GEO_LABEL", "GEO"]
+  }
+)
+```
+
+# Visualisation par territoire
+
+## Territoire sélectionné {height="15%"}
+```{ojs geo3}
+isGeoSelected = (selection_geo !== null);
+
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+
+// r <- dossier_complet %>% filter(GEO == "44109", ID_TAB == "EQUIP_T1") %>% distinct(TAB_MEASURE_LABEL) %>% collect()
+// (étape de contrôle en R, non nécessaire pour l'affichage final, donc non reprise ici)
+
+// equip <- dossier_complet %>%
+//   filter(
+//     TIME_PERIOD == "2024",
+//     GEO_OBJECT_LABEL == "Commune",
+//     GEO == "44109",
+//     ID_TAB == "EQUIP_T1",
+//     TAB_MEASURE_LABEL %in% c(...)
+//   )
+equip_filtre = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '2024'
+    AND GEO_OBJECT_LABEL = 'Commune'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'EQUIP_T1'
+    AND TAB_MEASURE_LABEL IN (
+      'Nombre d''équipements – Station-service',
+      'Nombre d''équipements – Station de recharge de véhicules électriques',
+      'Nombre d''équipements – Supermarché et magasin multi-commerce',
+      'Nombre d''équipements – Boulangerie-pâtisserie',
+      'Nombre d''équipements – Supérette',
+      'Nombre d''équipements – Épicerie',
+      'Nombre d''équipements – Hypermarché et grand magasin',
+      'Nombre d''équipements – Coiffure'
+    )
+`)
+: [];
+
+// mutate(
+//   équipements = case_when(
+//     TAB_MEASURE_LABEL == "Nombre d'équipements – Station-service" ~ "Station-service",
+//     TAB_MEASURE_LABEL == "Nombre d'équipements – Station de recharge de véhicules électriques" ~ "Station de recharge de véhicules électriques",
+//     TAB_MEASURE_LABEL == "Nombre d'équipements – Boulangerie-pâtisserie" ~ "Boulangerie-pâtisserie",
+//     TAB_MEASURE_LABEL %in% c("Nombre d'équipements – Supérette", "Nombre d'équipements – Épicerie") ~ "Epicerie, Supérette",
+//     TAB_MEASURE_LABEL %in% c("Nombre d'équipements – Hypermarché et grand magasin", "Nombre d'équipements – Supermarché et magasin multi-commerce") ~ "Grande Surface",
+//     TAB_MEASURE_LABEL == "Nombre d'équipements – Coiffure" ~ "Coiffure"
+//   )
+// )
+function case_when_equipements(TAB_MEASURE_LABEL) {
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Station-service") return "Station-service";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Station de recharge de véhicules électriques") return "Station de recharge de véhicules électriques";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Boulangerie-pâtisserie") return "Boulangerie-pâtisserie";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Supérette" || TAB_MEASURE_LABEL === "Nombre d'équipements – Épicerie") return "Epicerie, Supérette";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Hypermarché et grand magasin" || TAB_MEASURE_LABEL === "Nombre d'équipements – Supermarché et magasin multi-commerce") return "Grande Surface";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Coiffure") return "Coiffure";
+  return null;
+}
+
+equip_mutate = equip_filtre.map(function(d) {
+  return {
+    TAB_MEASURE_LABEL: d.TAB_MEASURE_LABEL,
+    OBS_VALUE: d.OBS_VALUE,
+    équipements: case_when_equipements(d.TAB_MEASURE_LABEL)
+  };
+});
+
+// group_by(équipements) %>% summarise(total_groupe = sum(OBS_VALUE, na.rm = TRUE)) %>% collect()
+equip_groupes = d3.rollups(
+  equip_mutate,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.équipements; }
+);
+
+equip_summarise = equip_groupes.map(function(g) {
+  return { équipements: g[0], total_groupe: g[1] };
+});
+
+// mutate(total = sum(total_groupe), part_groupe = (total_groupe / total) * 100)
+total = d3.sum(equip_summarise, function(d) { return d.total_groupe; });
+
+equip = equip_summarise.map(function(d) {
+  return {
+    équipements: d.équipements,
+    total_groupe: d.total_groupe,
+    total: total,
+    part_groupe: total > 0 ? (d.total_groupe / total) * 100 : 0
+  };
+});
+```
+
+```{ojs result_plot}
+// Histogramme (équivalent ggplot2)
+Plot.plot({
+  title: isGeoSelected ? `Nombre de commerces en 2024 – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  marginBottom: 60,
+  x: { label: null, tickRotate: -20 },
+  y: { label: null, grid: true },
+  marks: [
+    Plot.barY(equip, { x: "équipements", y: "total_groupe", fill: "steelblue" }),
+    Plot.ruleY([0])
+  ]
+})
+```
+
+# Pour en savoir plus
+
+- Techno : cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), le graphique se met à jour en allant piocher dynamiquement dans la base du dossier complet au format Parquet.
+
+```{ojs debug}
+debug_info = db.query(`
+  SELECT count(*) as nb_lignes
+  FROM read_parquet('${chemin_s3}')
+`)
+
+viewof debug_table = Inputs.table(
+  debug_info,
+  { locale: "fr" }
+)
+```
