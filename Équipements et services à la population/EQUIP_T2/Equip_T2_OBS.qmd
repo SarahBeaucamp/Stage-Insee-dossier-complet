@@ -12,12 +12,13 @@ format:
 db = DuckDBClient.of({})
 
 // 4. Définir l'adresse de votre fichier sur le S3 du SSP Cloud (équivalent chemin_s3 en R)
-chemin_s3 = "https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet"
+chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'
 ```
 
 # Recherche géographique {.sidebar width="30%"}
 
 ```{ojs annee}
+//  Selection de l'année que l'on souhaite
 viewof selection_annee = Inputs.select(
   [
     "1968", "1975", "1982", "1990", "1999", "2006", 
@@ -33,6 +34,7 @@ viewof selection_annee = Inputs.select(
 ```
 
 ```{ojs type_geo}
+// Sélection de l'aire urbaine que l'on souhaite
 viewof selection_type_geo = Inputs.select(
   [
     "Commune", "Unité urbaine 2020", "Bassin de vie 2022", "Intercommunalité-Métropole", 
@@ -54,7 +56,7 @@ viewof selection_type_geo = Inputs.select(
 geo = db.query(`
   SELECT DISTINCT GEO, GEO_LABEL
   FROM read_parquet('${chemin_s3}')
-  WHERE ID_TAB = 'EQUIP_T1' AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+  WHERE ID_TAB = 'EQUIP_T2' AND GEO_OBJECT_LABEL = '${selection_type_geo}'
   ORDER BY GEO_LABEL
 `)
 ```
@@ -112,16 +114,14 @@ equip_filtre = isGeoSelected
   WHERE TIME_PERIOD = '${selection_annee}'
     AND GEO_OBJECT_LABEL = '${selection_type_geo}'
     AND GEO = '${selection_geo.GEO}'
-    AND ID_TAB = 'EQUIP_T1'
+    AND ID_TAB = 'EQUIP_T2'
     AND TAB_MEASURE_LABEL IN (
-      'Nombre d''équipements – Station-service',
-      'Nombre d''équipements – Station de recharge de véhicules électriques',
-      'Nombre d''équipements – Supermarché et magasin multi-commerce',
-      'Nombre d''équipements – Boulangerie-pâtisserie',
-      'Nombre d''équipements – Supérette',
-      'Nombre d''équipements – Épicerie',
-      'Nombre d''équipements – Hypermarché et grand magasin',
-      'Nombre d''équipements – Coiffure'
+      'Nombre d''équipements – Infirmier',
+      'Nombre d''équipements – Psychologue',
+      'Nombre d''équipements – Médecin généraliste',
+      'Nombre d''équipements – Chirurgien dentiste',
+      'Nombre d''équipements – Masseur kinésithérapeute',
+      'Nombre d''équipements – Pharmacie'
     )
 `)
 : [];
@@ -137,12 +137,12 @@ equip_filtre = isGeoSelected
 //    )
 // )
 function case_when_equipements(TAB_MEASURE_LABEL) {
-  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Station-service") return "Station-service";
-  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Station de recharge de véhicules électriques") return "Station de recharge de véhicules électriques";
-  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Boulangerie-pâtisserie") return "Boulangerie-pâtisserie";
-  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Supérette" || TAB_MEASURE_LABEL === "Nombre d'équipements – Épicerie") return "Epicerie, Supérette";
-  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Hypermarché et grand magasin" || TAB_MEASURE_LABEL === "Nombre d'équipements – Supermarché et magasin multi-commerce") return "Grande Surface";
-  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Coiffure") return "Coiffure";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Infirmier") return "Infirmier";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Psychologue") return "Psychologue";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Médecin généraliste") return "Médecin généraliste";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Chirurgien dentiste") return "Chirurgien dentiste";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Masseur kinésithérapeute") return "Masseur kinésithérapeute";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Pharmacie") return "Pharmacie";
   return null;
 }
 
@@ -181,7 +181,7 @@ equip = equip_summarise.map(function(d) {
 ```{ojs result_plot}
 // Histogramme (équivalent ggplot2)
 Plot.plot({
-  title: isGeoSelected ? `Nombre de commerces en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  title: isGeoSelected ? `Nombre de professionnels de santé et de pharmacies en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
   marginBottom: 60,
   x: { label: null, tickRotate: -20 },
   y: { label: null, grid: true },
@@ -192,9 +192,28 @@ Plot.plot({
 })
 ```
 
+```{ojs result_table}
+// 1. On trie les données manuellement (du plus grand au plus petit)
+// 2. On ajoute la ligne "TOTAL" à la fin du tableau
+equip_pour_tableau = {
+  let data = equip.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
+  data.push({ équipements: "TOTAL", total_groupe: total });
+  return data;
+}
+
+// Affichage du tableau interactif
+Inputs.table(equip_pour_tableau, {
+  columns: ["équipements", "total_groupe"],
+  header: {
+    équipements: "Professionnels de santé ou pharmacies",
+    total_groupe: "Nombre"
+  }
+})
+```
+
 # Pour en savoir plus
 
-- Techno : cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), le graphique se met à jour en allant piocher dynamiquement dans la base du dossier complet au format Parquet.
+- Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), le graphique se met à jour en allant piocher dynamiquement dans la base du dossier complet au format Parquet.
 
 ```{ojs debug}
 debug_info = db.query(`

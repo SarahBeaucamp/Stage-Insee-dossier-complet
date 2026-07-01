@@ -12,10 +12,25 @@ format:
 db = DuckDBClient.of({})
 
 // 4. Définir l'adresse de votre fichier sur le S3 du SSP Cloud (équivalent chemin_s3 en R)
-chemin_s3 = "https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet"
+chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'
 ```
 
 # Recherche géographique {.sidebar width="30%"}
+
+```{ojs annee}
+viewof selection_annee = Inputs.select(
+  [
+    "1968", "1975", "1982", "1990", "1999", "2006", 
+    "2011", "2012", "2013", "2014", "2015", "2016", 
+    "2017", "2018", "2019", "2020", "2021", "2022", 
+    "2023", "2024", "2025", "2026"
+  ],
+  {
+    label: "Année",
+    value: "2024"
+  }
+)
+```
 
 ```{ojs type_geo}
 viewof selection_type_geo = Inputs.select(
@@ -94,7 +109,7 @@ equip_filtre = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
   FROM read_parquet('${chemin_s3}')
-  WHERE TIME_PERIOD = '2024'
+  WHERE TIME_PERIOD = '${selection_annee}'
     AND GEO_OBJECT_LABEL = '${selection_type_geo}'
     AND GEO = '${selection_geo.GEO}'
     AND ID_TAB = 'EQUIP_T1'
@@ -166,7 +181,7 @@ equip = equip_summarise.map(function(d) {
 ```{ojs result_plot}
 // Histogramme (équivalent ggplot2)
 Plot.plot({
-  title: isGeoSelected ? `Nombre de commerces en 2024 – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  title: isGeoSelected ? `Nombre de commerces en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
   marginBottom: 60,
   x: { label: null, tickRotate: -20 },
   y: { label: null, grid: true },
@@ -177,9 +192,28 @@ Plot.plot({
 })
 ```
 
+```{ojs result_table}
+// 1. On trie les données manuellement (du plus grand au plus petit)
+// 2. On ajoute la ligne "TOTAL" à la fin du tableau
+equip_pour_tableau = {
+  let data = equip.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
+  data.push({ équipements: "TOTAL", total_groupe: total });
+  return data;
+}
+
+// Affichage du tableau interactif
+Inputs.table(equip_pour_tableau, {
+  columns: ["équipements", "total_groupe"],
+  header: {
+    équipements: "Type de commerce",
+    total_groupe: "Nombre d'établissements"
+  }
+})
+```
+
 # Pour en savoir plus
 
-- Techno : cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), le graphique se met à jour en allant piocher dynamiquement dans la base du dossier complet au format Parquet.
+- Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), le graphique se met à jour en allant piocher dynamiquement dans la base du dossier complet au format Parquet.
 
 ```{ojs debug}
 debug_info = db.query(`
