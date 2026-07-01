@@ -1,4 +1,4 @@
-# Nombre d'enfants âgés de moins de 25 ans 
+# Equipements commerciaux 
 
 library(DBI)
 library(duckdb)
