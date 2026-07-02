@@ -1,0 +1,262 @@
+---
+title: "Base du dossier complet"
+format: 
+  dashboard:
+    nav-buttons: []
+---
+
+```{ojs config}
+//| output: false
+
+// 1. Créer ou ouvrir une connexion DuckDB
+db = DuckDBClient.of({})
+
+// 4. Définir l'adresse du fichier sur le S3 du SSP Cloud
+chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'
+```
+
+# Recherche géographique {.sidebar width="30%"}
+
+```{ojs annee}
+viewof selection_annee = Inputs.select(
+  [
+    "1968", "1975", "1982", "1990", "1999", "2006", 
+    "2011", "2012", "2013", "2014", "2015", "2016", 
+    "2017", "2018", "2019", "2020", "2021", "2022", 
+    "2023", "2024", "2025", "2026"
+  ],
+  {
+    label: "Année",
+    value: "2022" // Par défaut 2022 comme dans votre script R
+  }
+)
+```
+
+```{ojs type_geo}
+viewof selection_type_geo = Inputs.select(
+  [
+    "Commune", "Unité urbaine 2020", "Bassin de vie 2022", "Intercommunalité-Métropole", 
+    "Aire d’attraction des villes 2020", "Arrondissement", "Zone d’emploi 2020", 
+    "Département", "Arrondissement municipal", "Région", "France", 
+    "Autres", "Collectivité et territoire français d’outre-mer"
+  ],
+  {
+    label: "Type de zone",
+    value: "Commune"
+  }
+)
+```
+
+```{ojs geo}
+//| output: false
+
+// Liste des territoires disponibles dynamiquement
+geo = db.query(`
+  SELECT DISTINCT GEO, GEO_LABEL
+  FROM read_parquet('${chemin_s3}')
+  WHERE ID_TAB = 'LOG_T2' AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+  ORDER BY GEO_LABEL
+`)
+```
+
+```{ojs geo2}
+viewof search_geo = Inputs.search(
+  geo, {
+    width: "60%",
+    label: "Territoire",
+    placeholder: "Rechercher un territoire...",
+  })
+
+viewof selection_geo = Inputs.table(
+  search_geo, {
+    multiple: false,
+    value: search_geo.length > 0 ? search_geo[0] : null,
+    rows: 15,
+    columns: ["GEO_LABEL", "GEO"]
+  }
+)
+```
+
+# Visualisation par territoire
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3}
+isGeoSelected = (selection_geo !== null);
+
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+
+// 1. On récupère TOUTES les données de FAM_T3 (zéro risque de plantage SQL)
+equip_brut = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'LOG_T2'
+`)
+: [];
+
+// 2. On classe avec des mots-clés robustes
+function classer_familles(label) {
+  if (!label) return null;
+  let txt = label.toLowerCase();
+  
+  if (txt.includes("Maison")) return "Maison";
+  if (txt.includes("Appartement")) return "Appartement";
+  if (txt.includes("Autres logements de métropole")) return "Autres";
+  
+  return null; // Ignore le reste
+}
+
+// 3. Filtrage et nettoyage
+equip_mutate = equip_brut.map(function(d) {
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    Situation_f: classer_familles(d.TAB_MEASURE_LABEL)
+  };
+}).filter(d => d.Situation_f !== null);
+
+// 4. Agrégation des résultats
+equip_groupes = d3.rollups(
+  equip_mutate,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.Situation_f; }
+);
+
+equip_summarise = equip_groupes.map(function(g) {
+  return { Situation_f: g[0], total_groupe: g[1] };
+});
+
+total = d3.sum(equip_summarise, function(d) { return d.total_groupe; });
+
+equip = equip_summarise.map(function(d) {
+  return {
+    Situation_f: d.Situation_f,
+    total_groupe: d.total_groupe,
+    total: total,
+    part_groupe: total > 0 ? (d.total_groupe / total) * 100 : 0
+  };
+});
+```
+
+```{ojs result_plot}
+// Construction du camembert D3 sur-mesure (Reproduction fidèle de votre ggplot)
+camembert = {
+  if (!isGeoSelected || total === 0) return htl.html`<div>Sélectionnez un territoire ou aucune donnée disponible pour cette année.</div>`;
+  
+  const width = 600;
+  const height = 350;
+  const radius = Math.min(width, height) / 2 - 20;
+
+  const arc = d3.arc().innerRadius(0).outerRadius(radius);
+  const pie = d3.pie().value(d => d.total_groupe).sort(null);
+
+  // Palette de couleurs "Blues" de ggplot
+  const color = d3.scaleOrdinal()
+    .domain([
+      "Maisons", 
+      "Appartements", 
+      "Autres"
+    ])
+    .range(["#08519c", "#3182bd", "#6baed6"]);
+
+  const svg = d3.create("svg")
+    .attr("viewBox", [0, 0, width, height])
+    .style("font-family", "sans-serif");
+
+  // Centre du camembert positionné à gauche
+  const gPie = svg.append("g")
+    .attr("transform", `translate(${width / 3}, ${height / 2})`);
+
+  // Tranches du camembert
+  gPie.selectAll("path")
+    .data(pie(equip))
+    .join("path")
+    .attr("fill", d => color(d.data.Situation_f))
+    .attr("stroke", "white")
+    .attr("stroke-width", "1.5px")
+    .attr("d", arc)
+    .append("title")
+    .text(d => `${d.data.Situation_f}: ${d.data.total_groupe}`);
+
+  // Étiquettes de pourcentages au centre des tranches
+  gPie.selectAll("text")
+    .data(pie(equip))
+    .join("text")
+    .attr("transform", d => `translate(${arc.centroid(d)})`)
+    .attr("text-anchor", "middle")
+    .attr("fill", d => d.data.part_groupe < 15 ? "black" : "white") // Texte noir si tranche très claire/petite
+    .attr("font-size", "12px")
+    .attr("font-weight", "bold")
+    // Affiche uniquement si c'est assez grand pour ne pas baver (ex: > 2%)
+    .text(d => d.data.part_groupe >= 2 ? `${d.data.part_groupe.toFixed(1)}%` : "");
+
+  // Légende positionnée à droite
+  const legend = svg.append("g")
+    .attr("transform", `translate(${width * 0.65}, ${height / 2 - 60})`);
+    
+  const categories = color.domain();
+  categories.forEach((cat, i) => {
+    const row = legend.append("g").attr("transform", `translate(0, ${i * 25})`);
+    row.append("rect").attr("width", 15).attr("height", 15).attr("fill", color(cat)).attr("rx", 2);
+    row.append("text").attr("x", 25).attr("y", 12).attr("font-size", "12px").text(cat);
+  });
+
+  return svg.node();
+}
+
+// Emballage HTML avec titre (comme dans ggplot)
+htl.html`
+  <div style="display: flex; flex-direction: column; align-items: center;">
+    <h3 style="margin-bottom: 0px; font-family: sans-serif; font-weight: bold;">Types de logements</h3>
+    <span style="font-size: 13px; font-style: italic; font-family: sans-serif; color: #555; margin-bottom: 20px;">
+      Source : Recensement Insee ${selection_annee} – ${isGeoSelected ? selection_geo.GEO_LABEL : ""}
+    </span>
+    ${camembert}
+  </div>
+`
+```
+
+```{ojs result_table}
+// 1. Tri manuellement et ajout de la ligne TOTAL
+equip_pour_tableau = {
+  let data = equip.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
+  data.push({ Situation_f: "TOTAL", total_groupe: total });
+  return data;
+}
+
+// Affichage du tableau
+Inputs.table(equip_pour_tableau, {
+  columns: ["Situation_f", "total_groupe"],
+  header: {
+    Situation_f: "Type de logement",
+    total_groupe: "Nombre"
+  }
+})
+```
+
+# Pour en savoir plus
+
+- Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), le graphique se met à jour en allant piocher dynamiquement dans la base du dossier complet au format Parquet.
+
+```{ojs debug}
+debug_info = db.query(`
+  SELECT count(*) as nb_lignes
+  FROM read_parquet('${chemin_s3}')
+`)
+
+viewof debug_table = Inputs.table(
+  debug_info,
+  { locale: "fr" }
+)
+```

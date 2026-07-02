@@ -33,7 +33,7 @@ dossier_complet <- tbl(con, paste0("read_parquet('", chemin_s3, "')"))
 
 r <- dossier_complet %>%
   filter(GEO == "44109", ID_TAB == "LOG_T2") %>%
-  distinct(TAB_MEASURE_LABEL) %>%
+  #distinct(TAB_MEASURE_LABEL) %>%
   collect()
 
 View(r)
