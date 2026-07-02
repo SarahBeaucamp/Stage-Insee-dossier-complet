@@ -94,18 +94,9 @@ htl.html`
 ```{ojs result_calc}
 //| output: false
 
-// r <- dossier_complet %>% filter(GEO == "44109", ID_TAB == "EQUIP_T1") %>% distinct(TAB_MEASURE_LABEL) %>% collect()
-// (étape de contrôle en R, non nécessaire pour l'affichage final, donc non reprise ici)
-
-// equip <- dossier_complet %>%
-//   filter(
-//     TIME_PERIOD == "2024",
-//     GEO_OBJECT_LABEL == "Commune",
-//     GEO == "44109",
-//     ID_TAB == "EQUIP_T1",
-//     TAB_MEASURE_LABEL %in% c(...)
-//   )
-equip_filtre = isGeoSelected
+// 1. On récupère TOUS les équipements de type T3 sans lister les phrases exactes.
+// Fini les plantages liés aux apostrophes dans la requête SQL !
+equip_brut = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
   FROM read_parquet('${chemin_s3}')
@@ -113,49 +104,32 @@ equip_filtre = isGeoSelected
     AND GEO_OBJECT_LABEL = '${selection_type_geo}'
     AND GEO = '${selection_geo.GEO}'
     AND ID_TAB = 'EQUIP_T3'
-    AND TAB_MEASURE_LABEL IN (
-      'Nombre d''équipements – Bibliothèque',
-      'Nombre d''équipements – École maternelle',
-      'Nombre d''équipements – Lycée d'enseignement général et/ou technologique',
-      'Nombre d''équipements – Sgt section d’enseignement général et technologique',
-      'Nombre d''équipements – École primaire',
-      'Nombre d''équipements – École élémentaire',
-      'Nombre d''équipements – Lycée d’enseignement professionnel',
-      'Nombre d''équipements – Lycée d’enseignement technique et/ou professionnel agricole',
-      'Nombre d''équipements – Collège',
-      'Nombre d''équipements – Sep section d’enseignement professionnel'
-    )
 `)
 : [];
 
-// mutate(
-//    équipements = case_when(
-//      TAB_MEASURE_LABEL == "Nombre d'équipements – Station-service" ~ "Station-service",
-//      TAB_MEASURE_LABEL == "Nombre d'équipements – Station de recharge de véhicules électriques" ~ "Station de recharge de véhicules électriques",
-//      TAB_MEASURE_LABEL == "Nombre d'équipements – Boulangerie-pâtisserie" ~ "Boulangerie-pâtisserie",
-//      TAB_MEASURE_LABEL %in% c("Nombre d'équipements – Supérette", "Nombre d'équipements – Épicerie") ~ "Epicerie, Supérette",
-//      TAB_MEASURE_LABEL %in% c("Nombre d'équipements – Hypermarché et grand magasin", "Nombre d'équipements – Supermarché et magasin multi-commerce") ~ "Grande Surface",
-//      TAB_MEASURE_LABEL == "Nombre d'équipements – Coiffure" ~ "Coiffure"
-//    )
-// )
-function case_when_equipements(TAB_MEASURE_LABEL) {
-  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Bibliothèque") return "Bibliothèque";
-  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Collège") return "Collège";
-  if (TAB_MEASURE_LABEL === "Nombre d'équipements – École maternelle" || TAB_MEASURE_LABEL === "Nombre d'équipements – École primaire" || TAB_MEASURE_LABEL === "Nombre d'équipements – École élémentaire" ) return "Ecole";
-  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Lycée d’enseignement général et/ou technologique" || TAB_MEASURE_LABEL === "Nombre d'équipements – Sgt section d’enseignement général et technologique") return "Lycée d’enseignement général et/ou technologique";
-  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Lycée d’enseignement professionnel" || TAB_MEASURE_LABEL === "Nombre d'équipements – Lycée d’enseignement technique et/ou professionnel agricole" || TAB_MEASURE_LABEL === "Nombre d'équipements – Sep section d’enseignement professionnel") return "Lycée d’enseignement professionnel ou agricole"";
-  return null;
+// 2. On utilise une méthode infaillible : on cherche juste des mots-clés.
+function classer_equipements(label) {
+  if (!label) return null;
+  let txt = label.toLowerCase(); // On met tout en minuscule pour éviter les soucis de casse
+
+  if (txt.includes("bibliothèque")) return "Bibliothèque";
+  if (txt.includes("collège")) return "Collège";
+  if (txt.includes("maternelle") || txt.includes("primaire") || txt.includes("élémentaire")) return "École";
+  if (txt.includes("général") || txt.includes("technologique")) return "Lycée d'enseignement général et/ou technologique";
+  if (txt.includes("professionnel") || txt.includes("agricole")) return "Lycée d'enseignement professionnel ou agricole";
+  
+  return null; // On ignore tout le reste
 }
 
-equip_mutate = equip_filtre.map(function(d) {
+// 3. On filtre et on crée nos catégories
+equip_mutate = equip_brut.map(function(d) {
   return {
-    TAB_MEASURE_LABEL: d.TAB_MEASURE_LABEL,
     OBS_VALUE: d.OBS_VALUE,
-    équipements: case_when_equipements(d.TAB_MEASURE_LABEL)
+    équipements: classer_equipements(d.TAB_MEASURE_LABEL)
   };
-});
+}).filter(d => d.équipements !== null); // On supprime les lignes qui ne sont pas dans nos mots-clés
 
-// group_by(équipements) %>% summarise(total_groupe = sum(OBS_VALUE, na.rm = TRUE)) %>% collect()
+// 4. On groupe et on somme
 equip_groupes = d3.rollups(
   equip_mutate,
   function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
@@ -166,7 +140,6 @@ equip_summarise = equip_groupes.map(function(g) {
   return { équipements: g[0], total_groupe: g[1] };
 });
 
-// mutate(total = sum(total_groupe), part_groupe = (total_groupe / total) * 100)
 total = d3.sum(equip_summarise, function(d) { return d.total_groupe; });
 
 equip = equip_summarise.map(function(d) {

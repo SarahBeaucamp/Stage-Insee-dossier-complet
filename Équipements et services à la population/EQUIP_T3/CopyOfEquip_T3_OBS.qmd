@@ -116,14 +116,14 @@ equip_filtre = isGeoSelected
     AND TAB_MEASURE_LABEL IN (
       'Nombre d''équipements – Bibliothèque',
       'Nombre d''équipements – École maternelle',
-      'Nombre d''équipements – Lycée d'enseignement général et/ou technologique',
-      'Nombre d''équipements – Sgt section d’enseignement général et technologique',
+      'Nombre d''équipements – Lycée d''enseignement général et/ou technologique',
+      'Nombre d''équipements – Sgt section d''enseignement général et technologique',
       'Nombre d''équipements – École primaire',
       'Nombre d''équipements – École élémentaire',
-      'Nombre d''équipements – Lycée d’enseignement professionnel',
-      'Nombre d''équipements – Lycée d’enseignement technique et/ou professionnel agricole',
+      'Nombre d''équipements – Lycée d''enseignement professionnel',
+      'Nombre d''équipements – Lycée d''enseignement technique et/ou professionnel agricole',
       'Nombre d''équipements – Collège',
-      'Nombre d''équipements – Sep section d’enseignement professionnel'
+      'Nombre d''équipements – Sep section d''enseignement professionnel'
     )
 `)
 : [];
@@ -143,7 +143,7 @@ function case_when_equipements(TAB_MEASURE_LABEL) {
   if (TAB_MEASURE_LABEL === "Nombre d'équipements – Collège") return "Collège";
   if (TAB_MEASURE_LABEL === "Nombre d'équipements – École maternelle" || TAB_MEASURE_LABEL === "Nombre d'équipements – École primaire" || TAB_MEASURE_LABEL === "Nombre d'équipements – École élémentaire" ) return "Ecole";
   if (TAB_MEASURE_LABEL === "Nombre d'équipements – Lycée d’enseignement général et/ou technologique" || TAB_MEASURE_LABEL === "Nombre d'équipements – Sgt section d’enseignement général et technologique") return "Lycée d’enseignement général et/ou technologique";
-  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Lycée d’enseignement professionnel" || TAB_MEASURE_LABEL === "Nombre d'équipements – Lycée d’enseignement technique et/ou professionnel agricole" || TAB_MEASURE_LABEL === "Nombre d'équipements – Sep section d’enseignement professionnel") return "Lycée d’enseignement professionnel ou agricole"";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Lycée d’enseignement professionnel" || TAB_MEASURE_LABEL === "Nombre d'équipements – Lycée d’enseignement technique et/ou professionnel agricole" || TAB_MEASURE_LABEL === "Nombre d'équipements – Sep section d’enseignement professionnel") return "Lycée d’enseignement professionnel ou agricole";
   return null;
 }
 
