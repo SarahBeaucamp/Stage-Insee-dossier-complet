@@ -1,0 +1,222 @@
+---
+title: "Capacité des hôtels par étoiles"
+format: 
+  dashboard:
+    nav-buttons: []
+---
+
+```{ojs config}
+//| output: false
+
+// 1. Créer ou ouvrir une connexion DuckDB
+db = DuckDBClient.of({})
+
+// 4. Définir l'adresse du fichier sur le S3 du SSP Cloud
+chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'
+```
+
+# Recherche géographique {.sidebar width="30%"}
+
+```{ojs annee}
+viewof selection_annee = Inputs.select(
+  [
+    "1968", "1975", "1982", "1990", "1999", "2006", 
+    "2011", "2012", "2013", "2014", "2015", "2016", 
+    "2017", "2018", "2019", "2020", "2021", "2022", 
+    "2023", "2024", "2025", "2026"
+  ],
+  {
+    label: "Année",
+    value: "2026" // Valeur par défaut correspondant à votre code R
+  }
+)
+```
+
+```{ojs type_geo}
+viewof selection_type_geo = Inputs.select(
+  [
+    "Commune", "Unité urbaine 2020", "Bassin de vie 2022", "Intercommunalité-Métropole", 
+    "Aire d’attraction des villes 2020", "Arrondissement", "Zone d’emploi 2020", 
+    "Département", "Arrondissement municipal", "Région", "France", 
+    "Autres", "Collectivité et territoire français d’outre-mer"
+  ],
+  {
+    label: "Type de zone",
+    value: "Commune"
+  }
+)
+```
+
+```{ojs geo}
+//| output: false
+
+// Liste des territoires disponibles dynamiquement
+geo = db.query(`
+  SELECT DISTINCT GEO, GEO_LABEL
+  FROM read_parquet('${chemin_s3}')
+  WHERE ID_TAB = 'TOU_T1' AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+  ORDER BY GEO_LABEL
+`)
+```
+
+```{ojs geo2}
+viewof search_geo = Inputs.search(
+  geo, {
+    width: "60%",
+    label: "Territoire",
+    placeholder: "Rechercher un territoire...",
+  })
+
+viewof selection_geo = Inputs.table(
+  search_geo, {
+    multiple: false,
+    value: search_geo.length > 0 ? search_geo[0] : null,
+    rows: 15,
+    columns: ["GEO_LABEL", "GEO"]
+  }
+)
+```
+
+# Visualisation par territoire
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3}
+isGeoSelected = (selection_geo !== null);
+
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+
+// 1. On récupère TOUTES les données de TOU_T1 pour la zone
+equip_brut = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'TOU_T1'
+`)
+: [];
+
+// 2. On classe avec des mots-clés robustes
+function classer_hotels(label) {
+  if (!label) return null;
+  let txt = label.toLowerCase();
+  
+  // On filtre pour être sûr de prendre les "Hôtels et hébergement similaire"
+  if (!txt.includes("hôtels") && !txt.includes("hébergement")) return null;
+
+  if (txt.includes("1 étoile")) return "1 étoile";
+  if (txt.includes("2 étoiles")) return "2 étoiles";
+  if (txt.includes("3 étoiles")) return "3 étoiles";
+  if (txt.includes("4 étoiles")) return "4 étoiles";
+  if (txt.includes("5 étoiles")) return "5 étoiles";
+  if (txt.includes("non classé")) return "Non classé";
+  
+  return null;
+}
+
+// 3. Filtrage et nettoyage
+equip_mutate = equip_brut.map(function(d) {
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    etoiles: classer_hotels(d.TAB_MEASURE_LABEL)
+  };
+}).filter(d => d.etoiles !== null);
+
+// 4. Agrégation des résultats
+equip_groupes = d3.rollups(
+  equip_mutate,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.etoiles; }
+);
+
+equip_summarise = equip_groupes.map(function(g) {
+  return { etoiles: g[0], total_groupe: g[1] };
+});
+
+total = d3.sum(equip_summarise, function(d) { return d.total_groupe; });
+
+equip = equip_summarise.map(function(d) {
+  return {
+    etoiles: d.etoiles,
+    total_groupe: d.total_groupe,
+    total: total,
+    part_groupe: total > 0 ? (d.total_groupe / total) * 100 : 0
+  };
+});
+
+// 5. On force l'ordre logique (comme votre Ordre_h en R)
+ordre_etoiles = [
+  "1 étoile", 
+  "2 étoiles", 
+  "3 étoiles", 
+  "4 étoiles", 
+  "5 étoiles", 
+  "Non classé"
+];
+equip_trie = equip.sort((a, b) => ordre_etoiles.indexOf(a.etoiles) - ordre_etoiles.indexOf(b.etoiles));
+```
+
+```{ojs result_plot}
+// Histogramme (équivalent ggplot2)
+Plot.plot({
+  title: isGeoSelected ? `Capacité des hôtels au 1er janvier ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  marginBottom: 50,
+  x: { 
+    domain: ordre_etoiles, // Force l'ordre sur l'axe X
+    label: null 
+  },
+  y: { 
+    label: "Nombre de places", 
+    grid: true 
+  },
+  marks: [
+    Plot.barY(equip_trie, { x: "etoiles", y: "total_groupe", fill: "steelblue" }),
+    Plot.ruleY([0])
+  ]
+})
+```
+
+```{ojs result_table}
+// Tri manuellement et ajout de la ligne TOTAL
+equip_pour_tableau = {
+  // On garde l'ordre logique des étoiles pour le tableau, c'est plus lisible
+  let data = equip_trie.slice(); 
+  data.push({ etoiles: "TOTAL", total_groupe: total });
+  return data;
+}
+
+// Affichage du tableau
+Inputs.table(equip_pour_tableau, {
+  columns: ["etoiles", "total_groupe"],
+  header: {
+    etoiles: "Catégorie",
+    total_groupe: "Capacité (nombre de places)"
+  }
+})
+```
+
+# Pour en savoir plus
+
+- Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), le graphique se met à jour en allant piocher dynamiquement dans la base du dossier complet au format Parquet.
+
+```{ojs debug}
+debug_info = db.query(`
+  SELECT count(*) as nb_lignes
+  FROM read_parquet('${chemin_s3}')
+`)
+
+viewof debug_table = Inputs.table(
+  debug_info,
+  { locale: "fr" }
+)
+```

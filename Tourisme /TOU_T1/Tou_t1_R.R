@@ -1,4 +1,4 @@
-# Nombre d'enfants âgés de moins de 25 ans 
+# Nombre hôtels étoilés par villes
 
 library(DBI)
 library(duckdb)
