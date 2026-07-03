@@ -40,11 +40,19 @@ chômage <- dossier_complet %>%
   filter(
     GEO_OBJECT_LABEL == "Commune",
     GEO == "44109",
-    ID_TAB == "RFD_G1",
-    TAB_MEASURE_LABEL == "Population – De 15 à 64 ans x Chômeur"
+    ID_TAB == "EMP_T4",
+    TAB_MEASURE_LABEL == "Population – De 15 à 64 ans x Chômeur, 
+    Population – De 15 à 64 ans x Actif occupé"
   ) %>%
 
   select(TIME_PERIOD, TAB_MEASURE_LABEL, OBS_VALUE) %>%
+
+# Mauvais calcul de pourcentage de chomage de ma part
+  
+  mutate(
+     = sum(OBS_VALUE),
+    part_groupe = (OBS_VALUE/ total) * 100
+  ) %>%
   
   collect()
 
@@ -53,21 +61,6 @@ View(chômage)
 # Graphique 
 library(ggplot2)
 
-# Définition des couleurs basées sur votre image
-couleurs <- c(
-  "Nombre de naissances vivantes" = "#003366",               
-  "Nombre de décès" = "#ff4d4d")  
+plot(chômage$TIME_PERIOD, chômage$part_groupe, type = "b", col = "blue", lwd = 2, 
+     main = "Nombre d'électeurs inscrits sur liste principale par élection", xlab = "Année de l'élection", ylab = "Nombre d'électeurs")
 
-ggplot(solde, aes(x = as.numeric(TIME_PERIOD), y = total_groupe, color = TAB_MEASURE_LABEL)) +
-  geom_line(linewidth = 1) +
-  scale_color_manual(values = couleurs) +
-  theme_minimal() +
-  labs(
-    title = "Naissances et décès domiciliés",
-    x = NULL, 
-    y = "en nombre",
-    color = NULL
-  ) +
-  theme(legend.position = "top") +
-  
-  scale_x_continuous(breaks = seq(2012, 2025, 1))
