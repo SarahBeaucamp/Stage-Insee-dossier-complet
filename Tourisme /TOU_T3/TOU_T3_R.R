@@ -30,45 +30,31 @@ chemin_s3 <- "s3://sarahbeaucamp/dossier_complet.parquet"
 dossier_complet <- tbl(con, paste0("read_parquet('", chemin_s3, "')"))
 
 r <- dossier_complet %>%
-  filter(GEO == "44109", ID_TAB == "TOU_T2") %>%
+  filter(GEO == "44109", ID_TAB == "TOU_T3") %>%
   distinct(TAB_MEASURE_LABEL) %>%
   collect()
 
 View(r)
 
-Ordre_h <- c(
-  "1 étoile",
-  "2 étoiles",
-  "3 étoiles",
-  "4 étoiles",
-  "5 étoiles",
-  "Non classé"
-)
 
 cap_h <- dossier_complet %>%
   filter(
     TIME_PERIOD == "2026",
     GEO_OBJECT_LABEL == "Commune",
     GEO == "44109",
-    ID_TAB == "TOU_T2",
+    ID_TAB == "TOU_T3",
     TAB_MEASURE_LABEL %in% c(
-      "Nombre de places – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x 1 étoile",
-      "Nombre de places – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x 2 étoiles",
-      "Nombre de places – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x 3 étoiles",
-      "Nombre de places – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x 4 étoiles",
-      "Nombre de places – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x 5 étoiles",
-      "Nombre de places – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x Non classé"
+      "Nombre de place-lits – Résidences de tourisme – Résidences hôtelières",
+      "Nombre de place-lits – Auberges de jeunesse et centres sportifs",
+      "Nombre de place-lits – Villages vacances et maisons familiales"
     )
   ) %>%
   
   mutate (
     étoiles = case_when(
-      TAB_MEASURE_LABEL == "Nombre de places – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x 1 étoile" ~ "1 étoile",
-      TAB_MEASURE_LABEL == "Nombre de places – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x 2 étoiles" ~ "2 étoiles",
-      TAB_MEASURE_LABEL == "Nombre de places – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x 3 étoiles" ~ "3 étoiles",
-      TAB_MEASURE_LABEL == "Nombre de places – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x 4 étoiles" ~ "4 étoiles",
-      TAB_MEASURE_LABEL == "Nombre de places – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x 5 étoiles" ~ "5 étoiles",
-      TAB_MEASURE_LABEL == "Nombre de places – Terrains de camping et parcs pour caravanes ou véhicules de loisirs x Non classé" ~ "Non classé"
+      TAB_MEASURE_LABEL == "Nombre de place-lits – Résidences de tourisme – Résidences hôtelières" ~ "Résidence de tourisme et hébergements assimilés",
+      TAB_MEASURE_LABEL == "Nombre de place-lits – Auberges de jeunesse et centres sportifs" ~ "Auberges de jeunesse et centres sportifs",
+      TAB_MEASURE_LABEL == "Nombre de place-lits – Villages vacances et maisons familiales" ~ "Villages vacances et maisons familiales"
     )
   ) %>%
   
@@ -80,9 +66,7 @@ cap_h <- dossier_complet %>%
   mutate(
     total = sum(total_groupe),
     part_groupe = (total_groupe / total) * 100
-  ) %>%
-  
-  mutate(étoiles = factor(étoiles, levels = Ordre_h))
+  ) 
 
 View(cap_h)
 
@@ -104,7 +88,7 @@ ggplot(cap_h, aes(x = étoiles, y = total_groupe)) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
   
   labs(
-    title = "Capacité des campings au 1er janvier 2026", 
+    title = " Nombre d'autres hébergements collectifs au 1er janvier 2026", 
     x = "",
     y = ""
   ) +
@@ -115,3 +99,4 @@ ggplot(cap_h, aes(x = étoiles, y = total_groupe)) +
     axis.title = element_text(face = "bold"),
     axis.text.y = element_text(lineheight = 0.9) 
   )
+

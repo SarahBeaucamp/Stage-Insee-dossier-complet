@@ -1,0 +1,99 @@
+---
+title: "Créations d'entreprises"
+format: 
+  dashboard:
+    nav-buttons: []
+---
+
+```{ojs config}
+//| output: false
+
+db = DuckDBClient.of({})
+chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'
+```
+
+# Recherche géographique {.sidebar width="30%"}
+
+```{ojs type_geo}
+viewof selection_type_geo = Inputs.select(
+  ["Commune", "Unité urbaine 2020", "Bassin de vie 2022", "Intercommunalité-Métropole", "Aire d’attraction des villes 2020", "Arrondissement", "Zone d’emploi 2020", "Département", "Arrondissement municipal", "Région", "France", "Autres", "Collectivité et territoire français d’outre-mer"],
+  { label: "Type de zone", value: "Commune" }
+)
+```
+
+```{ojs geo}
+//| output: false
+geo = db.query(`SELECT DISTINCT GEO, GEO_LABEL FROM read_parquet('${chemin_s3}') WHERE ID_TAB = 'DEN_G1' AND GEO_OBJECT_LABEL = '${selection_type_geo}' ORDER BY GEO_LABEL`)
+```
+
+```{ojs geo2}
+viewof search_geo = Inputs.search(geo, {width: "60%", label: "Territoire", placeholder: "Rechercher..."})
+viewof selection_geo = Inputs.table(search_geo, {multiple: false, value: search_geo.length > 0 ? search_geo[0] : null, rows: 15, columns: ["GEO_LABEL", "GEO"]})
+```
+
+# Visualisation par territoire
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3}
+isGeoSelected = (selection_geo !== null);
+htl.html`<strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+equip_brut = isGeoSelected ? db.query(`SELECT TAB_MEASURE_LABEL, TIME_PERIOD, OBS_VALUE FROM read_parquet('${chemin_s3}') WHERE GEO_OBJECT_LABEL = '${selection_type_geo}' AND GEO = '${selection_geo.GEO}' AND ID_TAB = 'DEN_G1'`) : [];
+
+function classer_societes(label) {
+  if (!label) return null;
+  let txt = label.toLowerCase();
+  if (txt.includes("société par actions simplifiée")) return "Société par actions simplifiée";
+  if (txt.includes("société à responsabilité limitée")) return "Société à responsabilité limitée";
+  if (txt.includes("entrepreneur individuel")) return "Entrepreneur individuel";
+  if (txt.includes("ensemble")) return "Ensemble";
+  if (txt.includes("autres sociétés")) return "Autres sociétés";
+  return null;
+}
+
+equip_mutate = equip_brut.map(d => ({
+  OBS_VALUE: d.OBS_VALUE,
+  TIME_PERIOD: d.TIME_PERIOD,
+  societe: classer_societes(d.TAB_MEASURE_LABEL)
+})).filter(d => d.societe !== null);
+```
+
+```{ojs result_plot}
+Plot.plot({
+  title: "DEN G1 - Évolution des créations d'entreprises",
+  marginBottom: 40,
+  marginLeft: 50,
+  color: {
+    domain: ["Ensemble", "Entrepreneur individuel", "Société à responsabilité limitée", "Société par actions simplifiée", "Autres sociétés"],
+    range: ["#003366", "#ff4d4d", "gray", "#3399ff", "#990000"]
+  },
+  x: { label: null, tickFormat: "" },
+  y: { label: "en nombre", grid: true },
+  marks: [
+    Plot.lineY(equip_mutate, { x: "TIME_PERIOD", y: "OBS_VALUE", stroke: "societe", strokeWidth: 2 }),
+    Plot.dot(equip_mutate, { x: "TIME_PERIOD", y: "OBS_VALUE", fill: "societe" })
+  ]
+})
+```
+
+## Données brutes
+
+```{ojs result_table}
+Inputs.table(equip_mutate, {
+  columns: ["TIME_PERIOD", "societe", "OBS_VALUE"],
+  header: { TIME_PERIOD: "Année", societe: "Type", OBS_VALUE: "Valeur" }
+})
+```
+
+# Pour en savoir plus
+
+```{ojs debug}
+debug_info = db.query(`SELECT count(*) as nb_lignes FROM read_parquet('${chemin_s3}')`)
+viewof debug_table = Inputs.table(debug_info, { locale: "fr" })
+```

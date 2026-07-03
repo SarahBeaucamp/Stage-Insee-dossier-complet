@@ -1,0 +1,190 @@
+---
+title: "Base du dossier complet"
+format: 
+  dashboard:
+    nav-buttons: []
+---
+
+```{ojs config}
+//| output: false
+
+// 1. Créer ou ouvrir une connexion DuckDB
+db = DuckDBClient.of({})
+
+// 4. Définir l'adresse du fichier sur le S3 du SSP Cloud
+chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'
+```
+
+# Recherche géographique {.sidebar width="30%"}
+
+```{ojs annee}
+viewof selection_annee = Inputs.select(
+  [
+    "1968", "1975", "1982", "1990", "1999", "2006", 
+    "2011", "2012", "2013", "2014", "2015", "2016", 
+    "2017", "2018", "2019", "2020", "2021", "2022", 
+    "2023", "2024", "2025", "2026"
+  ],
+  {
+    label: "Année",
+    value: "2026" 
+  }
+)
+```
+
+```{ojs type_geo}
+viewof selection_type_geo = Inputs.select(
+  [
+    "Commune", "Unité urbaine 2020", "Bassin de vie 2022", "Intercommunalité-Métropole", 
+    "Aire d’attraction des villes 2020", "Arrondissement", "Zone d’emploi 2020", 
+    "Département", "Arrondissement municipal", "Région", "France", 
+    "Autres", "Collectivité et territoire français d’outre-mer"
+  ],
+  {
+    label: "Type de zone",
+    value: "Commune"
+  }
+)
+```
+
+```{ojs geo}
+//| output: false
+
+// Liste des territoires disponibles dynamiquement
+geo = db.query(`
+  SELECT DISTINCT GEO, GEO_LABEL
+  FROM read_parquet('${chemin_s3}')
+  WHERE ID_TAB = 'TOU_T3' AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+  ORDER BY GEO_LABEL
+`)
+```
+
+```{ojs geo2}
+viewof search_geo = Inputs.search(
+  geo, {
+    width: "60%",
+    label: "Territoire",
+    placeholder: "Rechercher un territoire...",
+  })
+
+viewof selection_geo = Inputs.table(
+  search_geo, {
+    multiple: false,
+    value: search_geo.length > 0 ? search_geo[0] : null,
+    rows: 15,
+    columns: ["GEO_LABEL", "GEO"]
+  }
+)
+```
+
+# Visualisation par territoire
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3}
+isGeoSelected = (selection_geo !== null);
+
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+
+// 1. On récupère TOUTES les données de TOU_T3 pour la zone
+equip_brut = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'TOU_T3'
+`)
+: [];
+
+// 2. On classe avec des mots-clés robustes
+function classer_hebergement(label) {
+  if (!label) return null;
+  let txt = label.toLowerCase();
+  
+  if (txt.includes("résidences de tourisme")) return "Résidence de tourisme et hébergements assimilés";
+  if (txt.includes("auberges de jeunesse")) return "Auberges de jeunesse et centres sportifs";
+  if (txt.includes("villages vacances")) return "Villages vacances et maisons familiales";
+  
+  return null;
+}
+
+// 3. Filtrage et nettoyage
+equip_mutate = equip_brut.map(function(d) {
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    categorie: classer_hebergement(d.TAB_MEASURE_LABEL)
+  };
+}).filter(d => d.categorie !== null);
+
+// 4. Agrégation des résultats
+equip_groupes = d3.rollups(
+  equip_mutate,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.categorie; }
+);
+
+equip_synthese = equip_groupes.map(function(g) {
+  return { categorie: g[0], total_groupe: g[1] };
+});
+
+total = d3.sum(equip_synthese, function(d) { return d.total_groupe; });
+```
+
+```{ojs result_plot}
+// Histogramme (équivalent ggplot2)
+Plot.plot({
+  title: isGeoSelected ? `Nombre d'autres hébergements collectifs au 1er janvier ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  marginBottom: 50,
+  marginLeft: 200, // Espace pour les labels longs
+  x: { label: "Nombre de lits", grid: true },
+  y: { label: null },
+  marks: [
+    Plot.barX(equip_synthese, { y: "categorie", x: "total_groupe", fill: "steelblue" }),
+    Plot.ruleX([0])
+  ]
+})
+```
+
+```{ojs result_table}
+// Ajout de la ligne TOTAL à la fin du tableau
+equip_pour_tableau = {
+  let data = equip_synthese.slice(); 
+  data.push({ categorie: "TOTAL", total_groupe: total });
+  return data;
+}
+
+// Affichage du tableau
+Inputs.table(equip_pour_tableau, {
+  columns: ["categorie", "total_groupe"],
+  header: {
+    categorie: "Type d'hébergement",
+    total_groupe: "Nombre de lits"
+  }
+})
+```
+
+# Pour en savoir plus
+
+- Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), le graphique se met à jour en allant piocher dynamiquement dans la base du dossier complet au format Parquet.
+
+```{ojs debug}
+debug_info = db.query(`
+  SELECT count(*) as nb_lignes
+  FROM read_parquet('${chemin_s3}')
+`)
+
+viewof debug_table = Inputs.table(
+  debug_info,
+  { locale: "fr" }
+)
+```
