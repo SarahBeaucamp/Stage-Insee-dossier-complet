@@ -1,5 +1,5 @@
 ---
-title: "Base du dossier complet"
+title: "Equipements et services à la population en 2024"
 format: 
   dashboard:
     nav-buttons: []
@@ -77,7 +77,7 @@ viewof selection_geo = Inputs.table(
 )
 ```
 
-# Visualisation par territoire
+# Commerces
 
 ## Territoire sélectionné {height="15%"}
 
@@ -170,7 +170,7 @@ total1 = d3.sum(equip1_summarise, function(d) { return d.total_groupe1; });
 
 equip1 = equip1_summarise.map(function(d) {
   return {
-    équipements: d.équipements,
+    équipements1: d.équipements1,
     total_groupe1: d.total_groupe1,
     total1: total1,
     part_groupe1: total1 > 0 ? (d.total_groupe1 / total1) * 100 : 0
@@ -203,13 +203,145 @@ equip1_pour_tableau = {
 
 // Affichage du tableau interactif
 Inputs.table(equip1_pour_tableau, {
-  columns: ["équipements", "total_groupe"],
+  columns: ["équipements1", "total_groupe1"],
   header: {
-    équipements1: "Type de commerce",
-    total_groupe1: "Nombre d'établissements"
+    équipements: "Type de commerce",
+    total_groupe: "Nombre d'établissements"
   }
 })
 ```
+
+# Santé
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3}
+
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+
+// r <- dossier_complet %>% filter(GEO == "44109", ID_TAB == "EQUIP_T1") %>% distinct(TAB_MEASURE_LABEL) %>% collect()
+// (étape de contrôle en R, non nécessaire pour l'affichage final, donc non reprise ici)
+
+// equip <- dossier_complet %>%
+//   filter(
+//     TIME_PERIOD == "2024",
+//     GEO_OBJECT_LABEL == "Commune",
+//     GEO == "44109",
+//     ID_TAB == "EQUIP_T1",
+//     TAB_MEASURE_LABEL %in% c(...)
+//   )
+equip2_filtre = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'EQUIP_T2'
+    AND TAB_MEASURE_LABEL IN (
+      'Nombre d''équipements – Infirmier',
+      'Nombre d''équipements – Psychologue',
+      'Nombre d''équipements – Médecin généraliste',
+      'Nombre d''équipements – Chirurgien dentiste',
+      'Nombre d''équipements – Masseur kinésithérapeute',
+      'Nombre d''équipements – Pharmacie'
+    )
+`)
+: [];
+
+// mutate(
+//    équipements = case_when(
+//      TAB_MEASURE_LABEL == "Nombre d'équipements – Station-service" ~ "Station-service",
+//      TAB_MEASURE_LABEL == "Nombre d'équipements – Station de recharge de véhicules électriques" ~ "Station de recharge de véhicules électriques",
+//      TAB_MEASURE_LABEL == "Nombre d'équipements – Boulangerie-pâtisserie" ~ "Boulangerie-pâtisserie",
+//      TAB_MEASURE_LABEL %in% c("Nombre d'équipements – Supérette", "Nombre d'équipements – Épicerie") ~ "Epicerie, Supérette",
+//      TAB_MEASURE_LABEL %in% c("Nombre d'équipements – Hypermarché et grand magasin", "Nombre d'équipements – Supermarché et magasin multi-commerce") ~ "Grande Surface",
+//      TAB_MEASURE_LABEL == "Nombre d'équipements – Coiffure" ~ "Coiffure"
+//    )
+// )
+function case_when_equipements2(TAB_MEASURE_LABEL) {
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Infirmier") return "Infirmier";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Psychologue") return "Psychologue";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Médecin généraliste") return "Médecin généraliste";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Chirurgien dentiste") return "Chirurgien dentiste";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Masseur kinésithérapeute") return "Masseur kinésithérapeute";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Pharmacie") return "Pharmacie";
+  return null;
+}
+
+equip2_mutate = equip2_filtre.map(function(d) {
+  return {
+    TAB_MEASURE_LABEL: d.TAB_MEASURE_LABEL,
+    OBS_VALUE: d.OBS_VALUE,
+    équipements2: case_when_equipements2(d.TAB_MEASURE_LABEL)
+  };
+});
+
+// group_by(équipements) %>% summarise(total_groupe = sum(OBS_VALUE, na.rm = TRUE)) %>% collect()
+equip2_groupes = d3.rollups(
+  equip2_mutate,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.équipements2; }
+);
+
+equip2_summarise = equip2_groupes.map(function(g) {
+  return { équipements2: g[0], total_groupe2: g[1] };
+});
+
+// mutate(total = sum(total_groupe), part_groupe = (total_groupe / total) * 100)
+total2 = d3.sum(equip2_summarise, function(d) { return d.total_groupe2; });
+
+equip2 = equip2_summarise.map(function(d) {
+  return {
+    équipements2: d.équipements2,
+    total_groupe2: d.total_groupe2,
+    total2: total2,
+    part_groupe2: total2 > 0 ? (d.total_groupe2 / total2) * 100 : 0
+  };
+});
+```
+
+```{ojs result_plot}
+// Histogramme (équivalent ggplot2)
+Plot.plot({
+  title: isGeoSelected ? `Nombre de professionnels de santé et de pharmacies en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  marginBottom: 60,
+  x: { label: null, tickRotate: -20 },
+  y: { label: null, grid: true },
+  marks: [
+    Plot.barY(equip2, { x: "équipements", y: "total_groupe", fill: "steelblue" }),
+    Plot.ruleY([0])
+  ]
+})
+```
+
+```{ojs result_table}
+// 1. On trie les données manuellement (du plus grand au plus petit)
+// 2. On ajoute la ligne "TOTAL" à la fin du tableau
+equip2_pour_tableau = {
+  let data = equip2.slice().sort((a, b) => d3.descending(a.total_groupe2, b.total_groupe2));
+  data.push({ équipements2: "TOTAL", total_groupe2: total2 });
+  return data;
+}
+
+// Affichage du tableau interactif
+Inputs.table(equip2_pour_tableau, {
+  columns: ["équipements", "total_groupe"],
+  header: {
+    équipements2: "Professionnels de santé ou pharmacies",
+    total_groupe2: "Nombre"
+  }
+})
+```
+
 
 # Pour en savoir plus
 
