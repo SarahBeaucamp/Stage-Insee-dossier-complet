@@ -105,7 +105,7 @@ htl.html`
 //     ID_TAB == "EQUIP_T1",
 //     TAB_MEASURE_LABEL %in% c(...)
 //   )
-equip1_filtre = isGeoSelected
+equip_filtre1 = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
   FROM read_parquet('${chemin_s3}')
@@ -136,7 +136,7 @@ equip1_filtre = isGeoSelected
 //      TAB_MEASURE_LABEL == "Nombre d'équipements – Coiffure" ~ "Coiffure"
 //    )
 // )
-function case_when_equipements1(TAB_MEASURE_LABEL) {
+function case_when_equipements(TAB_MEASURE_LABEL) {
   if (TAB_MEASURE_LABEL === "Nombre d'équipements – Station-service") return "Station-service";
   if (TAB_MEASURE_LABEL === "Nombre d'équipements – Station de recharge de véhicules électriques") return "Station de recharge de véhicules électriques";
   if (TAB_MEASURE_LABEL === "Nombre d'équipements – Boulangerie-pâtisserie") return "Boulangerie-pâtisserie";
@@ -146,34 +146,34 @@ function case_when_equipements1(TAB_MEASURE_LABEL) {
   return null;
 }
 
-equip1_mutate = equip1_filtre.map(function(d) {
+equip_mutate1 = equip_filtre1.map(function(d) {
   return {
     TAB_MEASURE_LABEL: d.TAB_MEASURE_LABEL,
     OBS_VALUE: d.OBS_VALUE,
-    équipements1: case_when_equipements1(d.TAB_MEASURE_LABEL)
+    équipements: case_when_equipements(d.TAB_MEASURE_LABEL)
   };
 });
 
 // group_by(équipements) %>% summarise(total_groupe = sum(OBS_VALUE, na.rm = TRUE)) %>% collect()
-equip1_groupes = d3.rollups(
-  equip1_mutate,
+equip_groupes1 = d3.rollups(
+  equip_mutate1,
   function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
-  function(d) { return d.équipements1; }
+  function(d) { return d.équipements; }
 );
 
-equip1_summarise = equip1_groupes.map(function(g) {
-  return { équipements1: g[0], total_groupe1: g[1] };
+equip_summarise1 = equip_groupes1.map(function(g) {
+  return { équipements: g[0], total_groupe: g[1] };
 });
 
 // mutate(total = sum(total_groupe), part_groupe = (total_groupe / total) * 100)
-total1 = d3.sum(equip1_summarise, function(d) { return d.total_groupe1; });
+total1 = d3.sum(equip_summarise1, function(d) { return d.total_groupe; });
 
-equip1 = equip1_summarise.map(function(d) {
+equip1 = equip_summarise1.map(function(d) {
   return {
     équipements: d.équipements,
-    total_groupe1: d.total_groupe1,
+    total_groupe: d.total_groupe,
     total1: total1,
-    part_groupe1: total1 > 0 ? (d.total_groupe1 / total1) * 100 : 0
+    part_groupe: total1 > 0 ? (d.total_groupe / total1) * 100 : 0
   };
 });
 ```
@@ -195,18 +195,18 @@ Plot.plot({
 ```{ojs result_table}
 // 1. On trie les données manuellement (du plus grand au plus petit)
 // 2. On ajoute la ligne "TOTAL" à la fin du tableau
-equip1_pour_tableau = {
-  let data = equip1.slice().sort((a, b) => d3.descending(a.total_groupe1, b.total_groupe1));
-  data.push({ équipements1: "TOTAL", total_groupe1: total1 });
+equip_pour_tableau1 = {
+  let data = equip1.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
+  data.push({ équipements: "TOTAL", total_groupe: total1 });
   return data;
 }
 
 // Affichage du tableau interactif
-Inputs.table(equip1_pour_tableau, {
+Inputs.table(equip_pour_tableau1, {
   columns: ["équipements", "total_groupe"],
   header: {
-    équipements1: "Type de commerce",
-    total_groupe1: "Nombre d'établissements"
+    équipements: "Type de commerce",
+    total_groupe: "Nombre d'établissements"
   }
 })
 ```

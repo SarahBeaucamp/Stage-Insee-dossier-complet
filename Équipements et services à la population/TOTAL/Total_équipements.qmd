@@ -105,7 +105,7 @@ htl.html`
 //     ID_TAB == "EQUIP_T1",
 //     TAB_MEASURE_LABEL %in% c(...)
 //   )
-equip1_filtre = isGeoSelected
+equip_filtre1 = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
   FROM read_parquet('${chemin_s3}')
@@ -136,7 +136,7 @@ equip1_filtre = isGeoSelected
 //      TAB_MEASURE_LABEL == "Nombre d'équipements – Coiffure" ~ "Coiffure"
 //    )
 // )
-function case_when_equipements1(TAB_MEASURE_LABEL) {
+function case_when_equipements(TAB_MEASURE_LABEL) {
   if (TAB_MEASURE_LABEL === "Nombre d'équipements – Station-service") return "Station-service";
   if (TAB_MEASURE_LABEL === "Nombre d'équipements – Station de recharge de véhicules électriques") return "Station de recharge de véhicules électriques";
   if (TAB_MEASURE_LABEL === "Nombre d'équipements – Boulangerie-pâtisserie") return "Boulangerie-pâtisserie";
@@ -146,34 +146,34 @@ function case_when_equipements1(TAB_MEASURE_LABEL) {
   return null;
 }
 
-equip1_mutate = equip1_filtre.map(function(d) {
+equip_mutate1 = equip_filtre1.map(function(d) {
   return {
     TAB_MEASURE_LABEL: d.TAB_MEASURE_LABEL,
     OBS_VALUE: d.OBS_VALUE,
-    équipements1: case_when_equipements1(d.TAB_MEASURE_LABEL)
+    équipements: case_when_equipements(d.TAB_MEASURE_LABEL)
   };
 });
 
 // group_by(équipements) %>% summarise(total_groupe = sum(OBS_VALUE, na.rm = TRUE)) %>% collect()
-equip1_groupes = d3.rollups(
-  equip1_mutate,
+equip_groupes1 = d3.rollups(
+  equip_mutate1,
   function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
-  function(d) { return d.équipements1; }
+  function(d) { return d.équipements; }
 );
 
-equip1_summarise = equip1_groupes.map(function(g) {
-  return { équipements1: g[0], total_groupe1: g[1] };
+equip_summarise1 = equip_groupes1.map(function(g) {
+  return { équipements: g[0], total_groupe: g[1] };
 });
 
 // mutate(total = sum(total_groupe), part_groupe = (total_groupe / total) * 100)
-total1 = d3.sum(equip1_summarise, function(d) { return d.total_groupe1; });
+total1 = d3.sum(equip_summarise1, function(d) { return d.total_groupe; });
 
-equip1 = equip1_summarise.map(function(d) {
+equip1 = equip_summarise1.map(function(d) {
   return {
-    équipements1: d.équipements1,
-    total_groupe1: d.total_groupe1,
+    équipements: d.équipements,
+    total_groupe: d.total_groupe,
     total1: total1,
-    part_groupe1: total1 > 0 ? (d.total_groupe1 / total1) * 100 : 0
+    part_groupe: total1 > 0 ? (d.total_groupe / total1) * 100 : 0
   };
 });
 ```
@@ -195,15 +195,15 @@ Plot.plot({
 ```{ojs result_table}
 // 1. On trie les données manuellement (du plus grand au plus petit)
 // 2. On ajoute la ligne "TOTAL" à la fin du tableau
-equip1_pour_tableau = {
-  let data = equip1.slice().sort((a, b) => d3.descending(a.total_groupe1, b.total_groupe1));
-  data.push({ équipements1: "TOTAL", total_groupe1: total1 });
+equip_pour_tableau1 = {
+  let data = equip1.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
+  data.push({ équipements: "TOTAL", total_groupe: total1 });
   return data;
 }
 
 // Affichage du tableau interactif
-Inputs.table(equip1_pour_tableau, {
-  columns: ["équipements1", "total_groupe1"],
+Inputs.table(equip_pour_tableau1, {
+  columns: ["équipements", "total_groupe"],
   header: {
     équipements: "Type de commerce",
     total_groupe: "Nombre d'établissements"
@@ -238,7 +238,7 @@ htl.html`
 //     ID_TAB == "EQUIP_T1",
 //     TAB_MEASURE_LABEL %in% c(...)
 //   )
-equip2_filtre = isGeoSelected
+equip_filtre2 = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
   FROM read_parquet('${chemin_s3}')
@@ -277,34 +277,34 @@ function case_when_equipements2(TAB_MEASURE_LABEL) {
   return null;
 }
 
-equip2_mutate = equip2_filtre.map(function(d) {
+equip_mutate2 = equip_filtre2.map(function(d) {
   return {
     TAB_MEASURE_LABEL: d.TAB_MEASURE_LABEL,
     OBS_VALUE: d.OBS_VALUE,
-    équipements2: case_when_equipements2(d.TAB_MEASURE_LABEL)
+    équipements: case_when_equipements2(d.TAB_MEASURE_LABEL)
   };
 });
 
 // group_by(équipements) %>% summarise(total_groupe = sum(OBS_VALUE, na.rm = TRUE)) %>% collect()
-equip2_groupes = d3.rollups(
-  equip2_mutate,
+equip_groupes2 = d3.rollups(
+  equip_mutate2,
   function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
-  function(d) { return d.équipements2; }
+  function(d) { return d.équipements; }
 );
 
-equip2_summarise = equip2_groupes.map(function(g) {
-  return { équipements2: g[0], total_groupe2: g[1] };
+equip_summarise2 = equip_groupes2.map(function(g) {
+  return { équipements: g[0], total_groupe: g[1] };
 });
 
 // mutate(total = sum(total_groupe), part_groupe = (total_groupe / total) * 100)
-total2 = d3.sum(equip2_summarise, function(d) { return d.total_groupe2; });
+total2 = d3.sum(equip_summarise2, function(d) { return d.total_groupe; });
 
-equip2 = equip2_summarise.map(function(d) {
+equip2 = equip_summarise2.map(function(d) {
   return {
-    équipements2: d.équipements2,
-    total_groupe2: d.total_groupe2,
+    équipements: d.équipements,
+    total_groupe: d.total_groupe,
     total2: total2,
-    part_groupe2: total2 > 0 ? (d.total_groupe2 / total2) * 100 : 0
+    part_groupe: total2 > 0 ? (d.total_groupe / total2) * 100 : 0
   };
 });
 ```
@@ -326,22 +326,128 @@ Plot.plot({
 ```{ojs result_table}
 // 1. On trie les données manuellement (du plus grand au plus petit)
 // 2. On ajoute la ligne "TOTAL" à la fin du tableau
-equip2_pour_tableau = {
-  let data = equip2.slice().sort((a, b) => d3.descending(a.total_groupe2, b.total_groupe2));
-  data.push({ équipements2: "TOTAL", total_groupe2: total2 });
+equip_pour_tableau2 = {
+  let data = equip2.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
+  data.push({ équipements: "TOTAL", total_groupe: total2 });
   return data;
 }
 
 // Affichage du tableau interactif
-Inputs.table(equip2_pour_tableau, {
+Inputs.table(equip_pour_tableau2, {
   columns: ["équipements", "total_groupe"],
   header: {
-    équipements2: "Professionnels de santé ou pharmacies",
-    total_groupe2: "Nombre"
+    équipements: "Professionnels de santé ou pharmacies",
+    total_groupe: "Nombre"
   }
 })
 ```
 
+# Scolaire
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3}
+
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+
+// 1. On récupère TOUS les équipements de type T3 sans lister les phrases exactes.
+// Fini les plantages liés aux apostrophes dans la requête SQL !
+equip_brut3 = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'EQUIP_T3'
+`)
+: [];
+
+
+function classer_equipements3(label) {
+  if (!label) return null;
+  let txt = label.toLowerCase(); // On met tout en minuscule
+
+  if (txt.includes("bibliothèque")) return "Bibliothèque";
+  if (txt.includes("collège")) return "Collège";
+  if (txt.includes("maternelle") || txt.includes("primaire") || txt.includes("élémentaire")) return "École";
+  if (txt.includes("général") || txt.includes("technologique")) return "Lycée d'enseignement général et/ou technologique";
+  if (txt.includes("professionnel") || txt.includes("agricole")) return "Lycée d'enseignement professionnel ou agricole";
+  
+  return null; 
+}
+
+// 3. On filtre et on crée nos catégories
+equip_mutate3 = equip_brut3.map(function(d) {
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    équipements: classer_equipements3(d.TAB_MEASURE_LABEL)
+  };
+}).filter(d => d.équipements !== null); // On supprime les lignes qui ne sont pas dans nos mots-clés
+
+// 4. On groupe et on somme
+equip_groupes3 = d3.rollups(
+  equip_mutate3,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.équipements; }
+);
+
+equip_summarise3 = equip_groupes3.map(function(g) {
+  return { équipements: g[0], total_groupe: g[1] };
+});
+
+total3 = d3.sum(equip_summarise3, function(d) { return d.total_groupe; });
+
+equip3 = equip_summarise3.map(function(d) {
+  return {
+    équipements: d.équipements,
+    total_groupe: d.total_groupe,
+    total3: total3,
+    part_groupe: total3 > 0 ? (d.total_groupe / total3) * 100 : 0
+  };
+});
+```
+
+```{ojs result_plot}
+// Histogramme (équivalent ggplot2)
+Plot.plot({
+  title: isGeoSelected ? `Nombre d'établissements scolaires et de bibliothèques en  ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  marginBottom: 60,
+  x: { label: null, tickRotate: -20 },
+  y: { label: null, grid: true },
+  marks: [
+    Plot.barY(equip3, { x: "équipements", y: "total_groupe", fill: "steelblue" }),
+    Plot.ruleY([0])
+  ]
+})
+```
+
+```{ojs result_table}
+// 1. On trie les données manuellement (du plus grand au plus petit)
+// 2. On ajoute la ligne "TOTAL" à la fin du tableau
+equip_pour_tableau3 = {
+  let data = equip3.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
+  data.push({ équipements: "TOTAL", total_groupe: total3 });
+  return data;
+}
+
+// Affichage du tableau interactif
+Inputs.table(equip_pour_tableau3, {
+  columns: ["équipements", "total_groupe"],
+  header: {
+    équipements: "Établissements scolaires ou culturels",
+    total_groupe: "Nombre"
+  }
+})
+```
 
 # Pour en savoir plus
 
@@ -358,3 +464,4 @@ viewof debug_table = Inputs.table(
   { locale: "fr" }
 )
 ```
+
