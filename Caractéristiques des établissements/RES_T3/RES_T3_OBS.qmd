@@ -1,0 +1,329 @@
+---
+title: "Établissements et effectifs selon les sphères de l'économie"
+format: 
+  dashboard:
+    nav-buttons: []
+---
+
+```{ojs config}
+//| output: false
+
+// 1. Créer ou ouvrir une connexion DuckDB
+db = DuckDBClient.of({})
+
+// 2. Définir l'adresse du fichier sur le S3 du SSP Cloud
+chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'
+```
+
+# Recherche géographique {.sidebar width="30%"}
+
+```{ojs annee}
+viewof selection_annee = Inputs.select(
+  [
+    "1968", "1975", "1982", "1990", "1999", "2006", 
+    "2011", "2012", "2013", "2014", "2015", "2016", 
+    "2017", "2018", "2019", "2020", "2021", "2022", 
+    "2023", "2024", "2025", "2026"
+  ],
+  {
+    label: "Année",
+    value: "2024" // Valeur par défaut correspondant à votre code R
+  }
+)
+```
+
+```{ojs type_geo}
+viewof selection_type_geo = Inputs.select(
+  [
+    "Commune", "Unité urbaine 2020", "Bassin de vie 2022", "Intercommunalité-Métropole", 
+    "Aire d’attraction des villes 2020", "Arrondissement", "Zone d’emploi 2020", 
+    "Département", "Arrondissement municipal", "Région", "France", 
+    "Autres", "Collectivité et territoire français d’outre-mer"
+  ],
+  {
+    label: "Type de zone",
+    value: "Commune"
+  }
+)
+```
+
+```{ojs geo}
+//| output: false
+
+// Liste des territoires disponibles dynamiquement
+geo = db.query(`
+  SELECT DISTINCT GEO, GEO_LABEL
+  FROM read_parquet('${chemin_s3}')
+  WHERE ID_TAB = 'RES_T3' AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+  ORDER BY GEO_LABEL
+`)
+```
+
+```{ojs geo2}
+viewof search_geo = Inputs.search(
+  geo, {
+    width: "60%",
+    label: "Territoire",
+    placeholder: "Rechercher un territoire...",
+  })
+
+viewof selection_geo = Inputs.table(
+  search_geo, {
+    multiple: false,
+    value: search_geo.length > 0 ? search_geo[0] : null,
+    rows: 15,
+    columns: ["GEO_LABEL", "GEO"]
+  }
+)
+```
+
+```{ojs geo3}
+isGeoSelected = (selection_geo !== null);
+```
+
+# Établissements
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3_etab}
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat établissements
+
+```{ojs etab_calc}
+//| output: false
+
+// 1. On récupère TOUTES les données de RES_T3 pour la zone et l'année
+etab_brut = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'RES_T3'
+`)
+: [];
+
+// 2. On classe selon les mêmes correspondances que dans le code R (etab_spheres)
+correspondance_etab = new Map([
+  ["Établissements – Ensemble hors particuliers employeurs x Établissements appartenant à la sphère productive", "Sphère productive"],
+  ["Établissements – Fonction Publique x Établissements appartenant à la sphère présentielle", "Sphère présentielle, domaine public"],
+  ["Établissements – Ensemble hors particuliers employeurs x Établissements appartenant à la sphère présentielle", "Sphère présentielle"],
+  ["Établissements – Fonction Publique x Établissements appartenant à la sphère productive", "Sphère productive, domaine public"]
+]);
+
+function classer_etab(label) {
+  if (!label) return null;
+  return correspondance_etab.has(label) ? correspondance_etab.get(label) : null;
+}
+
+// 3. Filtrage et nettoyage
+etab_mutate = etab_brut.map(function(d) {
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    type_etab: classer_etab(d.TAB_MEASURE_LABEL)
+  };
+}).filter(d => d.type_etab !== null);
+
+// 4. Agrégation des résultats (équivalent group_by + summarise)
+etab_groupes = d3.rollups(
+  etab_mutate,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.type_etab; }
+);
+
+etab_summarise = etab_groupes.map(function(g) {
+  return { type_etab: g[0], total_groupe: g[1] };
+});
+
+total_etab = d3.sum(etab_summarise, function(d) { return d.total_groupe; });
+
+etab_spheres = etab_summarise.map(function(d) {
+  return {
+    type_etab: d.type_etab,
+    total_groupe: d.total_groupe,
+    total: total_etab,
+    part_groupe: total_etab > 0 ? (d.total_groupe / total_etab) * 100 : 0
+  };
+});
+
+// 5. Ordre logique des catégories pour l'affichage (ordre du code R)
+ordre_etab = Array.from(correspondance_etab.values());
+
+etab_trie = etab_spheres.sort((a, b) => ordre_etab.indexOf(a.type_etab) - ordre_etab.indexOf(b.type_etab));
+```
+
+```{ojs etab_plot}
+// Histogramme (équivalent ggplot2 : geom_col + labels tronqués)
+Plot.plot({
+  title: isGeoSelected ? `Établissements selon les sphères de l'économie fin ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  marginBottom: 100,
+  x: { 
+    domain: ordre_etab, // Force l'ordre sur l'axe X
+    label: null,
+    tickFormat: (d) => d.length > 18 ? d.slice(0, 18) + "…" : d
+  },
+  y: { 
+    label: "Nombre d'établissements", 
+    grid: true 
+  },
+  marks: [
+    Plot.barY(etab_trie, { x: "type_etab", y: "total_groupe", fill: "steelblue" }),
+    Plot.ruleY([0])
+  ]
+})
+```
+
+```{ojs etab_table}
+// Tri manuellement et ajout de la ligne TOTAL
+etab_pour_tableau = {
+  let data = etab_trie.slice();
+  data.push({ type_etab: "TOTAL", total_groupe: total_etab });
+  return data;
+}
+
+// Affichage du tableau
+Inputs.table(etab_pour_tableau, {
+  columns: ["type_etab", "total_groupe"],
+  header: {
+    type_etab: "Sphère",
+    total_groupe: "Nombre d'établissements"
+  }
+})
+```
+
+# Effectifs
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3_eff}
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat effectifs
+
+```{ojs eff_calc}
+//| output: false
+
+// 1. On récupère TOUTES les données de RES_T3 pour la zone et l'année
+eff_brut = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'RES_T3'
+`)
+: [];
+
+// 2. On classe selon les mêmes correspondances que dans le code R (eff_spheres)
+correspondance_eff = new Map([
+  ["Effectifs présents la dernière semaine de décembre – Ensemble hors particuliers employeurs x Établissements appartenant à la sphère productive", "Sphère productive"],
+  ["Effectifs présents la dernière semaine de décembre – Fonction Publique x Établissements appartenant à la sphère présentielle", "Sphère présentielle, domaine public"],
+  ["Effectifs présents la dernière semaine de décembre – Ensemble hors particuliers employeurs x Établissements appartenant à la sphère présentielle", "Sphère présentielle"],
+  ["Effectifs présents la dernière semaine de décembre – Fonction Publique x Établissements appartenant à la sphère productive", "Sphère productive, domaine public"]
+]);
+
+function classer_eff(label) {
+  if (!label) return null;
+  return correspondance_eff.has(label) ? correspondance_eff.get(label) : null;
+}
+
+// 3. Filtrage et nettoyage
+eff_mutate = eff_brut.map(function(d) {
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    type_eff: classer_eff(d.TAB_MEASURE_LABEL)
+  };
+}).filter(d => d.type_eff !== null);
+
+// 4. Agrégation des résultats (équivalent group_by + summarise)
+eff_groupes = d3.rollups(
+  eff_mutate,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.type_eff; }
+);
+
+eff_summarise = eff_groupes.map(function(g) {
+  return { type_eff: g[0], total_groupe: g[1] };
+});
+
+total_eff = d3.sum(eff_summarise, function(d) { return d.total_groupe; });
+
+eff_spheres = eff_summarise.map(function(d) {
+  return {
+    type_eff: d.type_eff,
+    total_groupe: d.total_groupe,
+    total: total_eff,
+    part_groupe: total_eff > 0 ? (d.total_groupe / total_eff) * 100 : 0
+  };
+});
+
+// 5. Ordre logique des catégories pour l'affichage (ordre du code R)
+ordre_eff = Array.from(correspondance_eff.values());
+
+eff_trie = eff_spheres.sort((a, b) => ordre_eff.indexOf(a.type_eff) - ordre_eff.indexOf(b.type_eff));
+```
+
+```{ojs eff_plot}
+// Histogramme (équivalent ggplot2 : geom_col + labels tronqués)
+Plot.plot({
+  title: isGeoSelected ? `Effectifs selon les sphères de l'économie fin ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  marginBottom: 100,
+  x: { 
+    domain: ordre_eff, // Force l'ordre sur l'axe X
+    label: null,
+    tickFormat: (d) => d.length > 18 ? d.slice(0, 18) + "…" : d
+  },
+  y: { 
+    label: "Effectifs (dernière semaine de décembre)", 
+    grid: true 
+  },
+  marks: [
+    Plot.barY(eff_trie, { x: "type_eff", y: "total_groupe", fill: "steelblue" }),
+    Plot.ruleY([0])
+  ]
+})
+```
+
+```{ojs eff_table}
+// Tri manuellement et ajout de la ligne TOTAL
+eff_pour_tableau = {
+  let data = eff_trie.slice();
+  data.push({ type_eff: "TOTAL", total_groupe: total_eff });
+  return data;
+}
+
+// Affichage du tableau
+Inputs.table(eff_pour_tableau, {
+  columns: ["type_eff", "total_groupe"],
+  header: {
+    type_eff: "Sphère",
+    total_groupe: "Effectifs"
+  }
+})
+```
+
+# Pour en savoir plus
+
+- Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), les graphiques se mettent à jour en allant piocher dynamiquement dans la base du dossier complet au format Parquet.
+- Les deux onglets « Établissements » et « Effectifs » partagent la même sélection géographique (territoire, type de zone, année) définie dans la barre latérale.
+
+```{ojs debug}
+debug_info = db.query(`
+  SELECT count(*) as nb_lignes
+  FROM read_parquet('${chemin_s3}')
+`)
+
+viewof debug_table = Inputs.table(
+  debug_info,
+  { locale: "fr" }
+)
+```

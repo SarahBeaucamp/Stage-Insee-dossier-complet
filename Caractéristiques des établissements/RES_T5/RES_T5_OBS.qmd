@@ -1,0 +1,212 @@
+---
+title: "Particuliers employeurs"
+format: 
+  dashboard:
+    nav-buttons: []
+---
+
+```{ojs config}
+//| output: false
+
+// 1. Créer ou ouvrir une connexion DuckDB
+db = DuckDBClient.of({})
+
+// 2. Définir l'adresse du fichier sur le S3 du SSP Cloud
+chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'
+```
+
+# Recherche géographique {.sidebar width="30%"}
+
+```{ojs annee}
+viewof selection_annee = Inputs.select(
+  [
+    "1968", "1975", "1982", "1990", "1999", "2006", 
+    "2011", "2012", "2013", "2014", "2015", "2016", 
+    "2017", "2018", "2019", "2020", "2021", "2022", 
+    "2023", "2024", "2025", "2026"
+  ],
+  {
+    label: "Année",
+    value: "2024" // Valeur par défaut correspondant à votre code R
+  }
+)
+```
+
+```{ojs type_geo}
+viewof selection_type_geo = Inputs.select(
+  [
+    "Commune", "Unité urbaine 2020", "Bassin de vie 2022", "Intercommunalité-Métropole", 
+    "Aire d’attraction des villes 2020", "Arrondissement", "Zone d’emploi 2020", 
+    "Département", "Arrondissement municipal", "Région", "France", 
+    "Autres", "Collectivité et territoire français d’outre-mer"
+  ],
+  {
+    label: "Type de zone",
+    value: "Commune"
+  }
+)
+```
+
+```{ojs geo}
+//| output: false
+
+// Liste des territoires disponibles dynamiquement
+geo = db.query(`
+  SELECT DISTINCT GEO, GEO_LABEL
+  FROM read_parquet('${chemin_s3}')
+  WHERE ID_TAB = 'RES_T5' AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+  ORDER BY GEO_LABEL
+`)
+```
+
+```{ojs geo2}
+viewof search_geo = Inputs.search(
+  geo, {
+    width: "60%",
+    label: "Territoire",
+    placeholder: "Rechercher un territoire...",
+  })
+
+viewof selection_geo = Inputs.table(
+  search_geo, {
+    multiple: false,
+    value: search_geo.length > 0 ? search_geo[0] : null,
+    rows: 15,
+    columns: ["GEO_LABEL", "GEO"]
+  }
+)
+```
+
+# Visualisation par territoire
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3}
+isGeoSelected = (selection_geo !== null);
+
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+
+// 1. On récupère TOUTES les données de RES_T5 pour la zone et l'année
+employeur_brut = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'RES_T5'
+`)
+: [];
+
+// 2. On classe selon les mêmes correspondances que dans le code R
+// (ici la correspondance n'est pas un simple retrait de préfixe, donc on utilise
+//  un dictionnaire explicite comme dans le case_when du code R)
+correspondance_type = new Map([
+  ["Établissements – Accueil de jeunes enfants", "Accueil de jeunes enfants"],
+  ["Établissements – Aide à domicile ; Accueil de jeunes enfants ; Activités des ménages en tant qu'employeurs de personnel domestique", "Accueil de jeunes enfants et aide domestique"],
+  ["Établissements – Aide à domicile et Activités des ménages en tant qu'employeurs de personnel domestique", "Aide à domicile et Activités des ménages"]
+]);
+
+function classer_type(label) {
+  if (!label) return null;
+  return correspondance_type.has(label) ? correspondance_type.get(label) : null;
+}
+
+// 3. Filtrage et nettoyage
+employeur_mutate = employeur_brut.map(function(d) {
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    type: classer_type(d.TAB_MEASURE_LABEL)
+  };
+}).filter(d => d.type !== null);
+
+// 4. Agrégation des résultats (équivalent group_by + summarise)
+employeur_groupes = d3.rollups(
+  employeur_mutate,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.type; }
+);
+
+employeur_summarise = employeur_groupes.map(function(g) {
+  return { type: g[0], total_groupe: g[1] };
+});
+
+total = d3.sum(employeur_summarise, function(d) { return d.total_groupe; });
+
+employeur = employeur_summarise.map(function(d) {
+  return {
+    type: d.type,
+    total_groupe: d.total_groupe,
+    total: total,
+    part_groupe: total > 0 ? (d.total_groupe / total) * 100 : 0
+  };
+});
+
+// 5. Ordre logique des catégories pour l'affichage (ordre du code R)
+ordre_type = Array.from(correspondance_type.values());
+
+employeur_trie = employeur.sort((a, b) => ordre_type.indexOf(a.type) - ordre_type.indexOf(b.type));
+```
+
+```{ojs result_plot}
+// Histogramme (équivalent ggplot2 : geom_col + labels tronqués)
+Plot.plot({
+  title: isGeoSelected ? `Particuliers employeurs en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  marginBottom: 100,
+  x: { 
+    domain: ordre_type, // Force l'ordre sur l'axe X
+    label: null,
+    tickFormat: (d) => d.length > 18 ? d.slice(0, 18) + "…" : d
+  },
+  y: { 
+    label: "Nombre d'établissements", 
+    grid: true 
+  },
+  marks: [
+    Plot.barY(employeur_trie, { x: "type", y: "total_groupe", fill: "steelblue" }),
+    Plot.ruleY([0])
+  ]
+})
+```
+
+```{ojs result_table}
+// Tri manuellement et ajout de la ligne TOTAL
+employeur_pour_tableau = {
+  let data = employeur_trie.slice();
+  data.push({ type: "TOTAL", total_groupe: total });
+  return data;
+}
+
+// Affichage du tableau
+Inputs.table(employeur_pour_tableau, {
+  columns: ["type", "total_groupe"],
+  header: {
+    type: "Catégorie",
+    total_groupe: "Nombre d'établissements"
+  }
+})
+```
+
+# Pour en savoir plus
+
+- Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), le graphique se met à jour en allant piocher dynamiquement dans la base du dossier complet au format Parquet.
+
+```{ojs debug}
+debug_info = db.query(`
+  SELECT count(*) as nb_lignes
+  FROM read_parquet('${chemin_s3}')
+`)
+
+viewof debug_table = Inputs.table(
+  debug_info,
+  { locale: "fr" }
+)
+```

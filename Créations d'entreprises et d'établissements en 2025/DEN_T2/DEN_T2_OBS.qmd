@@ -1,0 +1,181 @@
+---
+title: "Création d'établissements par secteurs d'activité"
+format: 
+  dashboard:
+    nav-buttons: []
+---
+
+```{ojs config}
+//| output: false
+
+// 1. Créer ou ouvrir une connexion DuckDB
+db = DuckDBClient.of({})
+
+// 2. Définir l'adresse du fichier sur le S3 du SSP Cloud
+chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'
+```
+
+# Recherche géographique {.sidebar width="30%"}
+
+```{ojs annee}
+viewof selection_annee = Inputs.select(
+  [
+    "1968", "1975", "1982", "1990", "1999", "2006", 
+    "2011", "2012", "2013", "2014", "2015", "2016", 
+    "2017", "2018", "2019", "2020", "2021", "2022", 
+    "2023", "2024", "2025", "2026"
+  ],
+  {
+    label: "Année",
+    value: "2025" // Valeur par défaut correspondant à votre code R
+  }
+)
+```
+
+```{ojs type_geo}
+viewof selection_type_geo = Inputs.select(
+  [
+    "Commune", "Unité urbaine 2020", "Bassin de vie 2022", "Intercommunalité-Métropole", 
+    "Aire d’attraction des villes 2020", "Arrondissement", "Zone d’emploi 2020", 
+    "Département", "Arrondissement municipal", "Région", "France", 
+    "Autres", "Collectivité et territoire français d’outre-mer"
+  ],
+  {
+    label: "Type de zone",
+    value: "Commune"
+  }
+)
+```
+
+```{ojs geo}
+//| output: false
+
+// Liste des territoires disponibles dynamiquement pour la table DEN_T2
+geo = db.query(`
+  SELECT DISTINCT GEO, GEO_LABEL
+  FROM read_parquet('${chemin_s3}')
+  WHERE ID_TAB = 'DEN_T2' AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+  ORDER BY GEO_LABEL
+`)
+```
+
+```{ojs geo2}
+viewof search_geo = Inputs.search(
+  geo, {
+    width: "60%",
+    label: "Territoire",
+    placeholder: "Rechercher un territoire...",
+  })
+
+viewof selection_geo = Inputs.table(
+  search_geo, {
+    multiple: false,
+    value: search_geo.length > 0 ? search_geo[0] : null,
+    rows: 15,
+    columns: ["GEO_LABEL", "GEO"]
+  }
+)
+```
+
+# Visualisation par secteur
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3}
+isGeoSelected = (selection_geo !== null);
+
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+
+// 1. On récupère TOUTES les données de DEN_T2 pour la zone
+equip_brut = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'DEN_T2'
+`)
+: [];
+
+// 2. Nettoyage et équivalent du case_when (on extrait le nom du secteur après le tiret)
+function nettoyer_secteur(label) {
+  if (!label) return null;
+  if (!label.includes("Nombre de nouveaux établissements enregistrés – ")) return null;
+  return label.replace("Nombre de nouveaux établissements enregistrés – ", "");
+}
+
+equip_mutate = equip_brut.map(function(d) {
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    secteur: nettoyer_secteur(d.TAB_MEASURE_LABEL)
+  };
+}).filter(d => d.secteur !== null);
+
+// 3. Agrégation des résultats (group_by + summarise)
+equip_groupes = d3.rollups(
+  equip_mutate,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.secteur; }
+);
+
+equip_summarise = equip_groupes.map(function(g) {
+  return { secteur: g[0], total_groupe: g[1] };
+});
+
+total = d3.sum(equip_summarise, function(d) { return d.total_groupe; });
+
+data_clean = equip_summarise.map(function(d) {
+  return {
+    secteur: d.secteur,
+    total_groupe: d.total_groupe,
+    total: total,
+    part_groupe: total > 0 ? (d.total_groupe / total) * 100 : 0
+  };
+});
+```
+
+```{ojs result_plot}
+// Histogramme horizontal (idéal pour la lisibilité des intitulés de secteurs très longs)
+Plot.plot({
+  title: isGeoSelected ? `Créations d'établissements en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  marginLeft: 250, // Marge large pour afficher les textes des secteurs à gauche
+  x: { 
+    label: "Nombre de nouveaux établissements", 
+    grid: true 
+  },
+  y: { 
+    label: null 
+  },
+  marks: [
+    Plot.barX(data_clean, { x: "total_groupe", y: "secteur", fill: "steelblue" }),
+    Plot.ruleX([0])
+  ]
+})
+```
+
+```{ojs result_table}
+// Ajout de la ligne TOTAL pour le tableau
+equip_pour_tableau = {
+  let data = data_clean.slice(); 
+  data.push({ secteur: "TOTAL", total_groupe: total });
+  return data;
+}
+
+// Affichage du tableau
+Inputs.table(equip_pour_tableau, {
+  columns: ["secteur", "total_groupe"],
+  header: {
+    secteur: "Secteur d'activité",
+    total_groupe: "Créations (nombre d'établissements)"
+  }
+})
+```

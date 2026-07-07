@@ -1,0 +1,231 @@
+---
+title: "Indice de peuplement des résidences principales"
+format: 
+  dashboard:
+    nav-buttons: []
+---
+
+```{ojs config}
+//| output: false
+
+// 1. Créer ou ouvrir une connexion DuckDB
+db = DuckDBClient.of({})
+
+// 2. Définir l'adresse du fichier sur le S3 du SSP Cloud
+chemin_s3 = '[https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet](https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet)'
+```
+
+# Recherche géographique {.sidebar width="30%"}
+
+```{ojs annee}
+viewof selection_annee = Inputs.select(
+  [
+    "1968", "1975", "1982", "1990", "1999", "2006", 
+    "2011", "2012", "2013", "2014", "2015", "2016", 
+    "2017", "2018", "2019", "2020", "2021", "2022", 
+    "2023", "2024", "2025", "2026"
+  ],
+  {
+    label: "Année",
+    value: "2022" // Valeur par défaut correspondant au code R
+  }
+)
+```
+
+```{ojs type_geo}
+viewof selection_type_geo = Inputs.select(
+  [
+    "Commune", "Unité urbaine 2020", "Bassin de vie 2022", "Intercommunalité-Métropole", 
+    "Aire d’attraction des villes 2020", "Arrondissement", "Zone d’emploi 2020", 
+    "Département", "Arrondissement municipal", "Région", "France", 
+    "Autres", "Collectivité et territoire français d’outre-mer"
+  ],
+  {
+    label: "Type de zone",
+    value: "Commune"
+  }
+)
+```
+
+```{ojs geo}
+//| output: false
+
+// Liste des territoires disponibles dynamiquement basé sur la table LOG_T4bis
+geo = db.query(`
+  SELECT DISTINCT GEO, GEO_LABEL
+  FROM read_parquet('${chemin_s3}')
+  WHERE ID_TAB = 'LOG_T4bis' AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+  ORDER BY GEO_LABEL
+`)
+```
+
+```{ojs geo2}
+viewof search_geo = Inputs.search(
+  geo, {
+    width: "60%",
+    label: "Territoire",
+    placeholder: "Rechercher un territoire...",
+  })
+
+viewof selection_geo = Inputs.table(
+  search_geo, {
+    multiple: false,
+    value: search_geo.length > 0 ? search_geo[0] : null,
+    rows: 15,
+    columns: ["GEO_LABEL", "GEO"]
+  }
+)
+```
+
+# Visualisation par territoire
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3}
+isGeoSelected = (selection_geo !== null);
+
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+
+// 1. Récupération des données de LOG_T4bis pour la zone et l'année sélectionnées
+taille_occup_brut = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'LOG_T4bis'
+`)
+: [];
+
+// 2. Dictionnaire pour reproduire le 'case_when'
+correspondance_occup = new Map([
+  ["Logements – Occupation dans la norme", "Occupation dans la norme"],
+  ["Logements – Suroccupation modérée", "Suroccupation modérée"],
+  ["Logements – Sous-occupation très accentuée", "Sous-occupation très accentuée"],
+  ["Logements – Suroccupation accentuée", "Suroccupation accentuée"],
+  ["Logements – Sous-occupation modérée", "Sous-occupation modérée"],
+  ["Logements – Sous-occupation accentuée", "Sous-occupation accentuée"]
+]);
+
+function classer_occup(label) {
+  if (!label) return null;
+  return correspondance_occup.has(label) ? correspondance_occup.get(label) : null;
+}
+
+// 3. Application du dictionnaire et filtrage
+taille_occup_mutate = taille_occup_brut.map(function(d) {
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    occupation: classer_occup(d.TAB_MEASURE_LABEL)
+  };
+}).filter(d => d.occupation !== null);
+
+// 4. Agrégation des résultats (group_by + summarise)
+taille_occup_groupes = d3.rollups(
+  taille_occup_mutate,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.occupation; }
+);
+
+taille_occup_summarise = taille_occup_groupes.map(function(g) {
+  return { occupation: g[0], total_groupe: g[1] };
+});
+
+total = d3.sum(taille_occup_summarise, function(d) { return d.total_groupe; });
+
+taille_occup_final = taille_occup_summarise.map(function(d) {
+  return {
+    occupation: d.occupation,
+    total_groupe: d.total_groupe,
+    total: total,
+    part_groupe: total > 0 ? (d.total_groupe / total) * 100 : 0
+  };
+});
+
+// 5. Ordre défini dans le code R (Ordre_occup)
+ordre_occup = [
+  "Sous-occupation très accentuée",
+  "Sous-occupation accentuée",
+  "Sous-occupation modérée",
+  "Occupation dans la norme",
+  "Suroccupation modérée",
+  "Suroccupation accentuée"
+];
+
+// Tri des données pour correspondre à l'ordre imposé (factor levels en R)
+taille_occup_trie = taille_occup_final.sort((a, b) => ordre_occup.indexOf(a.occupation) - ordre_occup.indexOf(b.occupation));
+```
+
+```{ojs result_plot}
+// Diagramme en barres horizontales (équivalent de coord_flip)
+Plot.plot({
+  title: isGeoSelected ? `Indice de peuplement des résidences principales en ${selection_annee}` : "Sélectionnez un territoire",
+  marginLeft: 230, // Espace généreux pour les libellés de l'axe Y
+  marginRight: 40,
+  x: { 
+    label: "Part (%)", 
+    grid: true 
+  },
+  y: { 
+    domain: ordre_occup, // Conserve l'ordre logique défini
+    label: null 
+  },
+  marks: [
+    Plot.barX(taille_occup_trie, { 
+      x: "part_groupe", 
+      y: "occupation", 
+      fill: "steelblue", 
+      title: d => `${d.occupation} : ${d.part_groupe.toFixed(1)}% (${d.total_groupe} logements)` 
+    }),
+    Plot.ruleX([0])
+  ]
+})
+```
+
+```{ojs result_table}
+// Ajout de la ligne TOTAL pour le tableau et formatage
+taille_occup_pour_tableau = {
+  let data = taille_occup_trie.map(d => ({
+    occupation: d.occupation,
+    total_groupe: d.total_groupe,
+    part_groupe_fmt: d.part_groupe.toFixed(2) + " %"
+  }));
+  data.push({ occupation: "TOTAL", total_groupe: total, part_groupe_fmt: "100.00 %" });
+  return data;
+}
+
+// Affichage sous forme de tableau interactif
+Inputs.table(taille_occup_pour_tableau, {
+  columns: ["occupation", "total_groupe", "part_groupe_fmt"],
+  header: {
+    occupation: "Indice de peuplement",
+    total_groupe: "Nombre de logements",
+    part_groupe_fmt: "Part (%)"
+  }
+})
+```
+
+# Pour en savoir plus
+
+- Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), la visualisation interroge directement le fichier Parquet du Dossier Complet Insee avec DuckDB pour extraire dynamiquement les statistiques de l'année sélectionnée.
+
+```{ojs debug}
+debug_info = db.query(`
+  SELECT count(*) as nb_lignes
+  FROM read_parquet('${chemin_s3}')
+`)
+
+viewof debug_table = Inputs.table(
+  debug_info,
+  { locale: "fr" }
+)
+```

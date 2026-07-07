@@ -427,7 +427,6 @@ Inputs.table(equip_pour_tableau3, {
 })
 ```
 
-
 # Pour en savoir plus
 
 - Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), le graphique se met à jour en allant piocher dynamiquement dans la base du dossier complet au format Parquet.

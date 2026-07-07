@@ -1,0 +1,231 @@
+---
+title: "Résidences principales selon la période d'achèvement"
+format: 
+  dashboard:
+    nav-buttons: []
+---
+
+```{ojs config}
+//| output: false
+
+// 1. Créer ou ouvrir une connexion DuckDB
+db = DuckDBClient.of({})
+
+// 2. Définir l'adresse du fichier sur le S3 du SSP Cloud
+chemin_s3 = '[https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet](https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet)'
+```
+
+# Recherche géographique {.sidebar width="30%"}
+
+```{ojs annee}
+viewof selection_annee = Inputs.select(
+  [
+    "1968", "1975", "1982", "1990", "1999", "2006", 
+    "2011", "2012", "2013", "2014", "2015", "2016", 
+    "2017", "2018", "2019", "2020", "2021", "2022", 
+    "2023", "2024", "2025", "2026"
+  ],
+  {
+    label: "Année",
+    value: "2022" // Valeur par défaut correspondant au code R
+  }
+)
+```
+
+```{ojs type_geo}
+viewof selection_type_geo = Inputs.select(
+  [
+    "Commune", "Unité urbaine 2020", "Bassin de vie 2022", "Intercommunalité-Métropole", 
+    "Aire d’attraction des villes 2020", "Arrondissement", "Zone d’emploi 2020", 
+    "Département", "Arrondissement municipal", "Région", "France", 
+    "Autres", "Collectivité et territoire français d’outre-mer"
+  ],
+  {
+    label: "Type de zone",
+    value: "Commune"
+  }
+)
+```
+
+```{ojs geo}
+//| output: false
+
+// Liste des territoires disponibles dynamiquement basé sur la table LOG_T5
+geo = db.query(`
+  SELECT DISTINCT GEO, GEO_LABEL
+  FROM read_parquet('${chemin_s3}')
+  WHERE ID_TAB = 'LOG_T5' AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+  ORDER BY GEO_LABEL
+`)
+```
+
+```{ojs geo2}
+viewof search_geo = Inputs.search(
+  geo, {
+    width: "60%",
+    label: "Territoire",
+    placeholder: "Rechercher un territoire...",
+  })
+
+viewof selection_geo = Inputs.table(
+  search_geo, {
+    multiple: false,
+    value: search_geo.length > 0 ? search_geo[0] : null,
+    rows: 15,
+    columns: ["GEO_LABEL", "GEO"]
+  }
+)
+```
+
+# Visualisation par territoire
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3}
+isGeoSelected = (selection_geo !== null);
+
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+
+// 1. Récupération des données de LOG_T5 pour la zone et l'année sélectionnées
+date_resi_brut = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'LOG_T5'
+`)
+: [];
+
+// 2. Dictionnaire pour reproduire le 'case_when' (avec la gestion du "AAAA")
+correspondance_date = new Map([
+  ["Logements – Résidences principales x Avant 1919", "Avant 1919"],
+  ["Logements – Résidences principales x De 1919 à 1945", "De 1919 à 1945"],
+  ["Logements – Résidences principales x De 1946 à 1970", "De 1946 à 1970"],
+  ["Logements – Résidences principales x De 1971 à 1990", "De 1971 à 1990"],
+  ["Logements – Résidences principales x De 1991 à 2005", "De 1991 à 2005"],
+  ["Logements – Résidences principales x De 2006 à AAAA", "De 2006 à 2020"]
+]);
+
+function classer_date(label) {
+  if (!label) return null;
+  return correspondance_date.has(label) ? correspondance_date.get(label) : null;
+}
+
+// 3. Application du dictionnaire et filtrage
+date_resi_mutate = date_resi_brut.map(function(d) {
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    date: classer_date(d.TAB_MEASURE_LABEL)
+  };
+}).filter(d => d.date !== null);
+
+// 4. Agrégation des résultats (group_by + summarise)
+date_resi_groupes = d3.rollups(
+  date_resi_mutate,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.date; }
+);
+
+date_resi_summarise = date_resi_groupes.map(function(g) {
+  return { date: g[0], total_groupe: g[1] };
+});
+
+total = d3.sum(date_resi_summarise, function(d) { return d.total_groupe; });
+
+date_resi_final = date_resi_summarise.map(function(d) {
+  return {
+    date: d.date,
+    total_groupe: d.total_groupe,
+    total: total,
+    part_groupe: total > 0 ? (d.total_groupe / total) * 100 : 0
+  };
+});
+
+// 5. Ordre défini dans le code R (Ordre_date)
+ordre_date = [
+  "Avant 1919",
+  "De 1919 à 1945",
+  "De 1946 à 1970",
+  "De 1971 à 1990",
+  "De 1991 à 2005",
+  "De 2006 à 2020"
+];
+
+// Tri des données pour correspondre à l'ordre imposé (factor levels en R)
+date_resi_trie = date_resi_final.sort((a, b) => ordre_date.indexOf(a.date) - ordre_date.indexOf(b.date));
+```
+
+```{ojs result_plot}
+// Diagramme en barres horizontales (équivalent de coord_flip)
+Plot.plot({
+  title: isGeoSelected ? `Résidences principales selon la période d'achèvement en ${selection_annee}` : "Sélectionnez un territoire",
+  marginLeft: 130, // Espace pour les libellés de l'axe Y
+  marginRight: 40,
+  x: { 
+    label: "Part (%)", 
+    grid: true 
+  },
+  y: { 
+    domain: ordre_date, // Conserve l'ordre chronologique défini
+    label: null 
+  },
+  marks: [
+    Plot.barX(date_resi_trie, { 
+      x: "part_groupe", 
+      y: "date", 
+      fill: "steelblue", 
+      title: d => `${d.date} : ${d.part_groupe.toFixed(1)}% (${d.total_groupe} logements)` 
+    }),
+    Plot.ruleX([0])
+  ]
+})
+```
+
+```{ojs result_table}
+// Ajout de la ligne TOTAL pour le tableau et formatage
+date_resi_pour_tableau = {
+  let data = date_resi_trie.map(d => ({
+    date: d.date,
+    total_groupe: d.total_groupe,
+    part_groupe_fmt: d.part_groupe.toFixed(2) + " %"
+  }));
+  data.push({ date: "TOTAL", total_groupe: total, part_groupe_fmt: "100.00 %" });
+  return data;
+}
+
+// Affichage sous forme de tableau interactif
+Inputs.table(date_resi_pour_tableau, {
+  columns: ["date", "total_groupe", "part_groupe_fmt"],
+  header: {
+    date: "Période d'achèvement",
+    total_groupe: "Nombre de logements",
+    part_groupe_fmt: "Part (%)"
+  }
+})
+```
+
+# Pour en savoir plus
+
+- Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), la visualisation interroge directement le fichier Parquet du Dossier Complet Insee avec DuckDB pour extraire dynamiquement les statistiques de l'année sélectionnée.
+
+```{ojs debug}
+debug_info = db.query(`
+  SELECT count(*) as nb_lignes
+  FROM read_parquet('${chemin_s3}')
+`)
+
+viewof debug_table = Inputs.table(
+  debug_info,
+  { locale: "fr" }
+)
+```

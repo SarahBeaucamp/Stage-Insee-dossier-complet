@@ -1,0 +1,126 @@
+---
+title: "Évolution dans le temps (DEN_G2)"
+format: 
+  dashboard:
+    nav-buttons: []
+---
+
+```{ojs config}
+//| output: false
+
+// 1. Connexion DuckDB
+db = DuckDBClient.of({})
+
+// 2. Fichier S3
+chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'
+```
+
+# Recherche géographique {.sidebar width="30%"}
+
+```{ojs type_geo}
+viewof selection_type_geo = Inputs.select(
+  [
+    "Commune", "Unité urbaine 2020", "Bassin de vie 2022", "Intercommunalité-Métropole", 
+    "Aire d’attraction des villes 2020", "Arrondissement", "Zone d’emploi 2020", 
+    "Département", "Arrondissement municipal", "Région", "France", 
+    "Autres", "Collectivité et territoire français d’outre-mer"
+  ],
+  { label: "Type de zone", value: "Commune" }
+)
+```
+
+```{ojs geo}
+//| output: false
+
+// Liste des territoires pour DEN_G2
+geo = db.query(`
+  SELECT DISTINCT GEO, GEO_LABEL
+  FROM read_parquet('${chemin_s3}')
+  WHERE ID_TAB = 'DEN_G2' AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+  ORDER BY GEO_LABEL
+`)
+```
+
+```{ojs geo2}
+viewof search_geo = Inputs.search(
+  geo, {
+    width: "60%",
+    label: "Territoire",
+    placeholder: "Rechercher un territoire...",
+  })
+
+viewof selection_geo = Inputs.table(
+  search_geo, {
+    multiple: false,
+    value: search_geo.length > 0 ? search_geo[0] : null,
+    rows: 15,
+    columns: ["GEO_LABEL", "GEO"]
+  }
+)
+```
+
+# Évolution temporelle
+
+## Territoire {height="15%"}
+
+```{ojs geo3}
+isGeoSelected = (selection_geo !== null);
+htl.html`<strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})`
+```
+
+## Résultat
+
+```{ojs data_fetch}
+//| output: false
+
+// Récupération de l'historique sur toutes les années disponibles pour ce territoire
+data_brute = isGeoSelected ? db.query(`
+  SELECT TIME_PERIOD, TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'DEN_G2'
+  ORDER BY TIME_PERIOD
+`) : [];
+
+data_plot = data_brute.map(d => ({
+  annee: d.TIME_PERIOD,
+  label: d.TAB_MEASURE_LABEL,
+  valeur: +d.OBS_VALUE // Forcer le format numérique
+}));
+```
+
+```{ojs plot_evolution}
+// Graphique en ligne + points (l'équivalent parfait de type = "b" en R)
+Plot.plot({
+  title: isGeoSelected ? `Évolution – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  x: { 
+    label: "Année", 
+    tickFormat: "d" // Évite les virgules dans les années (ex: 2,020)
+  },
+  y: { 
+    label: "Valeur (Nombre)", 
+    grid: true 
+  },
+  color: { 
+    legend: true 
+  },
+  marks: [
+    Plot.lineY(data_plot, { x: "annee", y: "valeur", stroke: "label", strokeWidth: 2 }),
+    Plot.dot(data_plot, { x: "annee", y: "valeur", fill: "label", r: 4 })
+  ]
+})
+```
+
+```{ojs table_result}
+// Tableau récapitulatif
+Inputs.table(data_plot, {
+  columns: ["annee", "label", "valeur"],
+  header: { 
+    annee: "Année", 
+    label: "Indicateur", 
+    valeur: "Valeur" 
+  }
+})
+```
+

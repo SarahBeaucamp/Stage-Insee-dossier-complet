@@ -55,7 +55,7 @@ structure_villes_propres <- dossier_complet %>%
     TIME_PERIOD == "2022",
     GEO_OBJECT_LABEL == "Commune",
     GEO == "44109",
-    ID_TAB == "FOR_T2"
+    ID_TAB == "FOR_T2",
     TAB_MEASURE_LABEL %in% c(
       "Population – Moins de 15 ans x Homme",
       "Population – De 15 à 24 ans x Homme",

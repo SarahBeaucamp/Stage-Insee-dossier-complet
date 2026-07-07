@@ -1,0 +1,277 @@
+---
+title: "Répartition des établissements par tranche d'effectifs"
+format: 
+  dashboard:
+    nav-buttons: []
+---
+
+```{ojs config}
+//| output: false
+
+// 1. Créer ou ouvrir une connexion DuckDB
+db = DuckDBClient.of({})
+
+// 2. Définir l'adresse du fichier sur le S3 du SSP Cloud
+chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'
+```
+
+# Recherche géographique {.sidebar width="30%"}
+
+```{ojs annee}
+viewof selection_annee = Inputs.select(
+  [
+    "1968", "1975", "1982", "1990", "1999", "2006", 
+    "2011", "2012", "2013", "2014", "2015", "2016", 
+    "2017", "2018", "2019", "2020", "2021", "2022", 
+    "2023", "2024", "2025", "2026"
+  ],
+  {
+    label: "Année",
+    value: "2024" // Valeur par défaut correspondant à votre code R
+  }
+)
+```
+
+```{ojs type_geo}
+viewof selection_type_geo = Inputs.select(
+  [
+    "Commune", "Unité urbaine 2020", "Bassin de vie 2022", "Intercommunalité-Métropole", 
+    "Aire d’attraction des villes 2020", "Arrondissement", "Zone d’emploi 2020", 
+    "Département", "Arrondissement municipal", "Région", "France", 
+    "Autres", "Collectivité et territoire français d’outre-mer"
+  ],
+  {
+    label: "Type de zone",
+    value: "Commune"
+  }
+)
+```
+
+```{ojs geo}
+//| output: false
+
+// Liste des territoires disponibles dynamiquement
+geo = db.query(`
+  SELECT DISTINCT GEO, GEO_LABEL
+  FROM read_parquet('${chemin_s3}')
+  WHERE ID_TAB = 'RES_G2' AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+  ORDER BY GEO_LABEL
+`)
+```
+
+```{ojs geo2}
+viewof search_geo = Inputs.search(
+  geo, {
+    width: "60%",
+    label: "Territoire",
+    placeholder: "Rechercher un territoire...",
+  })
+
+viewof selection_geo = Inputs.table(
+  search_geo, {
+    multiple: false,
+    value: search_geo.length > 0 ? search_geo[0] : null,
+    rows: 15,
+    columns: ["GEO_LABEL", "GEO"]
+  }
+)
+```
+
+# Visualisation par territoire
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3}
+isGeoSelected = (selection_geo !== null);
+
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+
+// 1. On récupère TOUTES les données de RES_G2 pour la zone et l'année
+sal_act_brut = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'RES_G2'
+`)
+: [];
+
+// 2. On classe selon les mêmes regroupements que le case_when du code R
+// (plusieurs libellés d'origine peuvent pointer vers une même tranche)
+function classer_tranche(label) {
+  if (["Établissements – 1 à 4 salariés", "Établissements – 5 à 9 salariés"].includes(label)) {
+    return "1 à 9 salariés";
+  }
+  if (label === "Établissements – 0 salarié") return "0 salarié";
+  if (label === "Établissements – 10 à 19 salariés") return "10 à 19 salariés";
+  if (label === "Établissements – 20 à 49 salariés") return "20 à 49 salariés";
+  if ([
+    "Établissements – 100 à 199 salariés",
+    "Établissements – 500 salariés et plus",
+    "Établissements – 50 à 99 salariés",
+    "Établissements – 200 à 499 salariés"
+  ].includes(label)) {
+    return "50 salariés et plus";
+  }
+  return null;
+}
+
+// 3. Filtrage et nettoyage
+sal_act_mutate = sal_act_brut.map(function(d) {
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    tranche: classer_tranche(d.TAB_MEASURE_LABEL)
+  };
+}).filter(d => d.tranche !== null);
+
+// 4. Agrégation des résultats (équivalent group_by + summarise)
+sal_act_groupes = d3.rollups(
+  sal_act_mutate,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.tranche; }
+);
+
+sal_act_summarise = sal_act_groupes.map(function(g) {
+  return { tranche: g[0], total_groupe: g[1] };
+});
+
+total = d3.sum(sal_act_summarise, function(d) { return d.total_groupe; });
+
+sal_act = sal_act_summarise.map(function(d) {
+  return {
+    tranche: d.tranche,
+    total_groupe: d.total_groupe,
+    total: total,
+    part_pourcentage: total > 0 ? d.total_groupe / total : 0
+  };
+});
+
+// 5. Ordre logique des tranches pour l'affichage
+ordre_tranche = [
+  "0 salarié",
+  "1 à 9 salariés",
+  "10 à 19 salariés",
+  "20 à 49 salariés",
+  "50 salariés et plus"
+];
+
+sal_act_trie = sal_act.sort((a, b) => ordre_tranche.indexOf(a.tranche) - ordre_tranche.indexOf(b.tranche));
+```
+
+```{ojs result_plot}
+// Diagramme en camembert (équivalent ggplot2 : geom_col + coord_polar)
+result_plot = {
+  const width = 500;
+  const height = 440;
+  const radius = Math.min(width, height - 60) / 2 - 20;
+
+  const color = d3.scaleOrdinal()
+    .domain(ordre_tranche)
+    .range(d3.quantize((t) => d3.interpolateBlues(0.25 + 0.65 * t), ordre_tranche.length).reverse());
+
+  const pie = d3.pie().value((d) => d.total_groupe).sort(null);
+  const arc = d3.arc().innerRadius(0).outerRadius(radius);
+  const labelArc = d3.arc().innerRadius(radius * 0.65).outerRadius(radius * 0.65);
+
+  const arcs = pie(sal_act_trie);
+
+  const svg = d3.create("svg")
+    .attr("viewBox", [-width / 2, -height / 2, width, height])
+    .attr("width", width)
+    .attr("height", height)
+    .attr("style", "max-width: 100%; height: auto; font: 10px sans-serif;");
+
+  svg.append("text")
+    .attr("text-anchor", "middle")
+    .attr("y", -height / 2 + 16)
+    .attr("font-weight", "bold")
+    .attr("font-size", 14)
+    .text(isGeoSelected ? `Répartition des établissements par tranche d'effectifs fin ${selection_annee}` : "Sélectionnez un territoire");
+
+  svg.append("text")
+    .attr("text-anchor", "middle")
+    .attr("y", -height / 2 + 32)
+    .attr("font-style", "italic")
+    .attr("font-size", 11)
+    .text(isGeoSelected ? `${selection_geo.GEO_LABEL} — Source : Recensement Insee 2022` : "");
+
+  svg.append("g")
+    .attr("transform", `translate(0, 15)`)
+    .selectAll("path")
+    .data(arcs)
+    .join("path")
+    .attr("d", arc)
+    .attr("fill", (d) => color(d.data.tranche))
+    .attr("stroke", "white")
+    .attr("stroke-width", 1);
+
+  svg.append("g")
+    .attr("transform", `translate(0, 15)`)
+    .attr("text-anchor", "middle")
+    .selectAll("text")
+    .data(arcs)
+    .join("text")
+    .attr("transform", (d) => `translate(${labelArc.centroid(d)})`)
+    .attr("font-weight", "bold")
+    .attr("font-size", 10)
+    .text((d) => d3.format(".1%")(d.data.part_pourcentage));
+
+  const legend = svg.append("g")
+    .attr("transform", `translate(${width / 2 - 130}, ${-height / 2 + 55})`);
+
+  ordre_tranche.forEach(function(t, i) {
+    const row = legend.append("g").attr("transform", `translate(0, ${i * 16})`);
+    row.append("rect").attr("width", 10).attr("height", 10).attr("fill", color(t));
+    row.append("text").attr("x", 14).attr("y", 9).attr("font-size", 9).text(t);
+  });
+
+  return svg.node();
+}
+```
+
+```{ojs result_table}
+// Tri manuellement et ajout de la ligne TOTAL
+sal_act_pour_tableau = {
+  let data = sal_act_trie.map(function(d) {
+    return { tranche: d.tranche, total_groupe: d.total_groupe };
+  });
+  data.push({ tranche: "TOTAL", total_groupe: total });
+  return data;
+}
+
+// Affichage du tableau
+Inputs.table(sal_act_pour_tableau, {
+  columns: ["tranche", "total_groupe"],
+  header: {
+    tranche: "Tranche d'effectifs",
+    total_groupe: "Nombre d'établissements"
+  }
+})
+```
+
+# Pour en savoir plus
+
+- Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), le graphique se met à jour en allant piocher dynamiquement dans la base du dossier complet au format Parquet.
+- Le camembert est construit directement avec `d3.pie()` / `d3.arc()`, car Observable Plot ne propose pas nativement ce type de graphique (contrairement à `geom_col()` + `coord_polar()` dans ggplot2).
+
+```{ojs debug}
+debug_info = db.query(`
+  SELECT count(*) as nb_lignes
+  FROM read_parquet('${chemin_s3}')
+`)
+
+viewof debug_table = Inputs.table(
+  debug_info,
+  { locale: "fr" }
+)
+```

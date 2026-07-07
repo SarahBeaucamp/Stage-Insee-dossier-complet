@@ -1,0 +1,220 @@
+---
+title: "Établissements économiquement actifs par secteur"
+format: 
+  dashboard:
+    nav-buttons: []
+---
+
+```{ojs config}
+//| output: false
+
+// 1. Créer ou ouvrir une connexion DuckDB
+db = DuckDBClient.of({})
+
+// 2. Définir l'adresse du fichier sur le S3 du SSP Cloud
+chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'
+```
+
+# Recherche géographique {.sidebar width="30%"}
+
+```{ojs annee}
+viewof selection_annee = Inputs.select(
+  [
+    "1968", "1975", "1982", "1990", "1999", "2006", 
+    "2011", "2012", "2013", "2014", "2015", "2016", 
+    "2017", "2018", "2019", "2020", "2021", "2022", 
+    "2023", "2024", "2025", "2026"
+  ],
+  {
+    label: "Année",
+    value: "2023" // Valeur par défaut correspondant à votre code R
+  }
+)
+```
+
+```{ojs type_geo}
+viewof selection_type_geo = Inputs.select(
+  [
+    "Commune", "Unité urbaine 2020", "Bassin de vie 2022", "Intercommunalité-Métropole", 
+    "Aire d’attraction des villes 2020", "Arrondissement", "Zone d’emploi 2020", 
+    "Département", "Arrondissement municipal", "Région", "France", 
+    "Autres", "Collectivité et territoire français d’outre-mer"
+  ],
+  {
+    label: "Type de zone",
+    value: "Commune"
+  }
+)
+```
+
+```{ojs geo}
+//| output: false
+
+// Liste des territoires disponibles dynamiquement
+geo = db.query(`
+  SELECT DISTINCT GEO, GEO_LABEL
+  FROM read_parquet('${chemin_s3}')
+  WHERE ID_TAB = 'DEN_T4' AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+  ORDER BY GEO_LABEL
+`)
+```
+
+```{ojs geo2}
+viewof search_geo = Inputs.search(
+  geo, {
+    width: "60%",
+    label: "Territoire",
+    placeholder: "Rechercher un territoire...",
+  })
+
+viewof selection_geo = Inputs.table(
+  search_geo, {
+    multiple: false,
+    value: search_geo.length > 0 ? search_geo[0] : null,
+    rows: 15,
+    columns: ["GEO_LABEL", "GEO"]
+  }
+)
+```
+
+# Visualisation par territoire
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3}
+isGeoSelected = (selection_geo !== null);
+
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+
+// 1. On récupère TOUTES les données de DEN_T4 pour la zone et l'année
+etab_brut = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'DEN_T4'
+`)
+: [];
+
+// 2. On classe selon les mêmes libellés que dans le code R
+secteurs_retenus = [
+  "Établissements – Industrie manufacturière, industries extractives et autres",
+  "Établissements – Activités immobilières",
+  "Établissements – Activités spécialisées, scientifiques et techniques et activités de services administratifs et de soutien",
+  "Établissements – Construction",
+  "Établissements – Information et communication",
+  "Établissements – Administration publique, enseignement, santé humaine et action sociale",
+  "Établissements – Commerce de gros et de détail, transports, hébergement et restauration",
+  "Établissements – Activités financières et d'assurance",
+  "Établissements – Autres activités de services"
+];
+
+function classer_secteur(label) {
+  if (!label) return null;
+  if (!secteurs_retenus.includes(label)) return null;
+  // On retire le préfixe "Établissements – " pour ne garder que le nom du secteur
+  return label.replace("Établissements – ", "");
+}
+
+// 3. Filtrage et nettoyage
+etab_mutate = etab_brut.map(function(d) {
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    secteur_act: classer_secteur(d.TAB_MEASURE_LABEL)
+  };
+}).filter(d => d.secteur_act !== null);
+
+// 4. Agrégation des résultats (équivalent group_by + summarise)
+etab_groupes = d3.rollups(
+  etab_mutate,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.secteur_act; }
+);
+
+etab_summarise = etab_groupes.map(function(g) {
+  return { secteur_act: g[0], total_groupe: g[1] };
+});
+
+total = d3.sum(etab_summarise, function(d) { return d.total_groupe; });
+
+etab = etab_summarise.map(function(d) {
+  return {
+    secteur_act: d.secteur_act,
+    total_groupe: d.total_groupe,
+    total: total,
+    part_groupe: total > 0 ? (d.total_groupe / total) * 100 : 0
+  };
+});
+
+// 5. Ordre logique des secteurs pour l'affichage (ordre du code R)
+ordre_secteurs = secteurs_retenus.map(function(s) {
+  return s.replace("Établissements – ", "");
+});
+
+etab_trie = etab.sort((a, b) => ordre_secteurs.indexOf(a.secteur_act) - ordre_secteurs.indexOf(b.secteur_act));
+```
+
+```{ojs result_plot}
+// Histogramme (équivalent ggplot2 : geom_col + labels tronqués)
+Plot.plot({
+  title: isGeoSelected ? `Établissements économiquement actifs en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  marginBottom: 100,
+  x: { 
+    domain: ordre_secteurs, // Force l'ordre sur l'axe X
+    label: null,
+    tickFormat: (d) => d.length > 18 ? d.slice(0, 18) + "…" : d
+  },
+  y: { 
+    label: "Nombre d'établissements", 
+    grid: true 
+  },
+  marks: [
+    Plot.barY(etab_trie, { x: "secteur_act", y: "total_groupe", fill: "steelblue" }),
+    Plot.ruleY([0])
+  ]
+})
+```
+
+```{ojs result_table}
+// Tri manuellement et ajout de la ligne TOTAL
+etab_pour_tableau = {
+  let data = etab_trie.slice();
+  data.push({ secteur_act: "TOTAL", total_groupe: total });
+  return data;
+}
+
+// Affichage du tableau
+Inputs.table(etab_pour_tableau, {
+  columns: ["secteur_act", "total_groupe"],
+  header: {
+    secteur_act: "Secteur d'activité",
+    total_groupe: "Nombre d'établissements"
+  }
+})
+```
+
+# Pour en savoir plus
+
+- Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), le graphique se met à jour en allant piocher dynamiquement dans la base du dossier complet au format Parquet.
+
+```{ojs debug}
+debug_info = db.query(`
+  SELECT count(*) as nb_lignes
+  FROM read_parquet('${chemin_s3}')
+`)
+
+viewof debug_table = Inputs.table(
+  debug_info,
+  { locale: "fr" }
+)
+```
