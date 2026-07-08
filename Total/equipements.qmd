@@ -1,0 +1,561 @@
+---
+title: "Equipements et services à la population en 2024"
+format: 
+  dashboard:
+    nav-buttons: []
+include-in-header:
+  - text: |
+      <style>
+        /* ===== Sous-menu "Pages" (sous-thèmes du dashboard actuel) ===== */
+        #quarto-pages-dropdown .dropdown-menu {
+          max-height: 70vh;
+          overflow-y: auto;
+        }
+        #quarto-pages-dropdown .dropdown-menu .dropdown-item {
+          color: #212529 !important;
+        }
+        #quarto-pages-dropdown .dropdown-menu .dropdown-item:hover,
+        #quarto-pages-dropdown .dropdown-menu .dropdown-item:focus {
+          color: #212529 !important;
+          background-color: rgba(0,0,0,0.06);
+        }
+        #quarto-pages-dropdown .dropdown-item.active {
+          font-weight: 600;
+          background-color: #4a6f8a;
+          color: #ffffff !important;
+        }
+
+        /* ===== Menu "Thèmes" (titre transformé en dropdown) ===== */
+        #quarto-dashboard-header .navbar-brand-container {
+          position: relative;
+        }
+        #quarto-dashboard-header .navbar-brand-container {
+          cursor: pointer;
+        }
+        #quarto-dashboard-header .navbar-title::after {
+          content: " ▾";
+          font-size: 0.7em;
+        }
+        #quarto-themes-dropdown-menu {
+          display: none;
+          position: absolute;
+          top: 100%;
+          left: 0;
+          background: #ffffff;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+          min-width: 320px;
+          max-height: 70vh;
+          overflow-y: auto;
+          z-index: 1060;
+          border-radius: 4px;
+          padding: 0.25rem 0;
+        }
+        #quarto-themes-dropdown-menu.show {
+          display: block;
+        }
+        #quarto-themes-dropdown-menu a {
+          display: block;
+          padding: 0.5rem 1rem;
+          color: #212529;
+          text-decoration: none;
+        }
+        #quarto-themes-dropdown-menu a:hover {
+          background-color: rgba(0,0,0,0.06);
+        }
+        #quarto-themes-dropdown-menu a.active {
+          font-weight: 600;
+          background-color: #4a6f8a;
+          color: #ffffff;
+        }
+      </style>
+
+      <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // ----- 1. Sous-menu "Pages" : regroupe les sous-thèmes de la page courante -----
+        var navList = document.querySelector("#quarto-dashboard-header .navbar-nav");
+        if (navList) {
+          var items = Array.from(navList.querySelectorAll(":scope > li.nav-item"));
+          if (items.length > 0) {
+            var dropdownLi = document.createElement("li");
+            dropdownLi.className = "nav-item dropdown";
+            dropdownLi.id = "quarto-pages-dropdown";
+
+            var toggle = document.createElement("a");
+            toggle.className = "nav-link dropdown-toggle";
+            toggle.href = "#";
+            toggle.setAttribute("role", "button");
+            toggle.setAttribute("data-bs-toggle", "dropdown");
+            toggle.setAttribute("aria-expanded", "false");
+            toggle.textContent = "Pages";
+
+            var menu = document.createElement("ul");
+            menu.className = "dropdown-menu dropdown-menu-end";
+
+            dropdownLi.appendChild(toggle);
+            dropdownLi.appendChild(menu);
+
+            items.forEach(function (li) {
+              var link = li.querySelector("a.nav-link");
+              if (link) {
+                link.classList.add("dropdown-item");
+                if (link.classList.contains("active")) {
+                  toggle.textContent = link.textContent.trim();
+                }
+              }
+              menu.appendChild(li);
+            });
+
+            navList.appendChild(dropdownLi);
+
+            menu.addEventListener("click", function (e) {
+              var link = e.target.closest("a.dropdown-item");
+              if (link) toggle.textContent = link.textContent.trim();
+            });
+          }
+        }
+
+        // ----- 2. Menu "Thèmes" : navigation entre les dashboards -----
+        var themes = [
+          { label: "Équipements et services à la population en 2024", href: "equipements.html" },
+          { label: "Tourisme en 2026", href: "tourisme.html" }
+        ];
+
+        var brandContainer = document.querySelector("#quarto-dashboard-header .navbar-brand-container");
+        if (brandContainer) {
+          // Sur les dashboards, le titre n'est pas toujours dans un <a class="navbar-brand">
+          // On cible ce qui existe réellement, avec plusieurs solutions de repli.
+          var clickTarget =
+            brandContainer.querySelector("a.navbar-brand") ||
+            brandContainer.querySelector(".navbar-title") ||
+            brandContainer;
+
+          clickTarget.style.cursor = "pointer";
+
+          var themeMenu = document.createElement("div");
+          themeMenu.id = "quarto-themes-dropdown-menu";
+
+          var currentPage = window.location.pathname.split("/").pop();
+
+          themes.forEach(function (theme) {
+            var a = document.createElement("a");
+            a.href = theme.href;
+            a.textContent = theme.label;
+            if (theme.href === currentPage) a.classList.add("active");
+            themeMenu.appendChild(a);
+          });
+
+          brandContainer.appendChild(themeMenu);
+
+          clickTarget.addEventListener("click", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            themeMenu.classList.toggle("show");
+          });
+
+          document.addEventListener("click", function (e) {
+            if (!brandContainer.contains(e.target)) {
+              themeMenu.classList.remove("show");
+            }
+          });
+        }
+      });
+      </script>
+---
+
+```{ojs config}
+//| output: false
+
+// 1. Créer ou ouvrir une connexion DuckDB (équivalent dbConnect(duckdb(), ...) en R)
+db = DuckDBClient.of({})
+
+// 4. Définir l'adresse de votre fichier sur le S3 du SSP Cloud (équivalent chemin_s3 en R)
+chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'
+```
+
+# Recherche géographique {.sidebar width="30%"}
+
+```{ojs annee}
+viewof selection_annee = Inputs.select(
+  [
+    "1968", "1975", "1982", "1990", "1999", "2006", 
+    "2011", "2012", "2013", "2014", "2015", "2016", 
+    "2017", "2018", "2019", "2020", "2021", "2022", 
+    "2023", "2024", "2025", "2026"
+  ],
+  {
+    label: "Année",
+    value: "2024"
+  }
+)
+```
+
+```{ojs type_geo}
+viewof selection_type_geo = Inputs.select(
+  [
+    "Commune", "Unité urbaine 2020", "Bassin de vie 2022", "Intercommunalité-Métropole", 
+    "Aire d’attraction des villes 2020", "Arrondissement", "Zone d’emploi 2020", 
+    "Département", "Arrondissement municipal", "Région", "France", 
+    "Autres", "Collectivité et territoire français d’outre-mer"
+  ],
+  {
+    label: "Type de zone",
+    value: "Commune"
+  }
+)
+```
+
+```{ojs geo}
+//| output: false
+
+// Liste des territoires disponibles mis à jour dynamiquement selon l'aire urbaine choisie
+geo = db.query(`
+  SELECT DISTINCT GEO, GEO_LABEL
+  FROM read_parquet('${chemin_s3}')
+  WHERE ID_TAB = 'EQUIP_T1' AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+  ORDER BY GEO_LABEL
+`)
+```
+
+```{ojs geo2}
+viewof search_geo = Inputs.search(
+  geo, {
+    width: "60%",
+    label: "Territoire",
+    placeholder: "Rechercher un territoire...",
+  })
+
+viewof selection_geo = Inputs.table(
+  search_geo, {
+    multiple: false,
+    value: search_geo.length > 0 ? search_geo[0] : null,
+    rows: 15,
+    columns: ["GEO_LABEL", "GEO"]
+  }
+)
+```
+
+# Commerces
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3}
+isGeoSelected = (selection_geo !== null);
+
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+
+equip_filtre1 = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'EQUIP_T1'
+    AND TAB_MEASURE_LABEL IN (
+      'Nombre d''équipements – Station-service',
+      'Nombre d''équipements – Station de recharge de véhicules électriques',
+      'Nombre d''équipements – Supermarché et magasin multi-commerce',
+      'Nombre d''équipements – Boulangerie-pâtisserie',
+      'Nombre d''équipements – Supérette',
+      'Nombre d''équipements – Épicerie',
+      'Nombre d''équipements – Hypermarché et grand magasin',
+      'Nombre d''équipements – Coiffure'
+    )
+`)
+: [];
+
+function case_when_equipements(TAB_MEASURE_LABEL) {
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Station-service") return "Station-service";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Station de recharge de véhicules électriques") return "Station de recharge de véhicules électriques";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Boulangerie-pâtisserie") return "Boulangerie-pâtisserie";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Supérette" || TAB_MEASURE_LABEL === "Nombre d'équipements – Épicerie") return "Epicerie, Supérette";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Hypermarché et grand magasin" || TAB_MEASURE_LABEL === "Nombre d'équipements – Supermarché et magasin multi-commerce") return "Grande Surface";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Coiffure") return "Coiffure";
+  return null;
+}
+
+equip_mutate1 = equip_filtre1.map(function(d) {
+  return {
+    TAB_MEASURE_LABEL: d.TAB_MEASURE_LABEL,
+    OBS_VALUE: d.OBS_VALUE,
+    équipements: case_when_equipements(d.TAB_MEASURE_LABEL)
+  };
+});
+
+equip_groupes1 = d3.rollups(
+  equip_mutate1,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.équipements; }
+);
+
+equip_summarise1 = equip_groupes1.map(function(g) {
+  return { équipements: g[0], total_groupe: g[1] };
+});
+
+total1 = d3.sum(equip_summarise1, function(d) { return d.total_groupe; });
+
+equip1 = equip_summarise1.map(function(d) {
+  return {
+    équipements: d.équipements,
+    total_groupe: d.total_groupe,
+    total1: total1,
+    part_groupe: total1 > 0 ? (d.total_groupe / total1) * 100 : 0
+  };
+});
+```
+
+```{ojs result_plot}
+Plot.plot({
+  title: isGeoSelected ? `Nombre de commerces en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  marginBottom: 60,
+  x: { label: null, tickRotate: -20 },
+  y: { label: null, grid: true },
+  marks: [
+    Plot.barY(equip1, { x: "équipements", y: "total_groupe", fill: "steelblue" }),
+    Plot.ruleY([0])
+  ]
+})
+```
+
+```{ojs result_table}
+equip_pour_tableau1 = {
+  let data = equip1.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
+  data.push({ équipements: "TOTAL", total_groupe: total1 });
+  return data;
+}
+
+Inputs.table(equip_pour_tableau1, {
+  columns: ["équipements", "total_groupe"],
+  header: {
+    équipements: "Type de commerce",
+    total_groupe: "Nombre d'établissements"
+  }
+})
+```
+
+# Santé
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3}
+
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+
+equip_filtre2 = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'EQUIP_T2'
+    AND TAB_MEASURE_LABEL IN (
+      'Nombre d''équipements – Infirmier',
+      'Nombre d''équipements – Psychologue',
+      'Nombre d''équipements – Médecin généraliste',
+      'Nombre d''équipements – Chirurgien dentiste',
+      'Nombre d''équipements – Masseur kinésithérapeute',
+      'Nombre d''équipements – Pharmacie'
+    )
+`)
+: [];
+
+function case_when_equipements2(TAB_MEASURE_LABEL) {
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Infirmier") return "Infirmier";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Psychologue") return "Psychologue";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Médecin généraliste") return "Médecin généraliste";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Chirurgien dentiste") return "Chirurgien dentiste";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Masseur kinésithérapeute") return "Masseur kinésithérapeute";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Pharmacie") return "Pharmacie";
+  return null;
+}
+
+equip_mutate2 = equip_filtre2.map(function(d) {
+  return {
+    TAB_MEASURE_LABEL: d.TAB_MEASURE_LABEL,
+    OBS_VALUE: d.OBS_VALUE,
+    équipements: case_when_equipements2(d.TAB_MEASURE_LABEL)
+  };
+});
+
+equip_groupes2 = d3.rollups(
+  equip_mutate2,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.équipements; }
+);
+
+equip_summarise2 = equip_groupes2.map(function(g) {
+  return { équipements: g[0], total_groupe: g[1] };
+});
+
+total2 = d3.sum(equip_summarise2, function(d) { return d.total_groupe; });
+
+equip2 = equip_summarise2.map(function(d) {
+  return {
+    équipements: d.équipements,
+    total_groupe: d.total_groupe,
+    total2: total2,
+    part_groupe: total2 > 0 ? (d.total_groupe / total2) * 100 : 0
+  };
+});
+```
+
+```{ojs result_plot}
+Plot.plot({
+  title: isGeoSelected ? `Nombre de professionnels de santé et de pharmacies en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  marginBottom: 60,
+  x: { label: null, tickRotate: -20 },
+  y: { label: null, grid: true },
+  marks: [
+    Plot.barY(equip2, { x: "équipements", y: "total_groupe", fill: "steelblue" }),
+    Plot.ruleY([0])
+  ]
+})
+```
+
+```{ojs result_table}
+equip_pour_tableau2 = {
+  let data = equip2.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
+  data.push({ équipements: "TOTAL", total_groupe: total2 });
+  return data;
+}
+
+Inputs.table(equip_pour_tableau2, {
+  columns: ["équipements", "total_groupe"],
+  header: {
+    équipements: "Professionnels de santé ou pharmacies",
+    total_groupe: "Nombre"
+  }
+})
+```
+
+# Scolaire
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3}
+
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+
+equip_brut3 = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'EQUIP_T3'
+`)
+: [];
+
+
+function classer_equipements3(label) {
+  if (!label) return null;
+  let txt = label.toLowerCase();
+
+  if (txt.includes("bibliothèque")) return "Bibliothèque";
+  if (txt.includes("collège")) return "Collège";
+  if (txt.includes("maternelle") || txt.includes("primaire") || txt.includes("élémentaire")) return "École";
+  if (txt.includes("général") || txt.includes("technologique")) return "Lycée d'enseignement général et/ou technologique";
+  if (txt.includes("professionnel") || txt.includes("agricole")) return "Lycée d'enseignement professionnel ou agricole";
+  
+  return null; 
+}
+
+equip_mutate3 = equip_brut3.map(function(d) {
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    équipements: classer_equipements3(d.TAB_MEASURE_LABEL)
+  };
+}).filter(d => d.équipements !== null);
+
+equip_groupes3 = d3.rollups(
+  equip_mutate3,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.équipements; }
+);
+
+equip_summarise3 = equip_groupes3.map(function(g) {
+  return { équipements: g[0], total_groupe: g[1] };
+});
+
+total3 = d3.sum(equip_summarise3, function(d) { return d.total_groupe; });
+
+equip3 = equip_summarise3.map(function(d) {
+  return {
+    équipements: d.équipements,
+    total_groupe: d.total_groupe,
+    total3: total3,
+    part_groupe: total3 > 0 ? (d.total_groupe / total3) * 100 : 0
+  };
+});
+```
+
+```{ojs result_plot}
+Plot.plot({
+  title: isGeoSelected ? `Nombre d'établissements scolaires et de bibliothèques en  ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  marginBottom: 60,
+  x: { label: null, tickRotate: -20 },
+  y: { label: null, grid: true },
+  marks: [
+    Plot.barY(equip3, { x: "équipements", y: "total_groupe", fill: "steelblue" }),
+    Plot.ruleY([0])
+  ]
+})
+```
+
+```{ojs result_table}
+equip_pour_tableau3 = {
+  let data = equip3.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
+  data.push({ équipements: "TOTAL", total_groupe: total3 });
+  return data;
+}
+
+Inputs.table(equip_pour_tableau3, {
+  columns: ["équipements", "total_groupe"],
+  header: {
+    équipements: "Établissements scolaires ou culturels",
+    total_groupe: "Nombre"
+  }
+})
+```
+
+# Pour en savoir plus
+
+- Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), le graphique se met à jour en allant piocher dynamiquement dans la base du dossier complet au format Parquet.
+
+```{ojs debug}
+debug_info = db.query(`
+  SELECT count(*) as nb_lignes
+  FROM read_parquet('${chemin_s3}')
+`)
+
+viewof debug_table = Inputs.table(
+  debug_info,
+  { locale: "fr" }
+)
+```

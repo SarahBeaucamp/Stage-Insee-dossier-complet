@@ -1,0 +1,747 @@
+---
+title: "Caractéristiques des établissements fin 2024"
+format: 
+  dashboard:
+    nav-buttons: []
+---
+
+```{ojs config}
+//| output: false
+
+// 1. Créer ou ouvrir une connexion DuckDB
+db = DuckDBClient.of({})
+
+// 2. Définir l'adresse du fichier sur le S3 du SSP Cloud
+chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'
+```
+
+# Recherche géographique {.sidebar width="30%"}
+
+```{ojs annee}
+viewof selection_annee = Inputs.select(
+  [
+    "1968", "1975", "1982", "1990", "1999", "2006", 
+    "2011", "2012", "2013", "2014", "2015", "2016", 
+    "2017", "2018", "2019", "2020", "2021", "2022", 
+    "2023", "2024", "2025", "2026"
+  ],
+  {
+    label: "Année",
+    value: "2024" 
+  }
+)
+```
+
+```{ojs type_geo}
+viewof selection_type_geo = Inputs.select(
+  [
+    "Commune", "Unité urbaine 2020", "Bassin de vie 2022", "Intercommunalité-Métropole", 
+    "Aire d’attraction des villes 2020", "Arrondissement", "Zone d’emploi 2020", 
+    "Département", "Arrondissement municipal", "Région", "France", 
+    "Autres", "Collectivité et territoire français d’outre-mer"
+  ],
+  {
+    label: "Type de zone",
+    value: "Commune"
+  }
+)
+```
+
+```{ojs geo}
+//| output: false
+
+// Liste des territoires disponibles dynamiquement basé sur la table RES_G1
+geo = db.query(`
+  SELECT DISTINCT GEO, GEO_LABEL
+  FROM read_parquet('${chemin_s3}')
+  WHERE ID_TAB = 'RES_G1' AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+  ORDER BY GEO_LABEL
+`)
+```
+
+```{ojs geo2}
+viewof search_geo = Inputs.search(
+  geo, {
+    width: "60%",
+    label: "Territoire",
+    placeholder: "Rechercher un territoire...",
+  })
+
+viewof selection_geo = Inputs.table(
+  search_geo, {
+    multiple: false,
+    value: search_geo.length > 0 ? search_geo[0] : null,
+    rows: 15,
+    columns: ["GEO_LABEL", "GEO"]
+  }
+)
+```
+
+# Établissements par secteur d'activité
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3}
+isGeoSelected = (selection_geo !== null);
+
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+
+// 1. Récupération des données de RES_G1 pour la zone et l'année sélectionnées
+eco_act_brut = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'RES_G1'
+`)
+: [];
+
+// 2. Dictionnaire pour reproduire le 'case_when' du code R (regroupement de la construction et de l'industrie)
+correspondance_secteur = new Map([
+  ["Établissements – Construction", "Industrie manufacturière, industries extractives et autres"],
+  ["Établissements – Industrie manufacturière, industries extractives et autres", "Industrie manufacturière, industries extractives et autres"],
+  ["Établissements – Administration publique, enseignement, santé humaine et action sociale", "Administration publique, enseignement, santé humaine et action sociale"],
+  ["Établissements – Services principalement marchands", "Services principalement marchands"],
+  ["Établissements – Agriculture, sylviculture et pêche", "Agriculture, sylviculture et pêche"]
+]);
+
+function classer_secteur(label) {
+  if (!label) return null;
+  return correspondance_secteur.has(label) ? correspondance_secteur.get(label) : null;
+}
+
+// 3. Application du dictionnaire et filtrage
+eco_act_mutate = eco_act_brut.map(function(d) {
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    secteur_act: classer_secteur(d.TAB_MEASURE_LABEL)
+  };
+}).filter(d => d.secteur_act !== null);
+
+// 4. Agrégation (équivalent group_by + summarise en R)
+eco_act_groupes = d3.rollups(
+  eco_act_mutate,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.secteur_act; }
+);
+
+eco_act_summarise = eco_act_groupes.map(function(g) {
+  return { secteur_act: g[0], total_groupe: g[1] };
+});
+
+total = d3.sum(eco_act_summarise, function(d) { return d.total_groupe; });
+
+eco_act_final = eco_act_summarise.map(function(d) {
+  return {
+    secteur_act: d.secteur_act,
+    total_groupe: d.total_groupe,
+    total: total,
+    part_groupe: total > 0 ? (d.total_groupe / total) * 100 : 0
+  };
+});
+
+// 5. Ordre d'affichage unique (sans les doublons du Map original)
+ordre_secteur = [
+  "Industrie manufacturière, industries extractives et autres",
+  "Administration publique, enseignement, santé humaine et action sociale",
+  "Services principalement marchands",
+  "Agriculture, sylviculture et pêche"
+];
+
+eco_act_trie = eco_act_final.sort((a, b) => ordre_secteur.indexOf(a.secteur_act) - ordre_secteur.indexOf(b.secteur_act));
+```
+
+```{ojs result_plot}
+// Histogramme (équivalent du rendu ggplot, adapté au format Dashboard)
+Plot.plot({
+  title: isGeoSelected ? `Répartition des établissements par secteur d'activité en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  subtitle: "Source : Recensement Insee",
+  marginBottom: 100,
+  x: { 
+    domain: ordre_secteur, // Conserve l'ordre logique défini
+    label: null,
+    tickFormat: (d) => d.length > 25 ? d.slice(0, 25) + "…" : d // Tronque les longs libellés de secteurs
+  },
+  y: { 
+    label: "Nombre d'établissements", 
+    grid: true 
+  },
+  marks: [
+    Plot.barY(eco_act_trie, { x: "secteur_act", y: "total_groupe", fill: "steelblue" }),
+    Plot.ruleY([0])
+  ]
+})
+```
+
+```{ojs result_table}
+// Préparation du tableau avec calcul du TOTAL général
+eco_act_pour_tableau = {
+  let data = eco_act_trie.slice();
+  data.push({ secteur_act: "TOTAL", total_groupe: total });
+  return data;
+}
+
+// Affichage sous forme de tableau interactif
+Inputs.table(eco_act_pour_tableau, {
+  columns: ["secteur_act", "total_groupe"],
+  header: {
+    secteur_act: "Secteur d'activité",
+    total_groupe: "Nombre d'établissements"
+  }
+})
+```
+
+# Établissements par tranche d'effectifs
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3}
+
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+
+// 1. On récupère TOUTES les données de RES_G2 pour la zone et l'année
+sal_act_brut = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'RES_G2'
+`)
+: [];
+
+// 2. On classe selon les mêmes regroupements que le case_when du code R
+// (plusieurs libellés d'origine peuvent pointer vers une même tranche)
+function classer_tranche(label) {
+  if (["Établissements – 1 à 4 salariés", "Établissements – 5 à 9 salariés"].includes(label)) {
+    return "1 à 9 salariés";
+  }
+  if (label === "Établissements – 0 salarié") return "0 salarié";
+  if (label === "Établissements – 10 à 19 salariés") return "10 à 19 salariés";
+  if (label === "Établissements – 20 à 49 salariés") return "20 à 49 salariés";
+  if ([
+    "Établissements – 100 à 199 salariés",
+    "Établissements – 500 salariés et plus",
+    "Établissements – 50 à 99 salariés",
+    "Établissements – 200 à 499 salariés"
+  ].includes(label)) {
+    return "50 salariés et plus";
+  }
+  return null;
+}
+
+// 3. Filtrage et nettoyage
+sal_act_mutate = sal_act_brut.map(function(d) {
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    tranche: classer_tranche(d.TAB_MEASURE_LABEL)
+  };
+}).filter(d => d.tranche !== null);
+
+// 4. Agrégation des résultats (équivalent group_by + summarise)
+sal_act_groupes = d3.rollups(
+  sal_act_mutate,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.tranche; }
+);
+
+sal_act_summarise = sal_act_groupes.map(function(g) {
+  return { tranche: g[0], total_groupe: g[1] };
+});
+
+total_eff = d3.sum(sal_act_summarise, function(d) { return d.total_groupe; });
+
+sal_act = sal_act_summarise.map(function(d) {
+  return {
+    tranche: d.tranche,
+    total_groupe: d.total_groupe,
+    total_eff: total_eff,
+    part_pourcentage: total > 0 ? d.total_groupe / total_eff : 0
+  };
+});
+
+// 5. Ordre logique des tranches pour l'affichage
+ordre_tranche = [
+  "0 salarié",
+  "1 à 9 salariés",
+  "10 à 19 salariés",
+  "20 à 49 salariés",
+  "50 salariés et plus"
+];
+
+sal_act_trie = sal_act.sort((a, b) => ordre_tranche.indexOf(a.tranche) - ordre_tranche.indexOf(b.tranche));
+```
+
+```{ojs result_plot}
+// Diagramme en camembert (équivalent ggplot2 : geom_col + coord_polar)
+result_plot = {
+  const width = 500;
+  const height = 440;
+  const radius = Math.min(width, height - 60) / 2 - 20;
+
+  const color = d3.scaleOrdinal()
+    .domain(ordre_tranche)
+    .range(d3.quantize((t) => d3.interpolateBlues(0.25 + 0.65 * t), ordre_tranche.length).reverse());
+
+  const pie = d3.pie().value((d) => d.total_groupe).sort(null);
+  const arc = d3.arc().innerRadius(0).outerRadius(radius);
+  const labelArc = d3.arc().innerRadius(radius * 0.65).outerRadius(radius * 0.65);
+
+  const arcs = pie(sal_act_trie);
+
+  const svg = d3.create("svg")
+    .attr("viewBox", [-width / 2, -height / 2, width, height])
+    .attr("width", width)
+    .attr("height", height)
+    .attr("style", "max-width: 100%; height: auto; font: 10px sans-serif;");
+
+  svg.append("text")
+    .attr("text-anchor", "middle")
+    .attr("y", -height / 2 + 16)
+    .attr("font-weight", "bold")
+    .attr("font-size", 14)
+    .text(isGeoSelected ? `Répartition des établissements par tranche d'effectifs fin ${selection_annee}` : "Sélectionnez un territoire");
+
+  svg.append("text")
+    .attr("text-anchor", "middle")
+    .attr("y", -height / 2 + 32)
+    .attr("font-style", "italic")
+    .attr("font-size", 11)
+    .text(isGeoSelected ? `${selection_geo.GEO_LABEL} — Source : Recensement Insee 2022` : "");
+
+  svg.append("g")
+    .attr("transform", `translate(0, 15)`)
+    .selectAll("path")
+    .data(arcs)
+    .join("path")
+    .attr("d", arc)
+    .attr("fill", (d) => color(d.data.tranche))
+    .attr("stroke", "white")
+    .attr("stroke-width", 1);
+
+  svg.append("g")
+    .attr("transform", `translate(0, 15)`)
+    .attr("text-anchor", "middle")
+    .selectAll("text")
+    .data(arcs)
+    .join("text")
+    .attr("transform", (d) => `translate(${labelArc.centroid(d)})`)
+    .attr("font-weight", "bold")
+    .attr("font-size", 10)
+    .text((d) => d3.format(".1%")(d.data.part_pourcentage));
+
+  const legend = svg.append("g")
+    .attr("transform", `translate(${width / 2 - 130}, ${-height / 2 + 55})`);
+
+  ordre_tranche.forEach(function(t, i) {
+    const row = legend.append("g").attr("transform", `translate(0, ${i * 16})`);
+    row.append("rect").attr("width", 10).attr("height", 10).attr("fill", color(t));
+    row.append("text").attr("x", 14).attr("y", 9).attr("font-size", 9).text(t);
+  });
+
+  return svg.node();
+}
+```
+
+```{ojs result_table}
+// Tri manuellement et ajout de la ligne TOTAL
+sal_act_pour_tableau = {
+  let data = sal_act_trie.map(function(d) {
+    return { tranche: d.tranche, total_groupe: d.total_groupe };
+  });
+  data.push({ tranche: "TOTAL", total_groupe: total_eff });
+  return data;
+}
+
+// Affichage du tableau
+Inputs.table(sal_act_pour_tableau, {
+  columns: ["tranche", "total_groupe"],
+  header: {
+    tranche: "Tranche d'effectifs",
+    total_groupe: "Nombre d'établissements"
+  }
+})
+```
+
+# Établissements selon les sphères de l'économie
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3_etab}
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat établissements
+
+```{ojs etab_calc}
+//| output: false
+
+// 1. On récupère TOUTES les données de RES_T3 pour la zone et l'année
+etab_brut = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'RES_T3'
+`)
+: [];
+
+// 2. On classe selon les mêmes correspondances que dans le code R (etab_spheres)
+correspondance_etab = new Map([
+  ["Établissements – Ensemble hors particuliers employeurs x Établissements appartenant à la sphère productive", "Sphère productive"],
+  ["Établissements – Fonction Publique x Établissements appartenant à la sphère présentielle", "Sphère présentielle, domaine public"],
+  ["Établissements – Ensemble hors particuliers employeurs x Établissements appartenant à la sphère présentielle", "Sphère présentielle"],
+  ["Établissements – Fonction Publique x Établissements appartenant à la sphère productive", "Sphère productive, domaine public"]
+]);
+
+function classer_etab(label) {
+  if (!label) return null;
+  return correspondance_etab.has(label) ? correspondance_etab.get(label) : null;
+}
+
+// 3. Filtrage et nettoyage
+etab_mutate = etab_brut.map(function(d) {
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    type_etab: classer_etab(d.TAB_MEASURE_LABEL)
+  };
+}).filter(d => d.type_etab !== null);
+
+// 4. Agrégation des résultats (équivalent group_by + summarise)
+etab_groupes = d3.rollups(
+  etab_mutate,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.type_etab; }
+);
+
+etab_summarise = etab_groupes.map(function(g) {
+  return { type_etab: g[0], total_groupe: g[1] };
+});
+
+total_etab = d3.sum(etab_summarise, function(d) { return d.total_groupe; });
+
+etab_spheres = etab_summarise.map(function(d) {
+  return {
+    type_etab: d.type_etab,
+    total_groupe: d.total_groupe,
+    total: total_etab,
+    part_groupe: total_etab > 0 ? (d.total_groupe / total_etab) * 100 : 0
+  };
+});
+
+// 5. Ordre logique des catégories pour l'affichage (ordre du code R)
+ordre_etab = Array.from(correspondance_etab.values());
+
+etab_trie = etab_spheres.sort((a, b) => ordre_etab.indexOf(a.type_etab) - ordre_etab.indexOf(b.type_etab));
+```
+
+```{ojs etab_plot}
+// Histogramme (équivalent ggplot2 : geom_col + labels tronqués)
+Plot.plot({
+  title: isGeoSelected ? `Établissements selon les sphères de l'économie fin ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  marginBottom: 100,
+  x: { 
+    domain: ordre_etab, // Force l'ordre sur l'axe X
+    label: null,
+    tickFormat: (d) => d.length > 18 ? d.slice(0, 18) + "…" : d
+  },
+  y: { 
+    label: "Nombre d'établissements", 
+    grid: true 
+  },
+  marks: [
+    Plot.barY(etab_trie, { x: "type_etab", y: "total_groupe", fill: "steelblue" }),
+    Plot.ruleY([0])
+  ]
+})
+```
+
+```{ojs etab_table}
+// Tri manuellement et ajout de la ligne TOTAL
+etab_pour_tableau = {
+  let data = etab_trie.slice();
+  data.push({ type_etab: "TOTAL", total_groupe: total_etab });
+  return data;
+}
+
+// Affichage du tableau
+Inputs.table(etab_pour_tableau, {
+  columns: ["type_etab", "total_groupe"],
+  header: {
+    type_etab: "Sphère",
+    total_groupe: "Nombre d'établissements"
+  }
+})
+```
+
+# Effectifs selon les sphères de l'économie
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3_eff}
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat effectifs
+
+```{ojs eff_calc}
+//| output: false
+
+// 1. On récupère TOUTES les données de RES_T3 pour la zone et l'année
+eff_brut = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'RES_T3'
+`)
+: [];
+
+// 2. On classe selon les mêmes correspondances que dans le code R (eff_spheres)
+correspondance_eff = new Map([
+  ["Effectifs présents la dernière semaine de décembre – Ensemble hors particuliers employeurs x Établissements appartenant à la sphère productive", "Sphère productive"],
+  ["Effectifs présents la dernière semaine de décembre – Fonction Publique x Établissements appartenant à la sphère présentielle", "Sphère présentielle, domaine public"],
+  ["Effectifs présents la dernière semaine de décembre – Ensemble hors particuliers employeurs x Établissements appartenant à la sphère présentielle", "Sphère présentielle"],
+  ["Effectifs présents la dernière semaine de décembre – Fonction Publique x Établissements appartenant à la sphère productive", "Sphère productive, domaine public"]
+]);
+
+function classer_eff(label) {
+  if (!label) return null;
+  return correspondance_eff.has(label) ? correspondance_eff.get(label) : null;
+}
+
+// 3. Filtrage et nettoyage
+eff_mutate = eff_brut.map(function(d) {
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    type_eff: classer_eff(d.TAB_MEASURE_LABEL)
+  };
+}).filter(d => d.type_eff !== null);
+
+// 4. Agrégation des résultats (équivalent group_by + summarise)
+eff_groupes = d3.rollups(
+  eff_mutate,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.type_eff; }
+);
+
+eff_summarise = eff_groupes.map(function(g) {
+  return { type_eff: g[0], total_groupe: g[1] };
+});
+
+total_eff = d3.sum(eff_summarise, function(d) { return d.total_groupe; });
+
+eff_spheres = eff_summarise.map(function(d) {
+  return {
+    type_eff: d.type_eff,
+    total_groupe: d.total_groupe,
+    total: total_eff,
+    part_groupe: total_eff > 0 ? (d.total_groupe / total_eff) * 100 : 0
+  };
+});
+
+// 5. Ordre logique des catégories pour l'affichage (ordre du code R)
+ordre_eff = Array.from(correspondance_eff.values());
+
+eff_trie = eff_spheres.sort((a, b) => ordre_eff.indexOf(a.type_eff) - ordre_eff.indexOf(b.type_eff));
+```
+
+```{ojs eff_plot}
+// Histogramme (équivalent ggplot2 : geom_col + labels tronqués)
+Plot.plot({
+  title: isGeoSelected ? `Effectifs selon les sphères de l'économie fin ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  marginBottom: 100,
+  x: { 
+    domain: ordre_eff, // Force l'ordre sur l'axe X
+    label: null,
+    tickFormat: (d) => d.length > 18 ? d.slice(0, 18) + "…" : d
+  },
+  y: { 
+    label: "Effectifs (dernière semaine de décembre)", 
+    grid: true 
+  },
+  marks: [
+    Plot.barY(eff_trie, { x: "type_eff", y: "total_groupe", fill: "steelblue" }),
+    Plot.ruleY([0])
+  ]
+})
+```
+
+```{ojs eff_table}
+// Tri manuellement et ajout de la ligne TOTAL
+eff_pour_tableau = {
+  let data = eff_trie.slice();
+  data.push({ type_eff: "TOTAL", total_groupe: total_eff });
+  return data;
+}
+
+// Affichage du tableau
+Inputs.table(eff_pour_tableau, {
+  columns: ["type_eff", "total_groupe"],
+  header: {
+    type_eff: "Sphère",
+    total_groupe: "Effectifs"
+  }
+})
+```
+
+#  Particuliers employeurs en 2024
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3}
+
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+
+// 1. On récupère TOUTES les données de RES_T5 pour la zone et l'année
+employeur_brut = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'RES_T5'
+`)
+: [];
+
+// 2. On classe selon les mêmes correspondances que dans le code R
+// (ici la correspondance n'est pas un simple retrait de préfixe, donc on utilise
+//  un dictionnaire explicite comme dans le case_when du code R)
+correspondance_type = new Map([
+  ["Établissements – Accueil de jeunes enfants", "Accueil de jeunes enfants"],
+  ["Établissements – Aide à domicile ; Accueil de jeunes enfants ; Activités des ménages en tant qu'employeurs de personnel domestique", "Accueil de jeunes enfants et aide domestique"],
+  ["Établissements – Aide à domicile et Activités des ménages en tant qu'employeurs de personnel domestique", "Aide à domicile et Activités des ménages"]
+]);
+
+function classer_type(label) {
+  if (!label) return null;
+  return correspondance_type.has(label) ? correspondance_type.get(label) : null;
+}
+
+// 3. Filtrage et nettoyage
+employeur_mutate = employeur_brut.map(function(d) {
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    type: classer_type(d.TAB_MEASURE_LABEL)
+  };
+}).filter(d => d.type !== null);
+
+// 4. Agrégation des résultats (équivalent group_by + summarise)
+employeur_groupes = d3.rollups(
+  employeur_mutate,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.type; }
+);
+
+employeur_summarise = employeur_groupes.map(function(g) {
+  return { type: g[0], total_groupe: g[1] };
+});
+
+total_emp = d3.sum(employeur_summarise, function(d) { return d.total_groupe; });
+
+employeur = employeur_summarise.map(function(d) {
+  return {
+    type: d.type,
+    total_groupe: d.total_groupe,
+    total_emp: total_emp,
+    part_groupe: total_emp > 0 ? (d.total_groupe / total_emp) * 100 : 0
+  };
+});
+
+// 5. Ordre logique des catégories pour l'affichage (ordre du code R)
+ordre_type = Array.from(correspondance_type.values());
+
+employeur_trie = employeur.sort((a, b) => ordre_type.indexOf(a.type) - ordre_type.indexOf(b.type));
+```
+
+```{ojs result_plot}
+// Histogramme (équivalent ggplot2 : geom_col + labels tronqués)
+Plot.plot({
+  title: isGeoSelected ? `Particuliers employeurs en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  marginBottom: 100,
+  x: { 
+    domain: ordre_type, // Force l'ordre sur l'axe X
+    label: null,
+    tickFormat: (d) => d.length > 18 ? d.slice(0, 18) + "…" : d
+  },
+  y: { 
+    label: "Nombre d'établissements", 
+    grid: true 
+  },
+  marks: [
+    Plot.barY(employeur_trie, { x: "type", y: "total_groupe", fill: "steelblue" }),
+    Plot.ruleY([0])
+  ]
+})
+```
+
+```{ojs result_table}
+// Tri manuellement et ajout de la ligne TOTAL
+employeur_pour_tableau = {
+  let data = employeur_trie.slice();
+  data.push({ type: "TOTAL", total_groupe: total_emp });
+  return data;
+}
+
+// Affichage du tableau
+Inputs.table(employeur_pour_tableau, {
+  columns: ["type", "total_groupe"],
+  header: {
+    type: "Catégorie",
+    total_groupe: "Nombre d'établissements"
+  }
+})
+```
+
+
+# Pour en savoir plus
+
+- Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), le graphique et le tableau se mettent à jour dynamiquement en exécutant des requêtes SQL DuckDB à la volée sur le fichier Parquet hébergé sur le S3 du SSP Cloud.
+
+```{ojs debug}
+debug_info = db.query(`
+  SELECT count(*) as nb_lignes
+  FROM read_parquet('${chemin_s3}')
+`)
+
+viewof debug_table = Inputs.table(
+  debug_info,
+  { locale: "fr" }
+)
+```
