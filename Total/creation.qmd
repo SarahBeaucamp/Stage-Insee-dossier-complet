@@ -294,3 +294,418 @@ Inputs.table(equip_mutate, {
   header: { TIME_PERIOD: "Année", societe: "Type", OBS_VALUE: "Valeur" }
 })
 ```
+
+# Évolution des créations d'établissements
+
+## Territoire {height="15%"}
+
+```{ojs geo3}
+htl.html`<strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})`
+```
+
+## Résultat
+
+```{ojs data_fetch}
+//| output: false
+
+// Récupération de l'historique sur toutes les années disponibles pour ce territoire
+data_brute = isGeoSelected ? db.query(`
+  SELECT TIME_PERIOD, TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'DEN_G2'
+  ORDER BY TIME_PERIOD
+`) : [];
+
+data_plot = data_brute.map(d => ({
+  annee: d.TIME_PERIOD,
+  label: d.TAB_MEASURE_LABEL,
+  valeur: +d.OBS_VALUE // Forcer le format numérique
+}));
+```
+
+```{ojs plot_evolution}
+// Graphique en ligne + points (l'équivalent parfait de type = "b" en R)
+Plot.plot({
+  title: isGeoSelected ? `Évolution – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  x: { 
+    label: "Année", 
+    tickFormat: "d" // Évite les virgules dans les années (ex: 2,020)
+  },
+  y: { 
+    label: "Valeur (Nombre)", 
+    grid: true 
+  },
+  color: { 
+    legend: true 
+  },
+  marks: [
+    Plot.lineY(data_plot, { x: "annee", y: "valeur", stroke: "label", strokeWidth: 2 }),
+    Plot.dot(data_plot, { x: "annee", y: "valeur", fill: "label", r: 4 })
+  ]
+})
+```
+
+```{ojs table_result}
+// Tableau récapitulatif
+Inputs.table(data_plot, {
+  columns: ["annee", "label", "valeur"],
+  header: { 
+    annee: "Année", 
+    label: "Indicateur", 
+    valeur: "Valeur" 
+  }
+})
+```
+
+# Créations d'établissements par secteur d'activité en 2025
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3}
+
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+
+// 1. On récupère TOUTES les données de DEN_T2 pour la zone
+equip_brut5 = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'DEN_T2'
+`)
+: [];
+
+// 2. Nettoyage et équivalent du case_when (on extrait le nom du secteur après le tiret)
+function nettoyer_secteur5(label) {
+  if (!label) return null;
+  if (!label.includes("Nombre de nouveaux établissements enregistrés – ")) return null;
+  return label.replace("Nombre de nouveaux établissements enregistrés – ", "");
+}
+
+equip_mutate5 = equip_brut5.map(function(d) {
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    secteur5: nettoyer_secteur5(d.TAB_MEASURE_LABEL)
+  };
+}).filter(d => d.secteur5 !== null);
+
+// 3. Agrégation des résultats (group_by + summarise)
+equip_groupes5 = d3.rollups(
+  equip_mutate5,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.secteur5; }
+);
+
+equip_summarise5 = equip_groupes5.map(function(g) {
+  return { secteur5: g[0], total_groupe: g[1] };
+});
+
+total5 = d3.sum(equip_summarise5, function(d) { return d.total_groupe; });
+
+data_clean5 = equip_summarise5.map(function(d) {
+  return {
+    secteur5: d.secteur5,
+    total_groupe: d.total_groupe,
+    total5: total5,
+    part_groupe: total5 > 0 ? (d.total_groupe / total5) * 100 : 0
+  };
+});
+```
+
+```{ojs result_plot}
+// Histogramme horizontal (idéal pour la lisibilité des intitulés de secteurs très longs)
+Plot.plot({
+  title: isGeoSelected ? `Créations d'établissements en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  marginLeft: 250, // Marge large pour afficher les textes des secteurs à gauche
+  x: { 
+    label: "Nombre de nouveaux établissements", 
+    grid: true 
+  },
+  y: { 
+    label: null 
+  },
+  marks: [
+    Plot.barX(data_clean5, { x: "total_groupe", y: "secteur5", fill: "steelblue" }),
+    Plot.ruleX([0])
+  ]
+})
+```
+
+```{ojs result_table}
+// Ajout de la ligne TOTAL pour le tableau
+equip_pour_tableau5 = {
+  let data5 = data_clean5.slice(); 
+  data5.push({ secteur5: "TOTAL", total_groupe: total5 });
+  return data5;
+}
+
+// Affichage du tableau
+Inputs.table(equip_pour_tableau5, {
+  columns: ["secteur5", "total_groupe"],
+  header: {
+    secteur5: "Secteur d'activité",
+    total_groupe: "Créations (nombre d'établissements)"
+  }
+})
+```
+
+# Nombre d'unités légales économiquement actives en 2023
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3}
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+
+// 1. On récupère TOUTES les données de DEN_T3 pour la zone et l'année
+eco_act_brut = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'DEN_T3'
+`)
+: [];
+
+// 2. On classe selon les mêmes libellés que dans le code R
+secteurs_retenus = [
+  "Nombre d'unités légales – Industrie manufacturière, industries extractives et autres",
+  "Nombre d'unités légales – Activités immobilières",
+  "Nombre d'unités légales – Activités spécialisées, scientifiques et techniques et activités de services administratifs et de soutien",
+  "Nombre d'unités légales – Construction",
+  "Nombre d'unités légales – Information et communication",
+  "Nombre d'unités légales – Administration publique, enseignement, santé humaine et action sociale",
+  "Nombre d'unités légales – Commerce de gros et de détail, transports, hébergement et restauration",
+  "Nombre d'unités légales – Activités financières et d'assurance",
+  "Nombre d'unités légales – Autres activités de services"
+];
+
+function classer_secteur(label) {
+  if (!label) return null;
+  if (!secteurs_retenus.includes(label)) return null;
+  // On retire le préfixe "Nombre d'unités légales – " pour ne garder que le nom du secteur
+  return label.replace("Nombre d'unités légales – ", "");
+}
+
+// 3. Filtrage et nettoyage
+eco_act_mutate = eco_act_brut.map(function(d) {
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    secteur_act: classer_secteur(d.TAB_MEASURE_LABEL)
+  };
+}).filter(d => d.secteur_act !== null);
+
+// 4. Agrégation des résultats (équivalent group_by + summarise)
+eco_act_groupes = d3.rollups(
+  eco_act_mutate,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.secteur_act; }
+);
+
+eco_act_summarise = eco_act_groupes.map(function(g) {
+  return { secteur_act: g[0], total_groupe: g[1] };
+});
+
+total = d3.sum(eco_act_summarise, function(d) { return d.total_groupe; });
+
+eco_act = eco_act_summarise.map(function(d) {
+  return {
+    secteur_act: d.secteur_act,
+    total_groupe: d.total_groupe,
+    total: total,
+    part_groupe: total > 0 ? (d.total_groupe / total) * 100 : 0
+  };
+});
+
+// 5. Ordre logique des secteurs pour l'affichage (ordre du code R)
+ordre_secteurs = secteurs_retenus.map(function(s) {
+  return s.replace("Nombre d'unités légales – ", "");
+});
+
+eco_act_trie = eco_act.sort((a, b) => ordre_secteurs.indexOf(a.secteur_act) - ordre_secteurs.indexOf(b.secteur_act));
+```
+
+```{ojs result_plot}
+// Histogramme (équivalent ggplot2 : geom_col + labels tronqués)
+Plot.plot({
+  title: isGeoSelected ? `Unités légales économiquement actives en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  marginBottom: 100,
+  x: { 
+    domain: ordre_secteurs, // Force l'ordre sur l'axe X
+    label: null,
+    tickFormat: (d) => d.length > 18 ? d.slice(0, 18) + "…" : d
+  },
+  y: { 
+    label: "Nombre d'unités légales", 
+    grid: true 
+  },
+  marks: [
+    Plot.barY(eco_act_trie, { x: "secteur_act", y: "total_groupe", fill: "steelblue" }),
+    Plot.ruleY([0])
+  ]
+})
+```
+
+```{ojs result_table}
+// Tri manuellement et ajout de la ligne TOTAL
+eco_act_pour_tableau = {
+  let data = eco_act_trie.slice();
+  data.push({ secteur_act: "TOTAL", total_groupe: total });
+  return data;
+}
+
+// Affichage du tableau
+Inputs.table(eco_act_pour_tableau, {
+  columns: ["secteur_act", "total_groupe"],
+  header: {
+    secteur_act: "Secteur d'activité",
+    total_groupe: "Nombre d'unités légales"
+  }
+})
+```
+
+# Nombre d'établissements économiquement actifs en 2023
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3}
+
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+
+// 1. On récupère TOUTES les données de DEN_T4 pour la zone et l'année
+etab_brut = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'DEN_T4'
+`)
+: [];
+
+// 2. On classe selon les mêmes libellés que dans le code R
+secteurs_retenus1 = [
+  "Établissements – Industrie manufacturière, industries extractives et autres",
+  "Établissements – Activités immobilières",
+  "Établissements – Activités spécialisées, scientifiques et techniques et activités de services administratifs et de soutien",
+  "Établissements – Construction",
+  "Établissements – Information et communication",
+  "Établissements – Administration publique, enseignement, santé humaine et action sociale",
+  "Établissements – Commerce de gros et de détail, transports, hébergement et restauration",
+  "Établissements – Activités financières et d'assurance",
+  "Établissements – Autres activités de services"
+];
+
+function classer_secteur1(label) {
+  if (!label) return null;
+  if (!secteurs_retenus1.includes(label)) return null;
+  // On retire le préfixe "Établissements – " pour ne garder que le nom du secteur
+  return label.replace("Établissements – ", "");
+}
+
+// 3. Filtrage et nettoyage
+etab_mutate = etab_brut.map(function(d) {
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    secteur_act1: classer_secteur1(d.TAB_MEASURE_LABEL)
+  };
+}).filter(d => d.secteur_act1 !== null);
+
+// 4. Agrégation des résultats (équivalent group_by + summarise)
+etab_groupes = d3.rollups(
+  etab_mutate,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.secteur_act1; }
+);
+
+etab_summarise = etab_groupes.map(function(g) {
+  return { secteur_act1: g[0], total_groupe: g[1] };
+});
+
+total4 = d3.sum(etab_summarise, function(d) { return d.total_groupe; });
+
+etab = etab_summarise.map(function(d) {
+  return {
+    secteur_act1: d.secteur_act1,
+    total_groupe: d.total_groupe,
+    total4: total4,
+    part_groupe: total4 > 0 ? (d.total_groupe / total4) * 100 : 0
+  };
+});
+
+// 5. Ordre logique des secteurs pour l'affichage (ordre du code R)
+ordre_secteurs1 = secteurs_retenus1.map(function(s) {
+  return s.replace("Établissements – ", "");
+});
+
+etab_trie = etab.sort((a, b) => ordre_secteurs1.indexOf(a.secteur_act) - ordre_secteurs1.indexOf(b.secteur_act));
+```
+
+```{ojs result_plot}
+// Histogramme (équivalent ggplot2 : geom_col + labels tronqués)
+Plot.plot({
+  title: isGeoSelected ? `Établissements économiquement actifs en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  marginBottom: 100,
+  x: { 
+    domain: ordre_secteurs1, // Force l'ordre sur l'axe X
+    label: null,
+    tickFormat: (d) => d.length > 18 ? d.slice(0, 18) + "…" : d
+  },
+  y: { 
+    label: "Nombre d'établissements", 
+    grid: true 
+  },
+  marks: [
+    Plot.barY(etab_trie, { x: "secteur_act", y: "total_groupe", fill: "steelblue" }),
+    Plot.ruleY([0])
+  ]
+})
+```
+
+```{ojs result_table}
+// Tri manuellement et ajout de la ligne TOTAL
+etab_pour_tableau = {
+  let data = etab_trie.slice();
+  data.push({ secteur_act1: "TOTAL", total_groupe: total4 });
+  return data;
+}
+
+// Affichage du tableau
+Inputs.table(etab_pour_tableau, {
+  columns: ["secteur_act", "total_groupe"],
+  header: {
+    secteur_act1: "Secteur d'activité",
+    total_groupe: "Nombre d'établissements"
+  }
+})
+```
