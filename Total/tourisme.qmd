@@ -117,7 +117,8 @@ include-in-header:
         // ----- 2. Menu "Thèmes" : navigation entre les dashboards -----
         var themes = [
           { label: "Équipements et services à la population en 2024", href: "equipements.html" },
-          { label: "Tourisme en 2026", href: "tourisme.html" }
+          { label: "Tourisme en 2026", href: "tourisme.html" },
+          { label: "Créations d'entreprises et d'établissements en 2025", href: "creation.qmd"}
         ];
 
         var brandContainer = document.querySelector("#quarto-dashboard-header .navbar-brand-container");
