@@ -1,0 +1,586 @@
+---
+title: "Famille"
+format: 
+  dashboard:
+    nav-buttons: []
+include-in-header:
+  - text: |
+      <style>
+        /* ===== Sous-menu "Pages" (sous-thèmes du dashboard actuel) ===== */
+        #quarto-pages-dropdown .dropdown-menu {
+          max-height: 70vh;
+          overflow-y: auto;
+        }
+        #quarto-pages-dropdown .dropdown-menu .dropdown-item {
+          color: #212529 !important;
+        }
+        #quarto-pages-dropdown .dropdown-menu .dropdown-item:hover,
+        #quarto-pages-dropdown .dropdown-menu .dropdown-item:focus {
+          color: #212529 !important;
+          background-color: rgba(0,0,0,0.06);
+        }
+        #quarto-pages-dropdown .dropdown-item.active {
+          font-weight: 600;
+          background-color: #4a6f8a;
+          color: #ffffff !important;
+        }
+
+        /* ===== Menu "Thèmes" (titre transformé en dropdown) ===== */
+        #quarto-dashboard-header .navbar-brand-container {
+          position: relative;
+        }
+        #quarto-dashboard-header .navbar-brand-container {
+          cursor: pointer;
+        }
+        #quarto-dashboard-header .navbar-title::after {
+          content: " ▾";
+          font-size: 0.7em;
+        }
+        #quarto-themes-dropdown-menu {
+          display: none;
+          position: absolute;
+          top: 100%;
+          left: 0;
+          background: #ffffff;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+          min-width: 320px;
+          max-height: 70vh;
+          overflow-y: auto;
+          z-index: 1060;
+          border-radius: 4px;
+          padding: 0.25rem 0;
+        }
+        #quarto-themes-dropdown-menu.show {
+          display: block;
+        }
+        #quarto-themes-dropdown-menu a {
+          display: block;
+          padding: 0.5rem 1rem;
+          color: #212529;
+          text-decoration: none;
+        }
+        #quarto-themes-dropdown-menu a:hover {
+          background-color: rgba(0,0,0,0.06);
+        }
+        #quarto-themes-dropdown-menu a.active {
+          font-weight: 600;
+          background-color: #4a6f8a;
+          color: #ffffff;
+        }
+      </style>
+
+      <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // ----- 1. Sous-menu "Pages" : regroupe les sous-thèmes de la page courante -----
+        var navList = document.querySelector("#quarto-dashboard-header .navbar-nav");
+        if (navList) {
+          var items = Array.from(navList.querySelectorAll(":scope > li.nav-item"));
+          if (items.length > 0) {
+            var dropdownLi = document.createElement("li");
+            dropdownLi.className = "nav-item dropdown";
+            dropdownLi.id = "quarto-pages-dropdown";
+
+            var toggle = document.createElement("a");
+            toggle.className = "nav-link dropdown-toggle";
+            toggle.href = "#";
+            toggle.setAttribute("role", "button");
+            toggle.setAttribute("data-bs-toggle", "dropdown");
+            toggle.setAttribute("aria-expanded", "false");
+            toggle.textContent = "Pages";
+
+            var menu = document.createElement("ul");
+            menu.className = "dropdown-menu dropdown-menu-end";
+
+            dropdownLi.appendChild(toggle);
+            dropdownLi.appendChild(menu);
+
+            items.forEach(function (li) {
+              var link = li.querySelector("a.nav-link");
+              if (link) {
+                link.classList.add("dropdown-item");
+                if (link.classList.contains("active")) {
+                  toggle.textContent = link.textContent.trim();
+                }
+              }
+              menu.appendChild(li);
+            });
+
+            navList.appendChild(dropdownLi);
+
+            menu.addEventListener("click", function (e) {
+              var link = e.target.closest("a.dropdown-item");
+              if (link) toggle.textContent = link.textContent.trim();
+            });
+          }
+        }
+
+        // ----- 2. Menu "Thèmes" : navigation entre les dashboards -----
+        var themes = [
+          { label: "Équipements et services à la population en 2024", href: "equipements.html" },
+          { label: "Tourisme en 2026", href: "tourisme.html" },
+          { label: "Créations d'entreprises et d'établissements en 2025", href: "creation.qmd"},
+          { label: "Logement en 2023", href: "logement.qmd"},
+          { label: "Famille", href: "famille.qmd"}
+        ];
+        
+        var brandContainer = document.querySelector("#quarto-dashboard-header .navbar-brand-container");
+        if (brandContainer) {
+          // Sur les dashboards, le titre n'est pas toujours dans un <a class="navbar-brand">
+          // On cible ce qui existe réellement, avec plusieurs solutions de repli.
+          var clickTarget =
+            brandContainer.querySelector("a.navbar-brand") ||
+            brandContainer.querySelector(".navbar-title") ||
+            brandContainer;
+
+          clickTarget.style.cursor = "pointer";
+
+          var themeMenu = document.createElement("div");
+          themeMenu.id = "quarto-themes-dropdown-menu";
+
+          var currentPage = window.location.pathname.split("/").pop();
+
+          themes.forEach(function (theme) {
+            var a = document.createElement("a");
+            a.href = theme.href;
+            a.textContent = theme.label;
+            if (theme.href === currentPage) a.classList.add("active");
+            themeMenu.appendChild(a);
+          });
+
+          brandContainer.appendChild(themeMenu);
+
+          clickTarget.addEventListener("click", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            themeMenu.classList.toggle("show");
+          });
+
+          document.addEventListener("click", function (e) {
+            if (!brandContainer.contains(e.target)) {
+              themeMenu.classList.remove("show");
+            }
+          });
+        }
+      });
+      </script>
+---
+
+```{ojs config}
+//| output: false
+
+// 1. Créer ou ouvrir une connexion DuckDB (équivalent dbConnect(duckdb(), ...) en R)
+db = DuckDBClient.of({})
+
+// 4. Définir l'adresse de votre fichier sur le S3 du SSP Cloud (équivalent chemin_s3 en R)
+chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'
+```
+
+# Recherche géographique {.sidebar width="30%"}
+
+```{ojs annee}
+viewof selection_annee = Inputs.select(
+  [
+    "1968", "1975", "1982", "1990", "1999", "2006", 
+    "2011", "2012", "2013", "2014", "2015", "2016", 
+    "2017", "2018", "2019", "2020", "2021", "2022", 
+    "2023", "2024", "2025", "2026"
+  ],
+  {
+    label: "Année",
+    value: "2024"
+  }
+)
+```
+
+```{ojs type_geo}
+viewof selection_type_geo = Inputs.select(
+  [
+    "Commune", "Unité urbaine 2020", "Bassin de vie 2022", "Intercommunalité-Métropole", 
+    "Aire d’attraction des villes 2020", "Arrondissement", "Zone d’emploi 2020", 
+    "Département", "Arrondissement municipal", "Région", "France", 
+    "Autres", "Collectivité et territoire français d’outre-mer"
+  ],
+  {
+    label: "Type de zone",
+    value: "Commune"
+  }
+)
+```
+
+```{ojs geo}
+//| output: false
+
+// Liste des territoires disponibles mis à jour dynamiquement selon l'aire urbaine choisie
+geo = db.query(`
+  SELECT DISTINCT GEO, GEO_LABEL
+  FROM read_parquet('${chemin_s3}')
+  WHERE ID_TAB = 'EQUIP_T1' AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+  ORDER BY GEO_LABEL
+`)
+```
+
+```{ojs geo2}
+viewof search_geo = Inputs.search(
+  geo, {
+    width: "60%",
+    label: "Territoire",
+    placeholder: "Rechercher un territoire...",
+  })
+
+viewof selection_geo = Inputs.table(
+  search_geo, {
+    multiple: false,
+    value: search_geo.length > 0 ? search_geo[0] : null,
+    rows: 15,
+    columns: ["GEO_LABEL", "GEO"]
+  }
+)
+```
+
+# Composition des familles
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3}
+isGeoSelected = (selection_geo !== null);
+
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+
+// 1. On récupère TOUTES les données de FAM_T3 (zéro risque de plantage SQL)
+equip_brut = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'FAM_T3'
+`)
+: [];
+
+// 2. On classe avec des mots-clés robustes
+function classer_familles(label) {
+  if (!label) return null;
+  let txt = label.toLowerCase();
+  
+  if (txt.includes("père seul")) return "Hommes seuls avec enfant(s)";
+  if (txt.includes("mère seule")) return "Femmes seules avec enfant(s)";
+  if (txt.includes("couple sans enfant")) return "Couple sans enfant(s)";
+  if (txt.includes("couple avec enfant")) return "Couple avec enfant(s)";
+  
+  return null; // Ignore le reste
+}
+
+// 3. Filtrage et nettoyage
+equip_mutate = equip_brut.map(function(d) {
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    Situation_f: classer_familles(d.TAB_MEASURE_LABEL)
+  };
+}).filter(d => d.Situation_f !== null);
+
+// 4. Agrégation des résultats
+equip_groupes = d3.rollups(
+  equip_mutate,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.Situation_f; }
+);
+
+equip_summarise = equip_groupes.map(function(g) {
+  return { Situation_f: g[0], total_groupe: g[1] };
+});
+
+total = d3.sum(equip_summarise, function(d) { return d.total_groupe; });
+
+equip = equip_summarise.map(function(d) {
+  return {
+    Situation_f: d.Situation_f,
+    total_groupe: d.total_groupe,
+    total: total,
+    part_groupe: total > 0 ? (d.total_groupe / total) * 100 : 0
+  };
+});
+```
+
+```{ojs result_plot}
+// Construction du camembert D3 sur-mesure (Reproduction fidèle de votre ggplot)
+camembert = {
+  if (!isGeoSelected || total === 0) return htl.html`<div>Sélectionnez un territoire ou aucune donnée disponible pour cette année.</div>`;
+  
+  const width = 600;
+  const height = 350;
+  const radius = Math.min(width, height) / 2 - 20;
+
+  const arc = d3.arc().innerRadius(0).outerRadius(radius);
+  const pie = d3.pie().value(d => d.total_groupe).sort(null);
+
+  // Palette de couleurs "Blues" de ggplot
+  const color = d3.scaleOrdinal()
+    .domain([
+      "Couple avec enfant(s)", 
+      "Couple sans enfant(s)", 
+      "Femmes seules avec enfant(s)", 
+      "Hommes seuls avec enfant(s)"
+    ])
+    .range(["#08519c", "#3182bd", "#6baed6", "#bdd7e7"]);
+
+  const svg = d3.create("svg")
+    .attr("viewBox", [0, 0, width, height])
+    .style("font-family", "sans-serif");
+
+  // Centre du camembert positionné à gauche
+  const gPie = svg.append("g")
+    .attr("transform", `translate(${width / 3}, ${height / 2})`);
+
+  // Tranches du camembert
+  gPie.selectAll("path")
+    .data(pie(equip))
+    .join("path")
+    .attr("fill", d => color(d.data.Situation_f))
+    .attr("stroke", "white")
+    .attr("stroke-width", "1.5px")
+    .attr("d", arc)
+    .append("title")
+    .text(d => `${d.data.Situation_f}: ${d.data.total_groupe}`);
+
+  // Étiquettes de pourcentages au centre des tranches
+  gPie.selectAll("text")
+    .data(pie(equip))
+    .join("text")
+    .attr("transform", d => `translate(${arc.centroid(d)})`)
+    .attr("text-anchor", "middle")
+    .attr("fill", d => d.data.part_groupe < 15 ? "black" : "white") // Texte noir si tranche très claire/petite
+    .attr("font-size", "12px")
+    .attr("font-weight", "bold")
+    // Affiche uniquement si c'est assez grand pour ne pas baver (ex: > 2%)
+    .text(d => d.data.part_groupe >= 2 ? `${d.data.part_groupe.toFixed(1)}%` : "");
+
+  // Légende positionnée à droite
+  const legend = svg.append("g")
+    .attr("transform", `translate(${width * 0.65}, ${height / 2 - 60})`);
+    
+  const categories = color.domain();
+  categories.forEach((cat, i) => {
+    const row = legend.append("g").attr("transform", `translate(0, ${i * 25})`);
+    row.append("rect").attr("width", 15).attr("height", 15).attr("fill", color(cat)).attr("rx", 2);
+    row.append("text").attr("x", 25).attr("y", 12).attr("font-size", "12px").text(cat);
+  });
+
+  return svg.node();
+}
+
+// Emballage HTML avec titre (comme dans ggplot)
+htl.html`
+  <div style="display: flex; flex-direction: column; align-items: center;">
+    <h3 style="margin-bottom: 0px; font-family: sans-serif; font-weight: bold;">Composition des familles</h3>
+    <span style="font-size: 13px; font-style: italic; font-family: sans-serif; color: #555; margin-bottom: 20px;">
+      Source : Recensement Insee ${selection_annee} – ${isGeoSelected ? selection_geo.GEO_LABEL : ""}
+    </span>
+    ${camembert}
+  </div>
+`
+```
+
+```{ojs result_table}
+// 1. Tri manuellement et ajout de la ligne TOTAL
+equip_pour_tableau = {
+  let data = equip.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
+  data.push({ Situation_f: "TOTAL", total_groupe: total });
+  return data;
+}
+
+// Affichage du tableau
+Inputs.table(equip_pour_tableau, {
+  columns: ["Situation_f", "total_groupe"],
+  header: {
+    Situation_f: "Situation familiale",
+    total_groupe: "Nombre"
+  }
+})
+```
+
+# Familles selon le nombre d'enfants âgés de moins de 25 ans
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3}
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+
+// 1. On récupère TOUTES les données de FAM_T4 pour la zone (zéro risque SQL)
+equip_brut = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'FAM_T4'
+`)
+: [];
+
+// 2. On classe avec des mots-clés robustes
+function classer_enfants(label) {
+  if (!label) return null;
+  let txt = label.toLowerCase();
+  
+  if (txt.includes("aucun enfant")) return "Aucun enfant";
+  if (txt.includes("1 enfant")) return "1 enfant";
+  if (txt.includes("2 enfants")) return "2 enfants";
+  if (txt.includes("3 enfants")) return "3 enfants";
+  if (txt.includes("4 enfants") || txt.includes("plus")) return "4 enfants ou plus";
+  
+  return null; // Ignore le reste
+}
+
+// 3. Filtrage et nettoyage
+equip_mutate = equip_brut.map(function(d) {
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    enfants: classer_enfants(d.TAB_MEASURE_LABEL)
+  };
+}).filter(d => d.enfants !== null);
+
+// 4. Agrégation des résultats
+equip_groupes = d3.rollups(
+  equip_mutate,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.enfants; }
+);
+
+equip_summarise = equip_groupes.map(function(g) {
+  return { enfants: g[0], total_groupe: g[1] };
+});
+
+total = d3.sum(equip_summarise, function(d) { return d.total_groupe; });
+
+equip = equip_summarise.map(function(d) {
+  return {
+    enfants: d.enfants,
+    total_groupe: d.total_groupe,
+    total: total,
+    part_groupe: total > 0 ? (d.total_groupe / total) * 100 : 0
+  };
+});
+
+// 5. On force l'ordre logique (comme les 'levels' du factor en R)
+ordre_niveaux = ["Aucun enfant", "1 enfant", "2 enfants", "3 enfants", "4 enfants ou plus"];
+equip_trie = equip.sort((a, b) => ordre_niveaux.indexOf(a.enfants) - ordre_niveaux.indexOf(b.enfants));
+```
+
+```{ojs result_plot}
+// Construction du camembert D3 sur-mesure
+camembert = {
+  if (!isGeoSelected || total === 0) return htl.html`<div>Sélectionnez un territoire ou aucune donnée disponible pour cette année.</div>`;
+  
+  const width = 600;
+  const height = 350;
+  const radius = Math.min(width, height) / 2 - 20;
+
+  const arc = d3.arc().innerRadius(0).outerRadius(radius);
+  // sort(null) permet de conserver notre tri personnalisé ci-dessus
+  const pie = d3.pie().value(d => d.total_groupe).sort(null);
+
+  // Palette de couleurs "Blues" étalée sur 5 teintes
+  const color = d3.scaleOrdinal()
+    .domain(ordre_niveaux)
+    .range(["#eff3ff", "#bdd7e7", "#6baed6", "#3182bd", "#08519c"]);
+
+  const svg = d3.create("svg")
+    .attr("viewBox", [0, 0, width, height])
+    .style("font-family", "sans-serif");
+
+  // Centre du camembert positionné à gauche
+  const gPie = svg.append("g")
+    .attr("transform", `translate(${width / 3}, ${height / 2})`);
+
+  // Tranches du camembert
+  gPie.selectAll("path")
+    .data(pie(equip_trie))
+    .join("path")
+    .attr("fill", d => color(d.data.enfants))
+    .attr("stroke", "white")
+    .attr("stroke-width", "1.5px")
+    .attr("d", arc)
+    .append("title")
+    .text(d => `${d.data.enfants}: ${d.data.total_groupe}`);
+
+  // Étiquettes de pourcentages au centre des tranches
+  gPie.selectAll("text")
+    .data(pie(equip_trie))
+    .join("text")
+    .attr("transform", d => `translate(${arc.centroid(d)})`)
+    .attr("text-anchor", "middle")
+    // Le texte de "Aucun enfant" (clair) sera noir, les autres (foncés) seront blancs
+    .attr("fill", d => d.data.enfants === "Aucun enfant" || d.data.enfants === "1 enfant" ? "black" : "white") 
+    .attr("font-size", "12px")
+    .attr("font-weight", "bold")
+    // Affiche uniquement si c'est assez grand (ex: > 3%)
+    .text(d => d.data.part_groupe >= 3 ? `${d.data.part_groupe.toFixed(1)}%` : "");
+
+  // Légende positionnée à droite
+  const legend = svg.append("g")
+    .attr("transform", `translate(${width * 0.60}, ${height / 2 - 80})`);
+    
+  // Titre de la légende
+  legend.append("text")
+    .attr("x", 0)
+    .attr("y", -10)
+    .attr("font-weight", "bold")
+    .attr("font-size", "12px")
+    .text("Nombre d'enfants de moins de 25 ans");
+
+  const categories = color.domain();
+  categories.forEach((cat, i) => {
+    const row = legend.append("g").attr("transform", `translate(0, ${i * 25 + 10})`);
+    row.append("rect").attr("width", 15).attr("height", 15).attr("fill", color(cat)).attr("rx", 2);
+    row.append("text").attr("x", 25).attr("y", 12).attr("font-size", "12px").text(cat);
+  });
+
+  return svg.node();
+}
+
+// Emballage HTML avec titre (comme dans ggplot)
+htl.html`
+  <div style="display: flex; flex-direction: column; align-items: center;">
+    <h3 style="margin-bottom: 0px; font-family: sans-serif; font-weight: bold;">Familles selon le nombre d'enfants âgés de moins de 25 ans</h3>
+    <span style="font-size: 13px; font-style: italic; font-family: sans-serif; color: #555; margin-bottom: 20px;">
+      Source : Recensement Insee ${selection_annee} – ${isGeoSelected ? selection_geo.GEO_LABEL : ""}
+    </span>
+    ${camembert}
+  </div>
+`
+```
+
+```{ojs result_table}
+// 1. Tri manuellement selon le volume pour le tableau (ou on pourrait garder l'ordre logique, mais restons cohérents avec les tableaux précédents)
+equip_pour_tableau = {
+  let data = equip_trie.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
+  data.push({ enfants: "TOTAL", total_groupe: total });
+  return data;
+}
+
+// Affichage du tableau
+Inputs.table(equip_pour_tableau, {
+  columns: ["enfants", "total_groupe"],
+  header: {
+    enfants: "Nombre d'enfants",
+    total_groupe: "Nombre de familles"
+  }
+})
+```

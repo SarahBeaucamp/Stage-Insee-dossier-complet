@@ -7,7 +7,7 @@ con <- DBI::dbConnect(duckdb::duckdb(), ":memory:")
 
 # Liste des territoires, avec un ordre d'affichage privilégié
 geo <- DBI::dbGetQuery(con, glue::glue(
-  "SELECT DISTINCT GEO_OBJECT, GEO, GEO_LABEL, ",
+  "SELECT DISTINCT GEO_OBJECT, GEO_OBJECT_LABEL, GEO, GEO_LABEL, ",
   "CASE GEO_OBJECT
     WHEN 'COM' THEN 1
     WHEN 'EPCI' THEN 2
