@@ -1,0 +1,210 @@
+---
+title: "Base du dossier complet"
+format: 
+  dashboard:
+    nav-buttons: []
+resources:
+  - geo.csv
+---
+
+```{ojs config}
+//| output: false
+
+// 1. Créer ou ouvrir une connexion DuckDB (équivalent dbConnect(duckdb(), ...) en R)
+db = DuckDBClient.of({})
+
+// 4. Définir l'adresse de votre fichier sur le S3 du SSP Cloud (équivalent chemin_s3 en R)
+chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'
+```
+
+# Recherche géographique {.sidebar width="30%"}
+
+```{ojs annee}
+viewof selection_annee = Inputs.select(
+  [
+    "1968", "1975", "1982", "1990", "1999", "2006", 
+    "2011", "2012", "2013", "2014", "2015", "2016", 
+    "2017", "2018", "2019", "2020", "2021", "2022", 
+    "2023", "2024", "2025", "2026"
+  ],
+  {
+    label: "Année",
+    value: "2024"
+  }
+)
+```
+
+```{ojs type_geo}
+viewof selection_type_geo = Inputs.select(
+  [
+    "Commune", "Unité urbaine 2020", "Bassin de vie 2022", "Intercommunalité-Métropole", 
+    "Aire d’attraction des villes 2020", "Arrondissement", "Zone d’emploi 2020", 
+    "Département", "Arrondissement municipal", "Région", "France", 
+    "Autres", "Collectivité et territoire français d’outre-mer"
+  ],
+  {
+    label: "Type de zone",
+    value: "Commune"
+  }
+)
+```
+
+```{ojs geo}
+//| output: false
+
+// On ne va plus chercher les territoires disponibles dans le parquet à chaque
+// changement de type de zone (requête DISTINCT coûteuse) : on charge une bonne
+// fois pour toutes le fichier CSV précalculé (cf. votre script de préparation,
+// sur le même principe que preparer_conf_geo.R), qui doit contenir au moins
+// les colonnes GEO, GEO_LABEL et GEO_OBJECT_LABEL pour ID_TAB = 'EQUIP_T1'.
+geo_complet = await FileAttachment("geo.csv").csv()
+
+// Filtrage local (rapide, en JS) selon le type de zone sélectionné
+geo = geo_complet.filter(d => d.GEO_OBJECT_LABEL === selection_type_geo)
+```
+
+```{ojs geo2}
+viewof search_geo = Inputs.search(
+  geo, {
+    width: "60%",
+    label: "Territoire",
+    placeholder: "Rechercher un territoire...",
+  })
+
+viewof selection_geo = Inputs.table(
+  search_geo, {
+    multiple: false,
+    value: search_geo.length > 0 ? search_geo[0] : null,
+    rows: 15,
+    columns: ["GEO_LABEL", "GEO", "GEO_OBJECT"]
+  }
+)
+```
+
+# Visualisation par territoire
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3}
+isGeoSelected = (selection_geo !== null);
+
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+
+// Cette requête reste "en direct" sur le parquet : contrairement à la liste
+// des territoires (fixe), les valeurs des équipements dépendent de la
+// combinaison année / type de zone / territoire choisie par l'utilisateur,
+// donc on ne peut pas la précalculer une fois pour toutes.
+equip_filtre1 = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'EQUIP_T1'
+    AND TAB_MEASURE_LABEL IN (
+      'Nombre d''équipements – Station-service',
+      'Nombre d''équipements – Station de recharge de véhicules électriques',
+      'Nombre d''équipements – Supermarché et magasin multi-commerce',
+      'Nombre d''équipements – Boulangerie-pâtisserie',
+      'Nombre d''équipements – Supérette',
+      'Nombre d''équipements – Épicerie',
+      'Nombre d''équipements – Hypermarché et grand magasin',
+      'Nombre d''équipements – Coiffure'
+    )
+`)
+: [];
+
+function case_when_equipements(TAB_MEASURE_LABEL) {
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Station-service") return "Station-service";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Station de recharge de véhicules électriques") return "Station de recharge de véhicules électriques";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Boulangerie-pâtisserie") return "Boulangerie-pâtisserie";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Supérette" || TAB_MEASURE_LABEL === "Nombre d'équipements – Épicerie") return "Epicerie, Supérette";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Hypermarché et grand magasin" || TAB_MEASURE_LABEL === "Nombre d'équipements – Supermarché et magasin multi-commerce") return "Grande Surface";
+  if (TAB_MEASURE_LABEL === "Nombre d'équipements – Coiffure") return "Coiffure";
+  return null;
+}
+
+equip_mutate1 = equip_filtre1.map(function(d) {
+  return {
+    TAB_MEASURE_LABEL: d.TAB_MEASURE_LABEL,
+    OBS_VALUE: d.OBS_VALUE,
+    équipements: case_when_equipements(d.TAB_MEASURE_LABEL)
+  };
+});
+
+equip_groupes1 = d3.rollups(
+  equip_mutate1,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.équipements; }
+);
+
+equip_summarise1 = equip_groupes1.map(function(g) {
+  return { équipements: g[0], total_groupe: g[1] };
+});
+
+total1 = d3.sum(equip_summarise1, function(d) { return d.total_groupe; });
+
+equip1 = equip_summarise1.map(function(d) {
+  return {
+    équipements: d.équipements,
+    total_groupe: d.total_groupe,
+    total1: total1,
+    part_groupe: total1 > 0 ? (d.total_groupe / total1) * 100 : 0
+  };
+});
+```
+
+```{ojs result_plot}
+// Histogramme (équivalent ggplot2)
+Plot.plot({
+  title: isGeoSelected ? `Nombre de commerces en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  marginBottom: 60,
+  x: { label: null, tickRotate: -20 },
+  y: { label: null, grid: true },
+  marks: [
+    Plot.barY(equip1, { x: "équipements", y: "total_groupe", fill: "steelblue" }),
+    Plot.ruleY([0])
+  ]
+})
+```
+
+```{ojs result_table}
+equip_pour_tableau1 = {
+  let data = equip1.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
+  data.push({ équipements: "TOTAL", total_groupe: total1 });
+  return data;
+}
+
+Inputs.table(equip_pour_tableau1, {
+  columns: ["équipements", "total_groupe"],
+  header: {
+    équipements: "Type de commerce",
+    total_groupe: "Nombre d'établissements"
+  }
+})
+```
+
+# Pour en savoir plus
+
+- Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/) : la liste des territoires est chargée une seule fois depuis un fichier CSV précalculé (`input/geo.csv`), tandis que le graphique et le tableau vont piocher dynamiquement dans la base du dossier complet au format Parquet uniquement pour le territoire sélectionné.
+
+```{ojs debug}
+debug_info = db.query(`
+  SELECT count(*) as nb_lignes
+  FROM read_parquet('${chemin_s3}')
+`)
+
+viewof debug_table = Inputs.table(
+  debug_info,
+  { locale: "fr" }
+)
+```
