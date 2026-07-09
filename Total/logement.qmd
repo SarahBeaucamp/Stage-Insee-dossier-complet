@@ -236,3 +236,446 @@ viewof selection_geo = Inputs.table(
   }
 )
 ```
+
+# Types de logements
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3}
+isGeoSelected = (selection_geo !== null);
+
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+
+// 1. On récupère TOUTES les données de FAM_T3 (zéro risque de plantage SQL)
+equip_brut = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'LOG_T2'
+`)
+: [];
+
+// 2. On classe avec des mots-clés robustes
+function classer_familles(label) {
+  if (!label) return null;
+  let txt = label.toLowerCase();
+  
+  if (txt.includes("Maison")) return "Maison";
+  if (txt.includes("Appartement")) return "Appartement";
+  if (txt.includes("Autres")) return "Autres";
+  
+  return null; // Ignore le reste
+}
+
+// 3. Filtrage et nettoyage
+equip_mutate = equip_brut.map(function(d) {
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    Situation_f: classer_familles(d.TAB_MEASURE_LABEL)
+  };
+}).filter(d => d.Situation_f !== null);
+
+// 4. Agrégation des résultats
+equip_groupes = d3.rollups(
+  equip_mutate,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.Situation_f; }
+);
+
+equip_summarise = equip_groupes.map(function(g) {
+  return { Situation_f: g[0], total_groupe: g[1] };
+});
+
+total = d3.sum(equip_summarise, function(d) { return d.total_groupe; });
+
+equip = equip_summarise.map(function(d) {
+  return {
+    Situation_f: d.Situation_f,
+    total_groupe: d.total_groupe,
+    total: total,
+    part_groupe: total > 0 ? (d.total_groupe / total) * 100 : 0
+  };
+});
+```
+
+```{ojs result_plot}
+// Construction du camembert D3 sur-mesure (Reproduction fidèle de votre ggplot)
+camembert = {
+  if (!isGeoSelected || total === 0) return htl.html`<div>Sélectionnez un territoire ou aucune donnée disponible pour cette année.</div>`;
+  
+  const width = 600;
+  const height = 350;
+  const radius = Math.min(width, height) / 2 - 20;
+
+  const arc = d3.arc().innerRadius(0).outerRadius(radius);
+  const pie = d3.pie().value(d => d.total_groupe).sort(null);
+
+  // Palette de couleurs "Blues" de ggplot
+  const color = d3.scaleOrdinal()
+    .domain([
+      "Maisons", 
+      "Appartements", 
+      "Autres"
+    ])
+    .range(["#08519c", "#3182bd", "#6baed6"]);
+
+  const svg = d3.create("svg")
+    .attr("viewBox", [0, 0, width, height])
+    .style("font-family", "sans-serif");
+
+  // Centre du camembert positionné à gauche
+  const gPie = svg.append("g")
+    .attr("transform", `translate(${width / 3}, ${height / 2})`);
+
+  // Tranches du camembert
+  gPie.selectAll("path")
+    .data(pie(equip))
+    .join("path")
+    .attr("fill", d => color(d.data.Situation_f))
+    .attr("stroke", "white")
+    .attr("stroke-width", "1.5px")
+    .attr("d", arc)
+    .append("title")
+    .text(d => `${d.data.Situation_f}: ${d.data.total_groupe}`);
+
+  // Étiquettes de pourcentages au centre des tranches
+  gPie.selectAll("text")
+    .data(pie(equip))
+    .join("text")
+    .attr("transform", d => `translate(${arc.centroid(d)})`)
+    .attr("text-anchor", "middle")
+    .attr("fill", d => d.data.part_groupe < 15 ? "black" : "white") // Texte noir si tranche très claire/petite
+    .attr("font-size", "12px")
+    .attr("font-weight", "bold")
+    // Affiche uniquement si c'est assez grand pour ne pas baver (ex: > 2%)
+    .text(d => d.data.part_groupe >= 2 ? `${d.data.part_groupe.toFixed(1)}%` : "");
+
+  // Légende positionnée à droite
+  const legend = svg.append("g")
+    .attr("transform", `translate(${width * 0.65}, ${height / 2 - 60})`);
+    
+  const categories = color.domain();
+  categories.forEach((cat, i) => {
+    const row = legend.append("g").attr("transform", `translate(0, ${i * 25})`);
+    row.append("rect").attr("width", 15).attr("height", 15).attr("fill", color(cat)).attr("rx", 2);
+    row.append("text").attr("x", 25).attr("y", 12).attr("font-size", "12px").text(cat);
+  });
+
+  return svg.node();
+}
+
+// Emballage HTML avec titre (comme dans ggplot)
+htl.html`
+  <div style="display: flex; flex-direction: column; align-items: center;">
+    <h3 style="margin-bottom: 0px; font-family: sans-serif; font-weight: bold;">Types de logements</h3>
+    <span style="font-size: 13px; font-style: italic; font-family: sans-serif; color: #555; margin-bottom: 20px;">
+      Source : Recensement Insee ${selection_annee} – ${isGeoSelected ? selection_geo.GEO_LABEL : ""}
+    </span>
+    ${camembert}
+  </div>
+`
+```
+
+```{ojs result_table}
+// 1. Tri manuellement et ajout de la ligne TOTAL
+equip_pour_tableau = {
+  let data = equip.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
+  data.push({ Situation_f: "TOTAL", total_groupe: total });
+  return data;
+}
+
+// Affichage du tableau
+Inputs.table(equip_pour_tableau, {
+  columns: ["Situation_f", "total_groupe"],
+  header: {
+    Situation_f: "Type de logement",
+    total_groupe: "Nombre"
+  }
+})
+```
+
+# Résidences principales selon le nombre de pièces
+
+#  Indice de peuplement des résidences principales
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3}
+
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+
+// 1. Récupération des données de LOG_T4bis pour la zone et l'année sélectionnées
+taille_occup_brut = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'LOG_T4bis'
+`)
+: [];
+
+// 2. Dictionnaire pour reproduire le 'case_when'
+correspondance_occup = new Map([
+  ["Logements – Occupation dans la norme", "Occupation dans la norme"],
+  ["Logements – Suroccupation modérée", "Suroccupation modérée"],
+  ["Logements – Sous-occupation très accentuée", "Sous-occupation très accentuée"],
+  ["Logements – Suroccupation accentuée", "Suroccupation accentuée"],
+  ["Logements – Sous-occupation modérée", "Sous-occupation modérée"],
+  ["Logements – Sous-occupation accentuée", "Sous-occupation accentuée"]
+]);
+
+function classer_occup(label) {
+  if (!label) return null;
+  return correspondance_occup.has(label) ? correspondance_occup.get(label) : null;
+}
+
+// 3. Application du dictionnaire et filtrage
+taille_occup_mutate = taille_occup_brut.map(function(d) {
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    occupation: classer_occup(d.TAB_MEASURE_LABEL)
+  };
+}).filter(d => d.occupation !== null);
+
+// 4. Agrégation des résultats (group_by + summarise)
+taille_occup_groupes = d3.rollups(
+  taille_occup_mutate,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.occupation; }
+);
+
+taille_occup_summarise = taille_occup_groupes.map(function(g) {
+  return { occupation: g[0], total_groupe: g[1] };
+});
+
+total = d3.sum(taille_occup_summarise, function(d) { return d.total_groupe; });
+
+taille_occup_final = taille_occup_summarise.map(function(d) {
+  return {
+    occupation: d.occupation,
+    total_groupe: d.total_groupe,
+    total: total,
+    part_groupe: total > 0 ? (d.total_groupe / total) * 100 : 0
+  };
+});
+
+// 5. Ordre défini dans le code R (Ordre_occup)
+ordre_occup = [
+  "Sous-occupation très accentuée",
+  "Sous-occupation accentuée",
+  "Sous-occupation modérée",
+  "Occupation dans la norme",
+  "Suroccupation modérée",
+  "Suroccupation accentuée"
+];
+
+// Tri des données pour correspondre à l'ordre imposé (factor levels en R)
+taille_occup_trie = taille_occup_final.sort((a, b) => ordre_occup.indexOf(a.occupation) - ordre_occup.indexOf(b.occupation));
+```
+
+```{ojs result_plot}
+// Diagramme en barres horizontales (équivalent de coord_flip)
+Plot.plot({
+  title: isGeoSelected ? `Indice de peuplement des résidences principales en ${selection_annee}` : "Sélectionnez un territoire",
+  marginLeft: 230, // Espace généreux pour les libellés de l'axe Y
+  marginRight: 40,
+  x: { 
+    label: "Part (%)", 
+    grid: true 
+  },
+  y: { 
+    domain: ordre_occup, // Conserve l'ordre logique défini
+    label: null 
+  },
+  marks: [
+    Plot.barX(taille_occup_trie, { 
+      x: "part_groupe", 
+      y: "occupation", 
+      fill: "steelblue", 
+      title: d => `${d.occupation} : ${d.part_groupe.toFixed(1)}% (${d.total_groupe} logements)` 
+    }),
+    Plot.ruleX([0])
+  ]
+})
+```
+
+```{ojs result_table}
+// Ajout de la ligne TOTAL pour le tableau et formatage
+taille_occup_pour_tableau = {
+  let data = taille_occup_trie.map(d => ({
+    occupation: d.occupation,
+    total_groupe: d.total_groupe,
+    part_groupe_fmt: d.part_groupe.toFixed(2) + " %"
+  }));
+  data.push({ occupation: "TOTAL", total_groupe: total, part_groupe_fmt: "100.00 %" });
+  return data;
+}
+
+// Affichage sous forme de tableau interactif
+Inputs.table(taille_occup_pour_tableau, {
+  columns: ["occupation", "total_groupe", "part_groupe_fmt"],
+  header: {
+    occupation: "Indice de peuplement",
+    total_groupe: "Nombre de logements",
+    part_groupe_fmt: "Part (%)"
+  }
+})
+```
+
+# Résidences principales en 2023 selon la période d'achèvement
+
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3}
+
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+
+// 1. Récupération des données de LOG_T5 pour la zone et l'année sélectionnées
+date_resi_brut = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'LOG_T5'
+`)
+: [];
+
+// 2. Dictionnaire pour reproduire le 'case_when' (avec la gestion du "AAAA")
+correspondance_date = new Map([
+  ["Logements – Résidences principales x Avant 1919", "Avant 1919"],
+  ["Logements – Résidences principales x De 1919 à 1945", "De 1919 à 1945"],
+  ["Logements – Résidences principales x De 1946 à 1970", "De 1946 à 1970"],
+  ["Logements – Résidences principales x De 1971 à 1990", "De 1971 à 1990"],
+  ["Logements – Résidences principales x De 1991 à 2005", "De 1991 à 2005"],
+  ["Logements – Résidences principales x De 2006 à AAAA", "De 2006 à 2020"]
+]);
+
+function classer_date(label) {
+  if (!label) return null;
+  return correspondance_date.has(label) ? correspondance_date.get(label) : null;
+}
+
+// 3. Application du dictionnaire et filtrage
+date_resi_mutate = date_resi_brut.map(function(d) {
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    date: classer_date(d.TAB_MEASURE_LABEL)
+  };
+}).filter(d => d.date !== null);
+
+// 4. Agrégation des résultats (group_by + summarise)
+date_resi_groupes = d3.rollups(
+  date_resi_mutate,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.date; }
+);
+
+date_resi_summarise = date_resi_groupes.map(function(g) {
+  return { date: g[0], total_groupe: g[1] };
+});
+
+total = d3.sum(date_resi_summarise, function(d) { return d.total_groupe; });
+
+date_resi_final = date_resi_summarise.map(function(d) {
+  return {
+    date: d.date,
+    total_groupe: d.total_groupe,
+    total: total,
+    part_groupe: total > 0 ? (d.total_groupe / total) * 100 : 0
+  };
+});
+
+// 5. Ordre défini dans le code R (Ordre_date)
+ordre_date = [
+  "Avant 1919",
+  "De 1919 à 1945",
+  "De 1946 à 1970",
+  "De 1971 à 1990",
+  "De 1991 à 2005",
+  "De 2006 à 2020"
+];
+
+// Tri des données pour correspondre à l'ordre imposé (factor levels en R)
+date_resi_trie = date_resi_final.sort((a, b) => ordre_date.indexOf(a.date) - ordre_date.indexOf(b.date));
+```
+
+```{ojs result_plot}
+// Diagramme en barres horizontales (équivalent de coord_flip)
+Plot.plot({
+  title: isGeoSelected ? `Résidences principales selon la période d'achèvement en ${selection_annee}` : "Sélectionnez un territoire",
+  marginLeft: 130, // Espace pour les libellés de l'axe Y
+  marginRight: 40,
+  x: { 
+    label: "Part (%)", 
+    grid: true 
+  },
+  y: { 
+    domain: ordre_date, // Conserve l'ordre chronologique défini
+    label: null 
+  },
+  marks: [
+    Plot.barX(date_resi_trie, { 
+      x: "part_groupe", 
+      y: "date", 
+      fill: "steelblue", 
+      title: d => `${d.date} : ${d.part_groupe.toFixed(1)}% (${d.total_groupe} logements)` 
+    }),
+    Plot.ruleX([0])
+  ]
+})
+```
+
+```{ojs result_table}
+// Ajout de la ligne TOTAL pour le tableau et formatage
+date_resi_pour_tableau = {
+  let data = date_resi_trie.map(d => ({
+    date: d.date,
+    total_groupe: d.total_groupe,
+    part_groupe_fmt: d.part_groupe.toFixed(2) + " %"
+  }));
+  data.push({ date: "TOTAL", total_groupe: total, part_groupe_fmt: "100.00 %" });
+  return data;
+}
+
+// Affichage sous forme de tableau interactif
+Inputs.table(date_resi_pour_tableau, {
+  columns: ["date", "total_groupe", "part_groupe_fmt"],
+  header: {
+    date: "Période d'achèvement",
+    total_groupe: "Nombre de logements",
+    part_groupe_fmt: "Part (%)"
+  }
+})
+```

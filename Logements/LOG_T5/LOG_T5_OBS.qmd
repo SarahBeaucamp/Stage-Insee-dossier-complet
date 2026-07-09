@@ -12,7 +12,7 @@ format:
 db = DuckDBClient.of({})
 
 // 2. Définir l'adresse du fichier sur le S3 du SSP Cloud
-chemin_s3 = '[https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet](https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet)'
+chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'
 ```
 
 # Recherche géographique {.sidebar width="30%"}
