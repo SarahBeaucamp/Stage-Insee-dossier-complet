@@ -237,3 +237,359 @@ viewof selection_geo = Inputs.table(
   }
 )
 ```
+
+# Population par sexe et âge regroupé en 2023
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3}
+isGeoSelected = (selection_geo !== null);
+
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+
+// 1. On récupère les données de population pour la zone (en filtrant globalement sur le mot 'Population')
+equip_brut = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND TAB_MEASURE_LABEL LIKE 'Population%'
+`)
+: [];
+
+// 2. On classe avec des mots-clés robustes (Sexe + Tranche d'âge)
+function classer_pop(label) {
+  if (!label) return null;
+  let txt = label.toLowerCase();
+  
+  // Identifier le sexe
+  let sexe = null;
+  if (txt.includes("homme")) sexe = "Homme";
+  else if (txt.includes("femme")) sexe = "Femme";
+  if (!sexe) return null; // Si on ne trouve ni homme ni femme, on ignore
+  
+  // Identifier la tranche d'âge
+  let tranche = null;
+  if (txt.includes("moins de 15 ans")) tranche = "Moins de 15 ans";
+  else if (txt.includes("15 à 24 ans")) tranche = "15-24 ans";
+  else if (txt.includes("25 à 39 ans")) tranche = "25-39 ans";
+  else if (txt.includes("40 à 54 ans")) tranche = "40-54 ans";
+  else if (txt.includes("55 à 64 ans")) tranche = "55-64 ans";
+  else if (txt.includes("65 à 79 ans")) tranche = "65-79 ans";
+  else if (txt.includes("80 ans")) tranche = "80 ans et plus";
+  
+  if (!tranche) return null;
+  
+  return { sexe: sexe, tranche: tranche };
+}
+
+// 3. Filtrage et nettoyage
+equip_mutate = equip_brut.map(function(d) {
+  let classification = classer_pop(d.TAB_MEASURE_LABEL);
+  if (!classification) return null;
+  
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    SEXE: classification.sexe,
+    TRANCHE_AGE: classification.tranche
+  };
+}).filter(d => d !== null);
+
+// 4. Agrégation des résultats (Somme croisée Sexe x Tranche d'âge)
+equip_groupes = d3.flatRollup(
+  equip_mutate,
+  v => d3.sum(v, d => d.OBS_VALUE),
+  d => d.SEXE,
+  d => d.TRANCHE_AGE
+).map(([sexe, tranche, valeur]) => ({
+  SEXE: sexe, 
+  TRANCHE_AGE: tranche, 
+  population_exacte: valeur
+}));
+
+// 5. Calcul des parts locales (pourcentage de la tranche d'âge au sein du sexe)
+total_hommes = d3.sum(equip_groupes.filter(d => d.SEXE === "Homme"), d => d.population_exacte);
+total_femmes = d3.sum(equip_groupes.filter(d => d.SEXE === "Femme"), d => d.population_exacte);
+
+equip = equip_groupes.map(function(d) {
+  let part = 0;
+  if (d.SEXE === "Homme" && total_hommes > 0) part = d.population_exacte / total_hommes;
+  if (d.SEXE === "Femme" && total_femmes > 0) part = d.population_exacte / total_femmes;
+  
+  return {
+    SEXE: d.SEXE,
+    TRANCHE_AGE: d.TRANCHE_AGE,
+    population_exacte: d.population_exacte,
+    part_locale: part,
+    pourcentage_affichage: (part * 100).toFixed(1) + " %"
+  };
+});
+
+// Ordre pour l'affichage
+ordre_ages = ["Moins de 15 ans", "15-24 ans", "25-39 ans", "40-54 ans", "55-64 ans", "65-79 ans", "80 ans et plus"];
+equip_trie = equip.sort((a, b) => ordre_ages.indexOf(a.TRANCHE_AGE) - ordre_ages.indexOf(b.TRANCHE_AGE));
+```
+
+```{ojs result_plot}
+// Graphique en barres groupées (équivalent geom_col(position = "dodge"))
+Plot.plot({
+  title: isGeoSelected ? `Population par sexe et âge regroupé – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  subtitle: `Année ${selection_annee}`,
+  marginBottom: 60,
+  marginLeft: 50,
+  // L'axe X principal est masqué, car les labels sont gérés par le fx (facets)
+  x: { axis: null }, 
+  y: { 
+    label: "Proportion d'hommes et de femmes", 
+    tickFormat: "%", 
+    grid: true 
+  },
+  // Facet X : permet de grouper les barres par tranche d'âge
+  fx: { 
+    domain: ordre_ages, 
+    label: "Tranches d'âge", 
+    tickRotate: -30 
+  },
+  color: { 
+    domain: ["Homme", "Femme"], 
+    range: ["lightblue", "pink"], 
+    legend: true 
+  },
+  marks: [
+    Plot.barY(equip_trie, {
+      x: "SEXE", 
+      y: "part_locale", 
+      fill: "SEXE", 
+      fx: "TRANCHE_AGE",
+      title: d => `${d.SEXE} - ${d.TRANCHE_AGE}\n${d.population_exacte} personnes (${(d.part_locale*100).toFixed(1)}%)` // Info-bulle au survol
+    }),
+    Plot.ruleY([0])
+  ]
+})
+```
+
+```{ojs result_table}
+// Affichage du tableau interactif
+Inputs.table(equip_trie, {
+  columns: ["SEXE", "TRANCHE_AGE", "population_exacte", "pourcentage_affichage"],
+  header: {
+    SEXE: "Sexe",
+    TRANCHE_AGE: "Tranche d'âge",
+    population_exacte: "Nombre",
+    pourcentage_affichage: "Proportion (au sein du sexe)"
+  }
+})
+```
+
+# Lieu de résidence 1 an auparavant
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3}
+
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+
+// 1. On récupère TOUTES les données de POP_T4 pour la zone
+equip_brut = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'POP_T4'
+`)
+: [];
+
+// 2. On classe avec des mots-clés robustes
+function classer_residence(label) {
+  if (!label) return null;
+  let txt = label.toLowerCase();
+  
+  // On s'assure qu'on regarde bien la population de "1 an ou plus"
+  if (!txt.includes("1 an ou plus")) return null;
+
+  if (txt.includes("dans le même logement")) return "Dans le même logement";
+  if (txt.includes("autre logement dans la même commune")) return "Dans un autre logement de la même commune";
+  
+  // Tout le reste correspond à une autre commune (département, région, DOM, etc.)
+  if (txt.includes("autre commune") || 
+      txt.includes("hors de la région") || 
+      txt.includes("autre département") || 
+      txt.includes("hors métropole")) {
+    return "Dans une autre commune";
+  }
+  
+  return null;
+}
+
+// 3. Filtrage et nettoyage
+equip_mutate = equip_brut.map(function(d) {
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    Lieu_de_résidence: classer_residence(d.TAB_MEASURE_LABEL)
+  };
+}).filter(d => d.Lieu_de_résidence !== null);
+
+// 4. Agrégation des résultats
+equip_groupes = d3.rollups(
+  equip_mutate,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.Lieu_de_résidence; }
+);
+
+equip_summarise = equip_groupes.map(function(g) {
+  return { Lieu_de_résidence: g[0], total_groupe: g[1] };
+});
+
+total = d3.sum(equip_summarise, function(d) { return d.total_groupe; });
+
+equip = equip_summarise.map(function(d) {
+  return {
+    Lieu_de_résidence: d.Lieu_de_résidence,
+    total_groupe: d.total_groupe,
+    total: total,
+    part_groupe: total > 0 ? (d.total_groupe / total) * 100 : 0
+  };
+});
+
+// 5. On force l'ordre pour avoir des couleurs cohérentes (comme dans R)
+ordre_niveaux = [
+  "Dans le même logement", 
+  "Dans un autre logement de la même commune", 
+  "Dans une autre commune"
+];
+equip_trie = equip.sort((a, b) => ordre_niveaux.indexOf(a.Lieu_de_résidence) - ordre_niveaux.indexOf(b.Lieu_de_résidence));
+```
+
+```{ojs result_plot}
+// Construction du camembert D3 sur-mesure
+camembert = {
+  if (!isGeoSelected || total === 0) return htl.html`<div>Sélectionnez un territoire ou aucune donnée disponible pour cette année.</div>`;
+  
+  const width = 600;
+  const height = 350;
+  const radius = Math.min(width, height) / 2 - 20;
+
+  const arc = d3.arc().innerRadius(0).outerRadius(radius);
+  
+  // On inverse le sens de rotation (direction = -1 dans ggplot)
+  const pie = d3.pie()
+    .value(d => d.total_groupe)
+    .sort(null)
+    .startAngle(2 * Math.PI)
+    .endAngle(0);
+
+  // Palette "Blues" avec 3 teintes
+  const color = d3.scaleOrdinal()
+    .domain(ordre_niveaux)
+    .range(["#08519c", "#6baed6", "#bdd7e7"]); // Du plus foncé au plus clair
+
+  const svg = d3.create("svg")
+    .attr("viewBox", [0, 0, width, height])
+    .style("font-family", "sans-serif");
+
+  const gPie = svg.append("g")
+    .attr("transform", `translate(${width / 3}, ${height / 2})`);
+
+  // Tranches du camembert
+  gPie.selectAll("path")
+    .data(pie(equip_trie))
+    .join("path")
+    .attr("fill", d => color(d.data.Lieu_de_résidence))
+    .attr("stroke", "white")
+    .attr("stroke-width", "1.5px")
+    .attr("d", arc)
+    .append("title")
+    .text(d => `${d.data.Lieu_de_résidence}: ${d.data.total_groupe}`);
+
+  // Étiquettes de pourcentages au centre des tranches
+  gPie.selectAll("text")
+    .data(pie(equip_trie))
+    .join("text")
+    .attr("transform", d => `translate(${arc.centroid(d)})`)
+    .attr("text-anchor", "middle")
+    // Noir pour la couleur claire, blanc pour les couleurs foncées
+    .attr("fill", d => d.data.Lieu_de_résidence === "Dans une autre commune" ? "black" : "white") 
+    .attr("font-size", "12px")
+    .attr("font-weight", "bold")
+    // Affiche uniquement si c'est assez grand pour être lisible
+    .text(d => d.data.part_groupe >= 3 ? `${d.data.part_groupe.toFixed(1)}%` : "");
+
+  // Légende positionnée à droite
+  const legend = svg.append("g")
+    .attr("transform", `translate(${width * 0.60}, ${height / 2 - 50})`);
+    
+  // Titre de la légende
+  legend.append("text")
+    .attr("x", 0)
+    .attr("y", -10)
+    .attr("font-weight", "bold")
+    .attr("font-size", "12px")
+    .text("Lieu de résidence");
+
+  const categories = color.domain();
+  categories.forEach((cat, i) => {
+    const row = legend.append("g").attr("transform", `translate(0, ${i * 25 + 10})`);
+    row.append("rect").attr("width", 15).attr("height", 15).attr("fill", color(cat)).attr("rx", 2);
+    // On ajoute un retour à la ligne manuel en SVG pour les textes longs
+    if(cat === "Dans un autre logement de la même commune") {
+        row.append("text").attr("x", 25).attr("y", 10).attr("font-size", "12px").text("Dans un autre logement");
+        row.append("text").attr("x", 25).attr("y", 24).attr("font-size", "12px").text("de la même commune");
+    } else {
+        row.append("text").attr("x", 25).attr("y", 12).attr("font-size", "12px").text(cat);
+    }
+  });
+
+  return svg.node();
+}
+
+htl.html`
+  <div style="display: flex; flex-direction: column; align-items: center;">
+    <h3 style="margin-bottom: 0px; font-family: sans-serif; font-weight: bold;">Lieu de résidence 1 an auparavant</h3>
+    <span style="font-size: 13px; font-style: italic; font-family: sans-serif; color: #555; margin-bottom: 20px;">
+      Source : Recensement Insee ${selection_annee} – ${isGeoSelected ? selection_geo.GEO_LABEL : ""}
+    </span>
+    ${camembert}
+  </div>
+`
+```
+
+```{ojs result_table}
+// Tri manuellement et ajout de la ligne TOTAL
+equip_pour_tableau = {
+  let data = equip_trie.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
+  data.push({ Lieu_de_résidence: "TOTAL", total_groupe: total });
+  return data;
+}
+
+// Affichage du tableau
+Inputs.table(equip_pour_tableau, {
+  columns: ["Lieu_de_résidence", "total_groupe"],
+  header: {
+    Lieu_de_résidence: "Lieu de résidence",
+    total_groupe: "Nombre de personnes"
+  }
+})
+```
+
+
+
