@@ -216,3 +216,11 @@ taille_log_pour_tableau = {
 
 // Affichage sous forme de tableau interactif
 Inputs.table(taille_log_pour_tableau, {
+  columns: ["pieces", "total_groupe", "part_groupe_fmt"],
+  header: {
+    pieces: "Nombre de pièces",
+    total_groupe: "Nombre",
+    part_groupe_fmt: "Part (%)"
+  }
+})
+```

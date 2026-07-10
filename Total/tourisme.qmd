@@ -120,7 +120,8 @@ include-in-header:
           { label: "Tourisme en 2026", href: "tourisme.html" },
           { label: "Créations d'entreprises et d'établissements en 2025", href: "creation.qmd"},
           { label: "Logement en 2023", href: "logement.qmd"},
-          { label: "Famille", href: "famille.qmd"}
+          { label: "Famille", href: "famille.qmd"},
+          { label: "Structure de la population", href: "population.qmd"}
         ];
 
         var brandContainer = document.querySelector("#quarto-dashboard-header .navbar-brand-container");

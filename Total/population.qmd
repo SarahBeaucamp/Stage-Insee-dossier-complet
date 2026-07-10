@@ -1,0 +1,239 @@
+---
+title: "Structure de la population"
+format: 
+  dashboard:
+    nav-buttons: []
+include-in-header:
+  - text: |
+      <style>
+        /* ===== Sous-menu "Pages" (sous-thèmes du dashboard actuel) ===== */
+        #quarto-pages-dropdown .dropdown-menu {
+          max-height: 70vh;
+          overflow-y: auto;
+        }
+        #quarto-pages-dropdown .dropdown-menu .dropdown-item {
+          color: #212529 !important;
+        }
+        #quarto-pages-dropdown .dropdown-menu .dropdown-item:hover,
+        #quarto-pages-dropdown .dropdown-menu .dropdown-item:focus {
+          color: #212529 !important;
+          background-color: rgba(0,0,0,0.06);
+        }
+        #quarto-pages-dropdown .dropdown-item.active {
+          font-weight: 600;
+          background-color: #4a6f8a;
+          color: #ffffff !important;
+        }
+
+        /* ===== Menu "Thèmes" (titre transformé en dropdown) ===== */
+        #quarto-dashboard-header .navbar-brand-container {
+          position: relative;
+        }
+        #quarto-dashboard-header .navbar-brand-container {
+          cursor: pointer;
+        }
+        #quarto-dashboard-header .navbar-title::after {
+          content: " ▾";
+          font-size: 0.7em;
+        }
+        #quarto-themes-dropdown-menu {
+          display: none;
+          position: absolute;
+          top: 100%;
+          left: 0;
+          background: #ffffff;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+          min-width: 320px;
+          max-height: 70vh;
+          overflow-y: auto;
+          z-index: 1060;
+          border-radius: 4px;
+          padding: 0.25rem 0;
+        }
+        #quarto-themes-dropdown-menu.show {
+          display: block;
+        }
+        #quarto-themes-dropdown-menu a {
+          display: block;
+          padding: 0.5rem 1rem;
+          color: #212529;
+          text-decoration: none;
+        }
+        #quarto-themes-dropdown-menu a:hover {
+          background-color: rgba(0,0,0,0.06);
+        }
+        #quarto-themes-dropdown-menu a.active {
+          font-weight: 600;
+          background-color: #4a6f8a;
+          color: #ffffff;
+        }
+      </style>
+
+      <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // ----- 1. Sous-menu "Pages" : regroupe les sous-thèmes de la page courante -----
+        var navList = document.querySelector("#quarto-dashboard-header .navbar-nav");
+        if (navList) {
+          var items = Array.from(navList.querySelectorAll(":scope > li.nav-item"));
+          if (items.length > 0) {
+            var dropdownLi = document.createElement("li");
+            dropdownLi.className = "nav-item dropdown";
+            dropdownLi.id = "quarto-pages-dropdown";
+
+            var toggle = document.createElement("a");
+            toggle.className = "nav-link dropdown-toggle";
+            toggle.href = "#";
+            toggle.setAttribute("role", "button");
+            toggle.setAttribute("data-bs-toggle", "dropdown");
+            toggle.setAttribute("aria-expanded", "false");
+            toggle.textContent = "Pages";
+
+            var menu = document.createElement("ul");
+            menu.className = "dropdown-menu dropdown-menu-end";
+
+            dropdownLi.appendChild(toggle);
+            dropdownLi.appendChild(menu);
+
+            items.forEach(function (li) {
+              var link = li.querySelector("a.nav-link");
+              if (link) {
+                link.classList.add("dropdown-item");
+                if (link.classList.contains("active")) {
+                  toggle.textContent = link.textContent.trim();
+                }
+              }
+              menu.appendChild(li);
+            });
+
+            navList.appendChild(dropdownLi);
+
+            menu.addEventListener("click", function (e) {
+              var link = e.target.closest("a.dropdown-item");
+              if (link) toggle.textContent = link.textContent.trim();
+            });
+          }
+        }
+
+        // ----- 2. Menu "Thèmes" : navigation entre les dashboards -----
+        var themes = [
+          { label: "Équipements et services à la population en 2024", href: "equipements.html" },
+          { label: "Tourisme en 2026", href: "tourisme.html" },
+          { label: "Créations d'entreprises et d'établissements en 2025", href: "creation.qmd"},
+          { label: "Logement en 2023", href: "logement.qmd"},
+          { label: "Famille", href: "famille.qmd"},
+          { label: "Structure de la population", href: "population.qmd"}
+        ];
+        
+        var brandContainer = document.querySelector("#quarto-dashboard-header .navbar-brand-container");
+        if (brandContainer) {
+          // Sur les dashboards, le titre n'est pas toujours dans un <a class="navbar-brand">
+          // On cible ce qui existe réellement, avec plusieurs solutions de repli.
+          var clickTarget =
+            brandContainer.querySelector("a.navbar-brand") ||
+            brandContainer.querySelector(".navbar-title") ||
+            brandContainer;
+
+          clickTarget.style.cursor = "pointer";
+
+          var themeMenu = document.createElement("div");
+          themeMenu.id = "quarto-themes-dropdown-menu";
+
+          var currentPage = window.location.pathname.split("/").pop();
+
+          themes.forEach(function (theme) {
+            var a = document.createElement("a");
+            a.href = theme.href;
+            a.textContent = theme.label;
+            if (theme.href === currentPage) a.classList.add("active");
+            themeMenu.appendChild(a);
+          });
+
+          brandContainer.appendChild(themeMenu);
+
+          clickTarget.addEventListener("click", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            themeMenu.classList.toggle("show");
+          });
+
+          document.addEventListener("click", function (e) {
+            if (!brandContainer.contains(e.target)) {
+              themeMenu.classList.remove("show");
+            }
+          });
+        }
+      });
+      </script>
+---
+
+```{ojs config}
+//| output: false
+
+// 1. Créer ou ouvrir une connexion DuckDB (équivalent dbConnect(duckdb(), ...) en R)
+db = DuckDBClient.of({})
+
+// 4. Définir l'adresse de votre fichier sur le S3 du SSP Cloud (équivalent chemin_s3 en R)
+chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'
+```
+
+# Recherche géographique {.sidebar width="30%"}
+
+```{ojs annee}
+viewof selection_annee = Inputs.select(
+  [
+    "1968", "1975", "1982", "1990", "1999", "2006", 
+    "2011", "2012", "2013", "2014", "2015", "2016", 
+    "2017", "2018", "2019", "2020", "2021", "2022", 
+    "2023", "2024", "2025", "2026"
+  ],
+  {
+    label: "Année",
+    value: "2024"
+  }
+)
+```
+
+```{ojs type_geo}
+viewof selection_type_geo = Inputs.select(
+  [
+    "Commune", "Unité urbaine 2020", "Bassin de vie 2022", "Intercommunalité-Métropole", 
+    "Aire d’attraction des villes 2020", "Arrondissement", "Zone d’emploi 2020", 
+    "Département", "Arrondissement municipal", "Région", "France", 
+    "Autres", "Collectivité et territoire français d’outre-mer"
+  ],
+  {
+    label: "Type de zone",
+    value: "Commune"
+  }
+)
+```
+
+```{ojs geo}
+//| output: false
+
+// Liste des territoires disponibles mis à jour dynamiquement selon l'aire urbaine choisie
+geo = db.query(`
+  SELECT DISTINCT GEO, GEO_LABEL
+  FROM read_parquet('${chemin_s3}')
+  WHERE ID_TAB = 'EQUIP_T1' AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+  ORDER BY GEO_LABEL
+`)
+```
+
+```{ojs geo2}
+viewof search_geo = Inputs.search(
+  geo, {
+    width: "60%",
+    label: "Territoire",
+    placeholder: "Rechercher un territoire...",
+  })
+
+viewof selection_geo = Inputs.table(
+  search_geo, {
+    multiple: false,
+    value: search_geo.length > 0 ? search_geo[0] : null,
+    rows: 15,
+    columns: ["GEO_LABEL", "GEO"]
+  }
+)
+```

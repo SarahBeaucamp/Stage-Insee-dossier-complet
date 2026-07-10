@@ -120,7 +120,8 @@ include-in-header:
           { label: "Tourisme en 2026", href: "tourisme.html" },
           { label: "Créations d'entreprises et d'établissements en 2025", href: "creation.qmd"},
           { label: "Logement en 2023", href: "logement.qmd"},
-          { label: "Famille", href: "famille.qmd"}
+          { label: "Famille", href: "famille.qmd"},
+          { label: "Structure de la population", href: "population.qmd"}
         ];
         
         var brandContainer = document.querySelector("#quarto-dashboard-header .navbar-brand-container");
@@ -406,6 +407,151 @@ Inputs.table(equip_pour_tableau, {
 ```
 
 # Résidences principales selon le nombre de pièces
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3}
+
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+```{ojs result_calc}
+//| output: false
+
+// 1. Récupération des données de LOG_T3 pour la zone et l'année sélectionnées
+taille_log_brut = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'LOG_T3'
+`)
+: [];
+
+// 2. Dictionnaire pour reproduire le 'case_when' (catégorisation des pièces)
+correspondance_pieces = new Map([
+  ["Logements – Résidences principales x 1 pièce", "1 pièce"],
+  ["Logements – Résidences principales x 2 pièces", "2 pièces"],
+  ["Logements – Résidences principales x 3 pièces", "3 pièces"],
+  ["Logements – Résidences principales x 4 pièces", "4 pièces"],
+  ["Logements – Résidences principales x 5 pièces ou plus", "5 pièces ou plus"]
+]);
+
+function classer_pieces(label) {
+  if (!label) return null;
+  return correspondance_pieces.has(label) ? correspondance_pieces.get(label) : null;
+}
+
+// 3. Application du dictionnaire et filtrage
+taille_log_mutate = taille_log_brut.map(function(d) {
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    pieces: classer_pieces(d.TAB_MEASURE_LABEL)
+  };
+}).filter(d => d.pieces !== null);
+
+// 4. Agrégation des résultats (group_by + summarise)
+taille_log_groupes = d3.rollups(
+  taille_log_mutate,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.pieces; }
+);
+
+taille_log_summarise = taille_log_groupes.map(function(g) {
+  return { pieces: g[0], total_groupe: g[1] };
+});
+
+total = d3.sum(taille_log_summarise, function(d) { return d.total_groupe; });
+
+taille_log_final = taille_log_summarise.map(function(d) {
+  return {
+    pieces: d.pieces,
+    total_groupe: d.total_groupe,
+    total: total,
+    part_groupe: total > 0 ? (d.total_groupe / total) * 100 : 0
+  };
+});
+
+// 5. Ordre défini dans le code R (Ordre_pièces)
+ordre_pieces = [
+  "1 pièce",
+  "2 pièces",
+  "3 pièces",
+  "4 pièces",
+  "5 pièces ou plus"
+];
+
+// Tri des données pour correspondre à l'ordre imposé (factor levels en R)
+taille_log_trie = taille_log_final.sort((a, b) => ordre_pieces.indexOf(a.pieces) - ordre_pieces.indexOf(b.pieces));
+```
+
+```{ojs result_plot}
+// Diagramme en barres verticales colorées avec la palette Blues
+Plot.plot({
+  title: isGeoSelected ? `Résidences principales selon le nombre de pièces en ${selection_annee}` : "Sélectionnez un territoire",
+  subtitle: "Source : Recensement Insee",
+  marginBottom: 40,
+  color: {
+    scheme: "Blues", 
+    domain: ordre_pieces,
+    legend: false
+  },
+  x: { 
+    domain: ordre_pieces, // Conserve l'ordre logique
+    label: null 
+  },
+  y: { 
+    label: "Nombre de logements", 
+    grid: true 
+  },
+  marks: [
+    Plot.barY(taille_log_trie, { 
+      x: "pieces", 
+      y: "total_groupe", 
+      fill: "pieces", 
+      title: d => `${d.pieces}\n${d.total_groupe} logements (${d.part_groupe.toFixed(1)}%)`
+    }),
+    // Ajout des étiquettes de pourcentage au-dessus des barres
+    Plot.text(taille_log_trie, {
+      x: "pieces",
+      y: "total_groupe",
+      text: d => `${d.part_groupe.toFixed(1)} %`,
+      dy: -10,
+      fontWeight: "bold"
+    }),
+    Plot.ruleY([0])
+  ]
+})
+```
+
+```{ojs result_table}
+// Ajout de la ligne TOTAL pour le tableau et formatage
+taille_log_pour_tableau = {
+  let data = taille_log_trie.map(d => ({
+    pieces: d.pieces,
+    total_groupe: d.total_groupe,
+    part_groupe_fmt: d.part_groupe.toFixed(2) + " %"
+  }));
+  data.push({ pieces: "TOTAL", total_groupe: total, part_groupe_fmt: "100.00 %" });
+  return data;
+}
+
+// Affichage sous forme de tableau interactif
+Inputs.table(taille_log_pour_tableau, {
+  columns: ["pieces", "total_groupe", "part_groupe_fmt"],
+  header: {
+    pieces: "Nombre de pièces",
+    total_groupe: "Nombre",
+    part_groupe_fmt: "Part (%)"
+  }
+})
+```
 
 #  Indice de peuplement des résidences principales
 
