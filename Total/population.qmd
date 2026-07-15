@@ -378,18 +378,63 @@ Plot.plot({
 })
 ```
 
-```{ojs result_table}
-// Affichage du tableau interactif
-Inputs.table(equip_trie, {
-  columns: ["SEXE", "TRANCHE_AGE", "population_exacte", "pourcentage_affichage"],
-  header: {
-    SEXE: "Sexe",
-    TRANCHE_AGE: "Tranche d'âge",
-    population_exacte: "Nombre",
-    pourcentage_affichage: "Proportion (au sein du sexe)"
-  }
+```{ojs result_pyramide_calc}
+//| output: false
+
+// On prépare les données de la pyramide : une valeur "signée"
+// négative pour les hommes (barres vers la gauche), positive pour les femmes (barres vers la droite)
+equip_pyramide = equip_trie.map(function(d) {
+  return {
+    SEXE: d.SEXE,
+    TRANCHE_AGE: d.TRANCHE_AGE,
+    population_exacte: d.population_exacte,
+    valeur_signee: d.SEXE === "Homme" ? -d.population_exacte : d.population_exacte
+  };
+});
+
+// Pour un axe symétrique et lisible, on prend le max absolu des effectifs
+max_effectif = d3.max(equip_pyramide, d => Math.abs(d.valeur_signee));
+
+// Ordre inversé pour que "Moins de 15 ans" apparaisse en bas et "80 ans et plus" en haut (pyramide classique)
+ordre_ages_pyramide = ordre_ages.slice().reverse();
+```
+
+```{ojs result_pyramide_plot}
+// Pyramide des âges : hommes à gauche (valeurs négatives), femmes à droite (valeurs positives)
+Plot.plot({
+  title: isGeoSelected ? `Pyramide des âges – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  subtitle: `Année ${selection_annee}`,
+  marginLeft: 60,
+  marginRight: 20,
+  height: 400,
+  x: {
+    label: "Effectif",
+    // On force un domaine symétrique et on affiche des valeurs absolues sur l'axe
+    domain: [-max_effectif * 1.05, max_effectif * 1.05],
+    tickFormat: d => Math.abs(d).toLocaleString("fr-FR"),
+    grid: true
+  },
+  y: {
+    domain: ordre_ages_pyramide,
+    label: "Tranche d'âge"
+  },
+  color: {
+    domain: ["Homme", "Femme"],
+    range: ["lightblue", "pink"],
+    legend: true
+  },
+  marks: [
+    Plot.barX(equip_pyramide, {
+      x: "valeur_signee",
+      y: "TRANCHE_AGE",
+      fill: "SEXE",
+      title: d => `${d.SEXE} - ${d.TRANCHE_AGE}\n${d.population_exacte.toLocaleString("fr-FR")} personnes`
+    }),
+    Plot.ruleX([0])
+  ]
 })
 ```
+
 
 # Lieu de résidence 1 an auparavant
 

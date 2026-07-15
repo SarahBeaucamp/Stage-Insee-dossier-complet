@@ -484,7 +484,12 @@ ordre_niveaux = ["Aucun enfant", "1 enfant", "2 enfants", "3 enfants", "4 enfant
 equip_trie = equip.sort((a, b) => ordre_niveaux.indexOf(a.enfants) - ordre_niveaux.indexOf(b.enfants));
 ```
 
-```{ojs result_plot}
+```{ojs result_palette}
+// Palette de couleurs partagée (camembert + treemap)
+color_enfants = d3.scaleOrdinal()
+  .domain(ordre_niveaux)
+  .range(["#eff3ff", "#bdd7e7", "#6baed6", "#3182bd", "#08519c"])
+  
 // Construction du camembert D3 sur-mesure
 camembert = {
   if (!isGeoSelected || total === 0) return htl.html`<div>Sélectionnez un territoire ou aucune donnée disponible pour cette année.</div>`;
@@ -497,10 +502,7 @@ camembert = {
   // sort(null) permet de conserver notre tri personnalisé ci-dessus
   const pie = d3.pie().value(d => d.total_groupe).sort(null);
 
-  // Palette de couleurs "Blues" étalée sur 5 teintes
-  const color = d3.scaleOrdinal()
-    .domain(ordre_niveaux)
-    .range(["#eff3ff", "#bdd7e7", "#6baed6", "#3182bd", "#08519c"]);
+  const color = color_enfants;
 
   const svg = d3.create("svg")
     .attr("viewBox", [0, 0, width, height])
@@ -564,6 +566,77 @@ htl.html`
       Source : Recensement Insee ${selection_annee} – ${isGeoSelected ? selection_geo.GEO_LABEL : ""}
     </span>
     ${camembert}
+  </div>
+`
+```
+
+```{ojs result_treemap}
+// Construction du treemap D3, sur les mêmes données (equip_trie) et la même palette (color_enfants)
+treemap_chart = {
+  if (!isGeoSelected || total === 0) return htl.html`<div>Sélectionnez un territoire ou aucune donnée disponible pour cette année.</div>`;
+
+  const width = 600;
+  const height = 350;
+
+  const color = color_enfants;
+
+  // Hiérarchie : une racine fictive "root" avec les 5 catégories comme feuilles
+  const root = d3.hierarchy({ children: equip_trie })
+    .sum(d => d.total_groupe)
+    .sort((a, b) => b.value - a.value);
+
+  d3.treemap()
+    .size([width, height])
+    .paddingInner(2)
+    .paddingOuter(2)
+    .round(true)
+    (root);
+
+  const svg = d3.create("svg")
+    .attr("viewBox", [0, 0, width, height])
+    .style("font-family", "sans-serif");
+
+  const leaf = svg.selectAll("g")
+    .data(root.leaves())
+    .join("g")
+    .attr("transform", d => `translate(${d.x0},${d.y0})`);
+
+  leaf.append("rect")
+    .attr("width", d => d.x1 - d.x0)
+    .attr("height", d => d.y1 - d.y0)
+    .attr("fill", d => color(d.data.enfants))
+    .attr("stroke", "white")
+    .attr("stroke-width", 1.5)
+    .append("title")
+    .text(d => `${d.data.enfants}: ${d.data.total_groupe} (${d.data.part_groupe.toFixed(1)}%)`);
+
+  // Étiquettes : nom de la catégorie + pourcentage, uniquement si la case est assez grande
+  leaf.append("text")
+    .attr("x", 6)
+    .attr("y", 18)
+    .attr("fill", d => d.data.enfants === "Aucun enfant" || d.data.enfants === "1 enfant" ? "black" : "white")
+    .attr("font-size", "12px")
+    .attr("font-weight", "bold")
+    .text(d => (d.x1 - d.x0) > 60 && (d.y1 - d.y0) > 20 ? d.data.enfants : "");
+
+  leaf.append("text")
+    .attr("x", 6)
+    .attr("y", 34)
+    .attr("fill", d => d.data.enfants === "Aucun enfant" || d.data.enfants === "1 enfant" ? "black" : "white")
+    .attr("font-size", "11px")
+    .text(d => (d.x1 - d.x0) > 60 && (d.y1 - d.y0) > 40 ? `${d.data.part_groupe.toFixed(1)}%` : "");
+
+  return svg.node();
+}
+
+// Emballage HTML avec titre, cohérent avec le camembert
+htl.html`
+  <div style="display: flex; flex-direction: column; align-items: center;">
+    <h3 style="margin-bottom: 0px; font-family: sans-serif; font-weight: bold;">Répartition des familles par nombre d'enfants (treemap)</h3>
+    <span style="font-size: 13px; font-style: italic; font-family: sans-serif; color: #555; margin-bottom: 20px;">
+      Source : Recensement Insee ${selection_annee} – ${isGeoSelected ? selection_geo.GEO_LABEL : ""}
+    </span>
+    ${treemap_chart}
   </div>
 `
 ```
