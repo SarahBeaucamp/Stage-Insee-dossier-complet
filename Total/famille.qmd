@@ -188,7 +188,7 @@ viewof selection_annee = Inputs.select(
   ],
   {
     label: "Année",
-    value: "2024"
+    value: "2022"
   }
 )
 ```
@@ -256,7 +256,7 @@ htl.html`
 //| output: false
 
 // 1. On récupère TOUTES les données de FAM_T3 (zéro risque de plantage SQL)
-equip_brut = isGeoSelected
+equip_brut1 = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
   FROM read_parquet('${chemin_s3}')
@@ -281,7 +281,7 @@ function classer_familles(label) {
 }
 
 // 3. Filtrage et nettoyage
-equip_mutate = equip_brut.map(function(d) {
+equip_mutate1 = equip_brut1.map(function(d) {
   return {
     OBS_VALUE: d.OBS_VALUE,
     Situation_f: classer_familles(d.TAB_MEASURE_LABEL)
@@ -289,32 +289,32 @@ equip_mutate = equip_brut.map(function(d) {
 }).filter(d => d.Situation_f !== null);
 
 // 4. Agrégation des résultats
-equip_groupes = d3.rollups(
-  equip_mutate,
+equip_groupes1 = d3.rollups(
+  equip_mutate1,
   function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
   function(d) { return d.Situation_f; }
 );
 
-equip_summarise = equip_groupes.map(function(g) {
+equip_summarise1 = equip_groupes1.map(function(g) {
   return { Situation_f: g[0], total_groupe: g[1] };
 });
 
-total = d3.sum(equip_summarise, function(d) { return d.total_groupe; });
+total1 = d3.sum(equip_summarise1, function(d) { return d.total_groupe; });
 
-equip = equip_summarise.map(function(d) {
+equip1 = equip_summarise1.map(function(d) {
   return {
     Situation_f: d.Situation_f,
     total_groupe: d.total_groupe,
-    total: total,
-    part_groupe: total > 0 ? (d.total_groupe / total) * 100 : 0
+    total1: total1,
+    part_groupe: total1 > 0 ? (d.total_groupe / total1) * 100 : 0
   };
 });
 ```
 
 ```{ojs result_plot}
 // Construction du camembert D3 sur-mesure (Reproduction fidèle de votre ggplot)
-camembert = {
-  if (!isGeoSelected || total === 0) return htl.html`<div>Sélectionnez un territoire ou aucune donnée disponible pour cette année.</div>`;
+camembert1 = {
+  if (!isGeoSelected || total1 === 0) return htl.html`<div>Sélectionnez un territoire ou aucune donnée disponible pour cette année.</div>`;
   
   const width = 600;
   const height = 350;
@@ -343,7 +343,7 @@ camembert = {
 
   // Tranches du camembert
   gPie.selectAll("path")
-    .data(pie(equip))
+    .data(pie(equip1))
     .join("path")
     .attr("fill", d => color(d.data.Situation_f))
     .attr("stroke", "white")
@@ -354,7 +354,7 @@ camembert = {
 
   // Étiquettes de pourcentages au centre des tranches
   gPie.selectAll("text")
-    .data(pie(equip))
+    .data(pie(equip1))
     .join("text")
     .attr("transform", d => `translate(${arc.centroid(d)})`)
     .attr("text-anchor", "middle")
@@ -385,21 +385,21 @@ htl.html`
     <span style="font-size: 13px; font-style: italic; font-family: sans-serif; color: #555; margin-bottom: 20px;">
       Source : Recensement Insee ${selection_annee} – ${isGeoSelected ? selection_geo.GEO_LABEL : ""}
     </span>
-    ${camembert}
+    ${camembert1}
   </div>
 `
 ```
 
 ```{ojs result_table}
 // 1. Tri manuellement et ajout de la ligne TOTAL
-equip_pour_tableau = {
-  let data = equip.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
-  data.push({ Situation_f: "TOTAL", total_groupe: total });
-  return data;
+equip_pour_tableau1 = {
+  let data1 = equip1.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
+  data1.push({ Situation_f: "TOTAL", total_groupe: total });
+  return data1;
 }
 
 // Affichage du tableau
-Inputs.table(equip_pour_tableau, {
+Inputs.table(equip_pour_tableau1, {
   columns: ["Situation_f", "total_groupe"],
   header: {
     Situation_f: "Situation familiale",

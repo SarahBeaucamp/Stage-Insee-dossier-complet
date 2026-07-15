@@ -605,7 +605,7 @@ htl.html`
 //| output: false
 
 // 1. On récupère TOUTES les données de DEN_T4 pour la zone et l'année
-etab_brut = isGeoSelected
+etab_brut4 = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
   FROM read_parquet('${chemin_s3}')
@@ -617,7 +617,7 @@ etab_brut = isGeoSelected
 : [];
 
 // 2. On classe selon les mêmes libellés que dans le code R
-secteurs_retenus1 = [
+secteurs_retenus4 = [
   "Établissements – Industrie manufacturière, industries extractives et autres",
   "Établissements – Activités immobilières",
   "Établissements – Activités spécialisées, scientifiques et techniques et activités de services administratifs et de soutien",
@@ -629,37 +629,37 @@ secteurs_retenus1 = [
   "Établissements – Autres activités de services"
 ];
 
-function classer_secteur1(label) {
+function classer_secteur4(label) {
   if (!label) return null;
-  if (!secteurs_retenus1.includes(label)) return null;
+  if (!secteurs_retenus4.includes(label)) return null;
   // On retire le préfixe "Établissements – " pour ne garder que le nom du secteur
   return label.replace("Établissements – ", "");
 }
 
 // 3. Filtrage et nettoyage
-etab_mutate = etab_brut.map(function(d) {
+etab_mutate4 = etab_brut4.map(function(d) {
   return {
     OBS_VALUE: d.OBS_VALUE,
-    secteur_act1: classer_secteur1(d.TAB_MEASURE_LABEL)
+    secteur_act: classer_secteur4(d.TAB_MEASURE_LABEL)
   };
-}).filter(d => d.secteur_act1 !== null);
+}).filter(d => d.secteur_act !== null);
 
 // 4. Agrégation des résultats (équivalent group_by + summarise)
-etab_groupes = d3.rollups(
-  etab_mutate,
+etab_groupes4 = d3.rollups(
+  etab_mutate4,
   function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
-  function(d) { return d.secteur_act1; }
+  function(d) { return d.secteur_act; }
 );
 
-etab_summarise = etab_groupes.map(function(g) {
-  return { secteur_act1: g[0], total_groupe: g[1] };
+etab_summarise4 = etab_groupes4.map(function(g) {
+  return { secteur_act: g[0], total_groupe: g[1] };
 });
 
-total4 = d3.sum(etab_summarise, function(d) { return d.total_groupe; });
+total4 = d3.sum(etab_summarise4, function(d) { return d.total_groupe; });
 
-etab = etab_summarise.map(function(d) {
+etab4 = etab_summarise4.map(function(d) {
   return {
-    secteur_act1: d.secteur_act1,
+    secteur_act: d.secteur_act,
     total_groupe: d.total_groupe,
     total4: total4,
     part_groupe: total4 > 0 ? (d.total_groupe / total4) * 100 : 0
@@ -667,20 +667,20 @@ etab = etab_summarise.map(function(d) {
 });
 
 // 5. Ordre logique des secteurs pour l'affichage (ordre du code R)
-ordre_secteurs1 = secteurs_retenus1.map(function(s) {
+ordre_secteurs4 = secteurs_retenus4.map(function(s) {
   return s.replace("Établissements – ", "");
 });
 
-etab_trie = etab.sort((a, b) => ordre_secteurs1.indexOf(a.secteur_act) - ordre_secteurs1.indexOf(b.secteur_act));
+etab_trie4 = etab4.sort((a, b) => ordre_secteurs4.indexOf(a.secteur_act) - ordre_secteurs4.indexOf(b.secteur_act));
 ```
 
 ```{ojs result_plot}
-// Histogramme (équivalent ggplot2 : geom_col + labels tronqués)
+// Histogramme 
 Plot.plot({
   title: isGeoSelected ? `Établissements économiquement actifs en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
   marginBottom: 100,
   x: { 
-    domain: ordre_secteurs1, // Force l'ordre sur l'axe X
+    domain: ordre_secteurs4, // Force l'ordre sur l'axe X
     label: null,
     tickFormat: (d) => d.length > 18 ? d.slice(0, 18) + "…" : d
   },
@@ -689,7 +689,7 @@ Plot.plot({
     grid: true 
   },
   marks: [
-    Plot.barY(etab_trie, { x: "secteur_act", y: "total_groupe", fill: "steelblue" }),
+    Plot.barY(etab_trie4, { x: "secteur_act", y: "total_groupe", fill: "steelblue" }),
     Plot.ruleY([0])
   ]
 })
@@ -697,17 +697,17 @@ Plot.plot({
 
 ```{ojs result_table}
 // Tri manuellement et ajout de la ligne TOTAL
-etab_pour_tableau = {
-  let data = etab_trie.slice();
-  data.push({ secteur_act1: "TOTAL", total_groupe: total4 });
-  return data;
+etab_pour_tableau4 = {
+  let data4 = etab_trie4.slice();
+  data4.push({ secteur_act: "TOTAL", total_groupe: total4 });
+  return data4;
 }
 
 // Affichage du tableau
-Inputs.table(etab_pour_tableau, {
+Inputs.table(etab_pour_tableau4, {
   columns: ["secteur_act", "total_groupe"],
   header: {
-    secteur_act1: "Secteur d'activité",
+    secteur_act: "Secteur d'activité",
     total_groupe: "Nombre d'établissements"
   }
 })

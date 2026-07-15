@@ -188,7 +188,7 @@ viewof selection_annee = Inputs.select(
   ],
   {
     label: "Année",
-    value: "2024"
+    value: "2022"
   }
 )
 ```
@@ -408,7 +408,7 @@ htl.html`
 //| output: false
 
 // 1. On récupère TOUTES les données de POP_T4 pour la zone
-equip_brut = isGeoSelected
+equip_brut1 = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
   FROM read_parquet('${chemin_s3}')
@@ -442,7 +442,7 @@ function classer_residence(label) {
 }
 
 // 3. Filtrage et nettoyage
-equip_mutate = equip_brut.map(function(d) {
+equip_mutate1 = equip_brut1.map(function(d) {
   return {
     OBS_VALUE: d.OBS_VALUE,
     Lieu_de_résidence: classer_residence(d.TAB_MEASURE_LABEL)
@@ -450,24 +450,24 @@ equip_mutate = equip_brut.map(function(d) {
 }).filter(d => d.Lieu_de_résidence !== null);
 
 // 4. Agrégation des résultats
-equip_groupes = d3.rollups(
-  equip_mutate,
+equip_groupes1 = d3.rollups(
+  equip_mutate1,
   function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
   function(d) { return d.Lieu_de_résidence; }
 );
 
-equip_summarise = equip_groupes.map(function(g) {
+equip_summarise1 = equip_groupes1.map(function(g) {
   return { Lieu_de_résidence: g[0], total_groupe: g[1] };
 });
 
-total = d3.sum(equip_summarise, function(d) { return d.total_groupe; });
+total1 = d3.sum(equip_summarise1, function(d) { return d.total_groupe; });
 
-equip = equip_summarise.map(function(d) {
+equip1 = equip_summarise1.map(function(d) {
   return {
     Lieu_de_résidence: d.Lieu_de_résidence,
     total_groupe: d.total_groupe,
-    total: total,
-    part_groupe: total > 0 ? (d.total_groupe / total) * 100 : 0
+    total1: total1,
+    part_groupe: total1 > 0 ? (d.total_groupe / total1) * 100 : 0
   };
 });
 
@@ -477,13 +477,13 @@ ordre_niveaux = [
   "Dans un autre logement de la même commune", 
   "Dans une autre commune"
 ];
-equip_trie = equip.sort((a, b) => ordre_niveaux.indexOf(a.Lieu_de_résidence) - ordre_niveaux.indexOf(b.Lieu_de_résidence));
+equip_trie1 = equip1.sort((a, b) => ordre_niveaux.indexOf(a.Lieu_de_résidence) - ordre_niveaux.indexOf(b.Lieu_de_résidence));
 ```
 
 ```{ojs result_plot}
 // Construction du camembert D3 sur-mesure
 camembert = {
-  if (!isGeoSelected || total === 0) return htl.html`<div>Sélectionnez un territoire ou aucune donnée disponible pour cette année.</div>`;
+  if (!isGeoSelected || total1 === 0) return htl.html`<div>Sélectionnez un territoire ou aucune donnée disponible pour cette année.</div>`;
   
   const width = 600;
   const height = 350;
@@ -512,7 +512,7 @@ camembert = {
 
   // Tranches du camembert
   gPie.selectAll("path")
-    .data(pie(equip_trie))
+    .data(pie(equip_trie1))
     .join("path")
     .attr("fill", d => color(d.data.Lieu_de_résidence))
     .attr("stroke", "white")
@@ -523,7 +523,7 @@ camembert = {
 
   // Étiquettes de pourcentages au centre des tranches
   gPie.selectAll("text")
-    .data(pie(equip_trie))
+    .data(pie(equip_trie1))
     .join("text")
     .attr("transform", d => `translate(${arc.centroid(d)})`)
     .attr("text-anchor", "middle")
@@ -575,14 +575,14 @@ htl.html`
 
 ```{ojs result_table}
 // Tri manuellement et ajout de la ligne TOTAL
-equip_pour_tableau = {
-  let data = equip_trie.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
-  data.push({ Lieu_de_résidence: "TOTAL", total_groupe: total });
-  return data;
+equip_pour_tableau1 = {
+  let data1 = equip_trie1.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
+  data1.push({ Lieu_de_résidence: "TOTAL", total_groupe: total1 });
+  return data1;
 }
 
 // Affichage du tableau
-Inputs.table(equip_pour_tableau, {
+Inputs.table(equip_pour_tableau1, {
   columns: ["Lieu_de_résidence", "total_groupe"],
   header: {
     Lieu_de_résidence: "Lieu de résidence",

@@ -561,18 +561,3 @@ Inputs.table(equip_pour_tableau3, {
 })
 ```
 
-# Pour en savoir plus
-
-- Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), le graphique se met à jour en allant piocher dynamiquement dans la base du dossier complet au format Parquet.
-
-```{ojs debug}
-debug_info = db.query(`
-  SELECT count(*) as nb_lignes
-  FROM read_parquet('${chemin_s3}')
-`)
-
-viewof debug_table = Inputs.table(
-  debug_info,
-  { locale: "fr" }
-)
-```
