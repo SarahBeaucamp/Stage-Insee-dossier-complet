@@ -1,5 +1,5 @@
 ---
-title: "Tourisme en 2026"
+title: "Population active, emploi et chômage au sens du recensement en 2023"
 format: 
   dashboard:
     nav-buttons: []
@@ -170,10 +170,10 @@ include-in-header:
 ```{ojs config}
 //| output: false
 
-// 1. Créer ou ouvrir une connexion DuckDB
+// 1. Créer ou ouvrir une connexion DuckDB (équivalent dbConnect(duckdb(), ...) en R)
 db = DuckDBClient.of({})
 
-// 4. Définir l'adresse du fichier sur le S3 du SSP Cloud
+// 4. Définir l'adresse de votre fichier sur le S3 du SSP Cloud (équivalent chemin_s3 en R)
 chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'
 ```
 
@@ -189,7 +189,7 @@ viewof selection_annee = Inputs.select(
   ],
   {
     label: "Année",
-    value: "2026"
+    value: "2023"
   }
 )
 ```
@@ -212,11 +212,11 @@ viewof selection_type_geo = Inputs.select(
 ```{ojs geo}
 //| output: false
 
-// Liste des territoires disponibles dynamiquement
+// Liste des territoires disponibles mis à jour dynamiquement selon l'aire urbaine choisie
 geo = db.query(`
   SELECT DISTINCT GEO, GEO_LABEL
   FROM read_parquet('${chemin_s3}')
-  WHERE ID_TAB = 'TOU_T1' AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+  WHERE ID_TAB = 'EQUIP_T1' AND GEO_OBJECT_LABEL = '${selection_type_geo}'
   ORDER BY GEO_LABEL
 `)
 ```
@@ -239,7 +239,7 @@ viewof selection_geo = Inputs.table(
 )
 ```
 
-# Hôtels
+# Population active de 15 à 64 ans selon le groupe socioprofessionnel actuel ou antérieur
 
 ## Territoire sélectionné {height="15%"}
 
@@ -256,309 +256,177 @@ htl.html`
 ```{ojs result_calc}
 //| output: false
 
-equip_brut1 = isGeoSelected
+// 1. On récupère les données de population pour la zone (en filtrant sur ID_TAB = 'EMP_T3')
+equip_brut = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
   FROM read_parquet('${chemin_s3}')
   WHERE TIME_PERIOD = '${selection_annee}'
     AND GEO_OBJECT_LABEL = '${selection_type_geo}'
     AND GEO = '${selection_geo.GEO}'
-    AND ID_TAB = 'TOU_T1'
+    AND ID_TAB = 'EMP_T3'
 `)
 : [];
 
-function classer_hotels(label) {
+// 2. Classification corrigée.
+// Important : dans TAB_MEASURE_LABEL, il n'y a pas de catégorie "sans emploi" isolée.
+// - "Actif x CSP"          = TOTAL des actifs de cette CSP (occupés + non-occupés)
+// - "Actif occupé x CSP"   = uniquement les actifs OCCUPÉS de cette CSP
+// Le nombre de personnes "sans emploi" se déduit donc par soustraction : Total - Occupé.
+function classer_pop(label) {
   if (!label) return null;
   let txt = label.toLowerCase();
-  
-  if (!txt.includes("hôtels") && !txt.includes("hébergement")) return null;
 
-  if (txt.includes("1 étoile")) return "1 étoile";
-  if (txt.includes("2 étoiles")) return "2 étoiles";
-  if (txt.includes("3 étoiles")) return "3 étoiles";
-  if (txt.includes("4 étoiles")) return "4 étoiles";
-  if (txt.includes("5 étoiles")) return "5 étoiles";
-  if (txt.includes("non classé")) return "Non classé";
-  
-  return null;
+  // Identifier le statut (Total vs Occupé)
+  let act = null;
+  if (txt.includes("actif occupé x")) act = "Occupé";
+  else if (txt.includes("actif x")) act = "Total";
+  if (!act) return null;
+
+  // Identifier la CSP
+  let csp = null;
+  if (txt.includes("employés")) csp = "Employés";
+  else if (txt.includes("cadres et professions intellectuelles supérieures")) csp = "Cadres et professions intellectuelles supérieures";
+  else if (txt.includes("agriculteurs")) csp = "Agriculteurs";
+  else if (txt.includes("artisans, commerçants et chefs d’entreprise")) csp = "Artisans, commerçants et chefs d’entreprise";
+  else if (txt.includes("professions intermédiaires")) csp = "Professions intermédiaires";
+  else if (txt.includes("ouvriers")) csp = "Ouvriers";
+
+  if (!csp) return null;
+
+  return { act: act, csp: csp };
 }
 
-equip_mutate1 = equip_brut1.map(function(d) {
+// 3. Filtrage et nettoyage
+equip_mutate = equip_brut.map(function(d) {
+  let classification = classer_pop(d.TAB_MEASURE_LABEL);
+  if (!classification) return null;
+
   return {
     OBS_VALUE: d.OBS_VALUE,
-    etoiles: classer_hotels(d.TAB_MEASURE_LABEL)
+    ACT: classification.act,
+    CSP: classification.csp
   };
-}).filter(d => d.etoiles !== null);
+}).filter(d => d !== null);
 
-equip_groupes1 = d3.rollups(
-  equip_mutate1,
-  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
-  function(d) { return d.etoiles; }
+// 4. Agrégation : somme des valeurs par CSP x (Total / Occupé)
+equip_agrege = d3.flatRollup(
+  equip_mutate,
+  v => d3.sum(v, d => d.OBS_VALUE),
+  d => d.CSP,
+  d => d.ACT
 );
 
-equip_summarise1 = equip_groupes1.map(function(g) {
-  return { etoiles: g[0], total_groupe: g[1] };
+// 5. Reconstruction par CSP : on calcule "Sans Emploi" = Total - Occupé
+csp_map = new Map();
+equip_agrege.forEach(([csp, act, valeur]) => {
+  if (!csp_map.has(csp)) csp_map.set(csp, {});
+  csp_map.get(csp)[act] = valeur;
 });
 
-total1 = d3.sum(equip_summarise1, function(d) { return d.total_groupe; });
+// Ordre pour l'affichage
+ordre_csp = ["Agriculteurs", "Artisans, commerçants et chefs d’entreprise", "Ouvriers", "Employés", "Professions intermédiaires", "Cadres et professions intellectuelles supérieures"];
 
-equip1 = equip_summarise1.map(function(d) {
-  return {
-    etoiles: d.etoiles,
-    total_groupe: d.total_groupe,
-    total1: total1,
-    part_groupe: total1 > 0 ? (d.total_groupe / total1) * 100 : 0
-  };
-});
+// 6. Calcul des parts locales : part d'occupés / sans emploi AU SEIN de chaque CSP
+// (Avec Emploi + Sans Emploi = 100% pour chaque CSP)
+equip = Array.from(csp_map, ([csp, vals]) => {
+  let total = vals["Total"] || 0;
+  let occupe = vals["Occupé"] || 0;
+  let sans_emploi = total - occupe;
 
-ordre_etoiles = [
-  "1 étoile", 
-  "2 étoiles", 
-  "3 étoiles", 
-  "4 étoiles", 
-  "5 étoiles", 
-  "Non classé"
-];
-equip_trie1 = equip1.sort((a, b) => ordre_etoiles.indexOf(a.etoiles) - ordre_etoiles.indexOf(b.etoiles));
+  return [
+    {
+      CSP: csp,
+      ACT: "Avec Emploi",
+      population_exacte: occupe,
+      part_locale: total > 0 ? occupe / total : 0,
+      pourcentage_affichage: total > 0 ? (occupe / total * 100).toFixed(1) + " %" : "0.0 %"
+    },
+    {
+      CSP: csp,
+      ACT: "Sans Emploi",
+      population_exacte: sans_emploi,
+      part_locale: total > 0 ? sans_emploi / total : 0,
+      pourcentage_affichage: total > 0 ? (sans_emploi / total * 100).toFixed(1) + " %" : "0.0 %"
+    }
+  ];
+}).flat();
+
+equip_trie = equip.sort((a, b) => ordre_csp.indexOf(a.CSP) - ordre_csp.indexOf(b.CSP));
 ```
 
+
 ```{ojs result_plot}
+// Graphique en barres groupées (dodge) : une paire de barres par CSP
 Plot.plot({
-  title: isGeoSelected ? `Capacité des hôtels au 1er janvier ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
-  marginBottom: 50,
-  x: { 
-    domain: ordre_etoiles,
-    label: null 
+  title: isGeoSelected ? `Taux d'emploi par CSP – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  subtitle: `Année ${selection_annee}`,
+  marginBottom: 60,
+  marginLeft: 50,
+  // L'axe X principal est masqué, car les labels sont gérés par le fx (facets)
+  x: { axis: null },
+  y: {
+    label: "Part au sein de la CSP",
+    tickFormat: "%",
+    grid: true,
+    domain: [0, 1]
   },
-  y: { 
-    label: "Nombre de places", 
-    grid: true 
+  // Facet X : permet de grouper les barres par CSP
+  fx: {
+    domain: ordre_csp,
+    label: "CSP",
+    tickRotate: -30
+  },
+  color: {
+    domain: ["Avec Emploi", "Sans Emploi"],
+    range: ["lightblue", "pink"],
+    legend: true
   },
   marks: [
-    Plot.barY(equip_trie1, { x: "etoiles", y: "total_groupe", fill: "steelblue" }),
+    Plot.barY(equip_trie, {
+      x: "ACT",
+      y: "part_locale",
+      fill: "ACT",
+      fx: "CSP",
+      title: d => `${d.ACT} - ${d.CSP}\n${d.population_exacte} personnes (${(d.part_locale*100).toFixed(1)}%)` // Info-bulle au survol
+    }),
     Plot.ruleY([0])
   ]
 })
 ```
 
-```{ojs result_table}
-equip_pour_tableau1 = {
-  let data = equip_trie1.slice(); 
-  data.push({ etoiles: "TOTAL", total_groupe: total1 });
-  return data;
-}
 
-Inputs.table(equip_pour_tableau1, {
-  columns: ["etoiles", "total_groupe"],
-  header: {
-    etoiles: "Catégorie",
-    total_groupe: "Capacité (nombre de places)"
-  }
-})
-```
-
-# Campings
-
-## Territoire sélectionné {height="15%"}
-
-```{ojs geo3}
-
-htl.html`
-  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
-`
-```
-
-## Résultat
-
-```{ojs result_calc}
-//| output: false
-
-equip_brut2 = isGeoSelected
-? db.query(`
-  SELECT TAB_MEASURE_LABEL, OBS_VALUE
-  FROM read_parquet('${chemin_s3}')
-  WHERE TIME_PERIOD = '${selection_annee}'
-    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
-    AND GEO = '${selection_geo.GEO}'
-    AND ID_TAB = 'TOU_T2'
-`)
-: [];
-
-function classer_campings(label) {
-  if (!label) return null;
-  let txt = label.toLowerCase();
-  
-  if (!txt.includes("camping") && !txt.includes("terrains")) return null;
-
-  if (txt.includes("1 étoile")) return "1 étoile";
-  if (txt.includes("2 étoiles")) return "2 étoiles";
-  if (txt.includes("3 étoiles")) return "3 étoiles";
-  if (txt.includes("4 étoiles")) return "4 étoiles";
-  if (txt.includes("5 étoiles")) return "5 étoiles";
-  if (txt.includes("non classé")) return "Non classé";
-  
-  return null;
-}
-
-equip_mutate2 = equip_brut2.map(function(d) {
-  return {
-    OBS_VALUE: d.OBS_VALUE,
-    etoiles: classer_campings(d.TAB_MEASURE_LABEL)
-  };
-}).filter(d => d.etoiles !== null);
-
-equip_groupes2 = d3.rollups(
-  equip_mutate2,
-  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
-  function(d) { return d.etoiles; }
-);
-
-equip_summarise2 = equip_groupes2.map(function(g) {
-  return { etoiles: g[0], total_groupe: g[1] };
-});
-
-total2 = d3.sum(equip_summarise2, function(d) { return d.total_groupe; });
-
-equip2 = equip_summarise2.map(function(d) {
-  return {
-    etoiles: d.etoiles,
-    total_groupe: d.total_groupe,
-    total2: total2,
-    part_groupe: total2 > 0 ? (d.total_groupe / total2) * 100 : 0
-  };
-});
-
-classement_etoiles = [
-  "1 étoile", 
-  "2 étoiles", 
-  "3 étoiles", 
-  "4 étoiles", 
-  "5 étoiles", 
-  "Non classé"
-];
-equip_trie2 = equip2.sort((a, b) => classement_etoiles.indexOf(a.etoiles) - classement_etoiles.indexOf(b.etoiles));
-```
-
-```{ojs result_plot}
+```{ojs result_plot_empile}
+// Histogramme empilé : une colonne par CSP, "Avec Emploi" + "Sans Emploi" empilés jusqu'à 100%
 Plot.plot({
-  title: isGeoSelected ? `Capacité des hôtels au 1er janvier ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
-  marginBottom: 50,
-  x: { 
-    domain: classement_etoiles,
-    label: null 
+  title: isGeoSelected ? `Répartition emploi / non-emploi par CSP – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  subtitle: `Année ${selection_annee}`,
+  marginBottom: 80,
+  marginLeft: 50,
+  x: {
+    domain: ordre_csp,
+    label: null,
+    tickRotate: -30
   },
-  y: { 
-    label: "Nombre de places", 
-    grid: true 
+  y: {
+    label: "Part au sein de la CSP",
+    tickFormat: "%",
+    grid: true,
+    domain: [0, 1]
+  },
+  color: {
+    domain: ["Avec Emploi", "Sans Emploi"],
+    range: ["lightblue", "pink"],
+    legend: true
   },
   marks: [
-    Plot.barY(equip_trie2, { x: "etoiles", y: "total_groupe", fill: "steelblue" }),
+    Plot.barY(equip_trie, {
+      x: "CSP",
+      y: "part_locale",
+      fill: "ACT",
+      title: d => `${d.ACT} - ${d.CSP}\n${d.population_exacte} personnes (${(d.part_locale*100).toFixed(1)}%)`
+    }),
     Plot.ruleY([0])
   ]
 })
 ```
-
-```{ojs result_table}
-equip_pour_tableau2 = {
-  let data = equip_trie2.slice(); 
-  data.push({ etoiles: "TOTAL", total_groupe: total2 });
-  return data;
-}
-
-Inputs.table(equip_pour_tableau2, {
-  columns: ["etoiles", "total_groupe"],
-  header: {
-    etoiles: "Catégorie",
-    total_groupe: "Capacité (nombre de places)"
-  }
-})
-```
-
-# Autres hébergements collectifs
-
-## Territoire sélectionné {height="15%"}
-
-```{ojs geo3}
-
-htl.html`
-  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
-`
-```
-
-## Résultat
-
-```{ojs result_calc}
-//| output: false
-
-equip_brut3 = isGeoSelected
-? db.query(`
-  SELECT TAB_MEASURE_LABEL, OBS_VALUE
-  FROM read_parquet('${chemin_s3}')
-  WHERE TIME_PERIOD = '${selection_annee}'
-    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
-    AND GEO = '${selection_geo.GEO}'
-    AND ID_TAB = 'TOU_T3'
-`)
-: [];
-
-function classer_hebergement(label) {
-  if (!label) return null;
-  let txt = label.toLowerCase();
-  
-  if (txt.includes("résidences de tourisme")) return "Résidence de tourisme et hébergements assimilés";
-  if (txt.includes("auberges de jeunesse")) return "Auberges de jeunesse et centres sportifs";
-  if (txt.includes("villages vacances")) return "Villages vacances et maisons familiales";
-  
-  return null;
-}
-
-equip_mutate3 = equip_brut3.map(function(d) {
-  return {
-    OBS_VALUE: d.OBS_VALUE,
-    categorie: classer_hebergement(d.TAB_MEASURE_LABEL)
-  };
-}).filter(d => d.categorie !== null);
-
-equip_groupes3 = d3.rollups(
-  equip_mutate3,
-  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
-  function(d) { return d.categorie; }
-);
-
-equip_synthese3 = equip_groupes3.map(function(g) {
-  return { categorie: g[0], total_groupe: g[1] };
-});
-
-total3 = d3.sum(equip_synthese3, function(d) { return d.total_groupe; });
-```
-
-```{ojs result_plot}
-Plot.plot({
-  title: isGeoSelected ? `Nombre d'autres hébergements collectifs au 1er janvier ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
-  marginBottom: 50,
-  marginLeft: 200,
-  x: { label: "Nombre de lits", grid: true },
-  y: { label: null },
-  marks: [
-    Plot.barX(equip_synthese3, { y: "categorie", x: "total_groupe", fill: "steelblue" }),
-    Plot.ruleX([0])
-  ]
-})
-```
-
-```{ojs result_table}
-equip_pour_tableau3 = {
-  let data = equip_synthese3.slice(); 
-  data.push({ categorie: "TOTAL", total_groupe: total3 });
-  return data;
-}
-
-Inputs.table(equip_pour_tableau3, {
-  columns: ["categorie", "total_groupe"],
-  header: {
-    categorie: "Type d'hébergement",
-    total_groupe: "Nombre de lits"
-  }
-})
-```
-

@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.38">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Population active, emploi et chômage au sens du recensement en 2023</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="emploi_files/libs/clipboard/clipboard.min.js"></script>
+<script src="emploi_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="emploi_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="emploi_files/libs/quarto-html/popper.min.js"></script>
+<script src="emploi_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="emploi_files/libs/quarto-html/anchor.min.js"></script>
+<link href="emploi_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="emploi_files/libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
+<link href="emploi_files/libs/quarto-html/quarto-syntax-highlighting-dark-0a6b7249c26820e032cb0bd839ff02b1.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
+<link href="emploi_files/libs/quarto-html/quarto-syntax-highlighting-15634bcf2e68342d4ad2dfa704d543f6.css" rel="stylesheet" class="quarto-color-scheme-extra" id="quarto-text-highlighting-styles">
+<script src="emploi_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="emploi_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="emploi_files/libs/bootstrap/bootstrap-9de7c8df88aa02e0dd8da442b4982568.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
+<link href="emploi_files/libs/bootstrap/bootstrap-dark-9de7c8df88aa02e0dd8da442b4982568.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="light">
+<link href="emploi_files/libs/bootstrap/bootstrap-9de7c8df88aa02e0dd8da442b4982568.min.css" rel="stylesheet" append-hash="true" class="quarto-color-scheme-extra" id="quarto-bootstrap" data-mode="light">
+<script src="emploi_files/libs/quarto-dashboard/quarto-dashboard.js"></script>
+<script src="emploi_files/libs/quarto-dashboard/stickythead.js"></script>
+
+
+
+<script src="emploi_files/libs/quarto-dashboard/web-components.js" type="module"></script>
+<script src="emploi_files/libs/quarto-dashboard/components.js"></script>
+
+<script type="module" src="emploi_files/libs/quarto-ojs/quarto-ojs-runtime.js"></script>
+<link href="emploi_files/libs/quarto-ojs/quarto-ojs.css" rel="stylesheet">
+<style>
+  /* ===== Sous-menu "Pages" (sous-thèmes du dashboard actuel) ===== */
+  #quarto-pages-dropdown .dropdown-menu {
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+  #quarto-pages-dropdown .dropdown-menu .dropdown-item {
+    color: #212529 !important;
+  }
+  #quarto-pages-dropdown .dropdown-menu .dropdown-item:hover,
+  #quarto-pages-dropdown .dropdown-menu .dropdown-item:focus {
+    color: #212529 !important;
+    background-color: rgba(0,0,0,0.06);
+  }
+  #quarto-pages-dropdown .dropdown-item.active {
+    font-weight: 600;
+    background-color: #4a6f8a;
+    color: #ffffff !important;
+  }
+
+  /* ===== Menu "Thèmes" (titre transformé en dropdown) ===== */
+  #quarto-dashboard-header .navbar-brand-container {
+    position: relative;
+  }
+  #quarto-dashboard-header .navbar-brand-container {
+    cursor: pointer;
+  }
+  #quarto-dashboard-header .navbar-title::after {
+    content: " ▾";
+    font-size: 0.7em;
+  }
+  #quarto-themes-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #ffffff;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    min-width: 320px;
+    max-height: 70vh;
+    overflow-y: auto;
+    z-index: 1060;
+    border-radius: 4px;
+    padding: 0.25rem 0;
+  }
+  #quarto-themes-dropdown-menu.show {
+    display: block;
+  }
+  #quarto-themes-dropdown-menu a {
+    display: block;
+    padding: 0.5rem 1rem;
+    color: #212529;
+    text-decoration: none;
+  }
+  #quarto-themes-dropdown-menu a:hover {
+    background-color: rgba(0,0,0,0.06);
+  }
+  #quarto-themes-dropdown-menu a.active {
+    font-weight: 600;
+    background-color: #4a6f8a;
+    color: #ffffff;
+  }
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  // ----- 1. Sous-menu "Pages" : regroupe les sous-thèmes de la page courante -----
+  var navList = document.querySelector("#quarto-dashboard-header .navbar-nav");
+  if (navList) {
+    var items = Array.from(navList.querySelectorAll(":scope > li.nav-item"));
+    if (items.length > 0) {
+      var dropdownLi = document.createElement("li");
+      dropdownLi.className = "nav-item dropdown";
+      dropdownLi.id = "quarto-pages-dropdown";
+
+      var toggle = document.createElement("a");
+      toggle.className = "nav-link dropdown-toggle";
+      toggle.href = "#";
+      toggle.setAttribute("role", "button");
+      toggle.setAttribute("data-bs-toggle", "dropdown");
+      toggle.setAttribute("aria-expanded", "false");
+      toggle.textContent = "Pages";
+
+      var menu = document.createElement("ul");
+      menu.className = "dropdown-menu dropdown-menu-end";
+
+      dropdownLi.appendChild(toggle);
+      dropdownLi.appendChild(menu);
+
+      items.forEach(function (li) {
+        var link = li.querySelector("a.nav-link");
+        if (link) {
+          link.classList.add("dropdown-item");
+          if (link.classList.contains("active")) {
+            toggle.textContent = link.textContent.trim();
+          }
+        }
+        menu.appendChild(li);
+      });
+
+      navList.appendChild(dropdownLi);
+
+      menu.addEventListener("click", function (e) {
+        var link = e.target.closest("a.dropdown-item");
+        if (link) toggle.textContent = link.textContent.trim();
+      });
+    }
+  }
+
+  // ----- 2. Menu "Thèmes" : navigation entre les dashboards -----
+  var themes = [
+    { label: "Équipements et services à la population en 2024", href: "equipements.html" },
+    { label: "Tourisme en 2026", href: "tourisme.html" },
+    { label: "Créations d'entreprises et d'établissements en 2025", href: "creation.qmd"},
+    { label: "Logement en 2023", href: "logement.qmd"},
+    { label: "Famille", href: "famille.qmd"},
+    { label: "Structure de la population", href: "population.qmd"},
+    { label: "Population active, emploi et chômage au sens du recensement en 2023", href: "emploi.qmd"}
+  ];
+
+  var brandContainer = document.querySelector("#quarto-dashboard-header .navbar-brand-container");
+  if (brandContainer) {
+    // Sur les dashboards, le titre n'est pas toujours dans un <a class="navbar-brand">
+    // On cible ce qui existe réellement, avec plusieurs solutions de repli.
+    var clickTarget =
+      brandContainer.querySelector("a.navbar-brand") ||
+      brandContainer.querySelector(".navbar-title") ||
+      brandContainer;
+
+    clickTarget.style.cursor = "pointer";
+
+    var themeMenu = document.createElement("div");
+    themeMenu.id = "quarto-themes-dropdown-menu";
+
+    var currentPage = window.location.pathname.split("/").pop();
+
+    themes.forEach(function (theme) {
+      var a = document.createElement("a");
+      a.href = theme.href;
+      a.textContent = theme.label;
+      if (theme.href === currentPage) a.classList.add("active");
+      themeMenu.appendChild(a);
+    });
+
+    brandContainer.appendChild(themeMenu);
+
+    clickTarget.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      themeMenu.classList.toggle("show");
+    });
+
+    document.addEventListener("click", function (e) {
+      if (!brandContainer.contains(e.target)) {
+        themeMenu.classList.remove("show");
+      }
+    });
+  }
+});
+</script>
+
+
+</head>
+
+<body class="quarto-dashboard dashboard-fill dashboard-sidebar fullcontent quarto-light">
+
+<header id="quarto-dashboard-header">
+<nav class="navbar navbar-expand-md slim" data-bs-theme="dark">
+  <div class="navbar-container container-fluid">
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#dashboard-collapse" aria-controls="dashboard-collapse" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>    
+
+
+    <div class="navbar-brand-container">
+
+
+      <div class="navbar-title">
+        <div class="navbar-title-text"><a href="#">Population active, emploi et chômage au sens du recensement en 2023</a></div>
+        
+        
+      </div>
+    </div>
+<div id="dashboard-collapse" class="navbar-collapse collapse"><ul class="navbar-nav navbar-nav-scroll me-auto" role="tablist"><li class="nav-item" role="presentation"><a id="tab-population-active-de-15-à-64-ans-selon-le-groupe-socioprofessionnel-actuel-ou-antérieur" class="nav-link active" data-bs-toggle="tab" role="tab" data-bs-target="#population-active-de-15-à-64-ans-selon-le-groupe-socioprofessionnel-actuel-ou-antérieur" data-scrolling="false" href="#population-active-de-15-à-64-ans-selon-le-groupe-socioprofessionnel-actuel-ou-antérieur" aria-controls="population-active-de-15-à-64-ans-selon-le-groupe-socioprofessionnel-actuel-ou-antérieur" aria-selected="true"><span class="nav-link-text">Population active de 15 à 64 ans selon le groupe socioprofessionnel actuel ou antérieur</span></a></li></ul></div></div>
+</nav>
+</header>
+<div class="page-layout-custom quarto-dashboard-content bslib-gap-spacing html-fill-container bslib-page-fill quarto-dashboard-pages dashboard-sidebar-container">  
+
+<div class="cell hidden bslib-grid-item html-fill-item">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code hidden" id="cb1" data-startfrom="174" data-source-offset="-87"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 173;"><span id="cb1-174"><a href="#cb1-174" aria-hidden="true" tabindex="-1"></a>db <span class="op">=</span> DuckDBClient<span class="op">.</span><span class="fu">of</span>({})</span>
+<span id="cb1-175"><a href="#cb1-175" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-176"><a href="#cb1-176" aria-hidden="true" tabindex="-1"></a><span class="co">// 4. Définir l'adresse de votre fichier sur le S3 du SSP Cloud (équivalent chemin_s3 en R)</span></span>
+<span id="cb1-177"><a href="#cb1-177" aria-hidden="true" tabindex="-1"></a>chemin_s3 <span class="op">=</span> <span class="st">'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-1" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden">
+<div>
+<div id="ojs-cell-1-2" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</div>
+<div class="bslib-sidebar-layout html-fill-item html-fill-container" data-bslib-sidebar-open="desktop" data-bslib-sidebar-init="true" style=" --bslib-sidebar-width: 30%" data-bslib-sidebar-border="false" data-bslib-sidebar-border-radius="false"><div class="main html-fill-container html-fill-item"><div class="sidebar-content html-fill-item html-fill-container">
+<div class="tab-content bslib-grid html-fill-item html-fill-container" style="display: grid; grid-template-columns: minmax(3em, 1fr);
+grid-auto-rows: minmax(0, 1fr);">
+<div id="population-active-de-15-à-64-ans-selon-le-groupe-socioprofessionnel-actuel-ou-antérieur" class="dashboard-page tab-pane show active html-fill-item html-fill-container" data-orientation="rows" aria-labelledby="tab-population-active-de-15-à-64-ans-selon-le-groupe-socioprofessionnel-actuel-ou-antérieur">
+<div class="html-fill-item html-fill-container bslib-grid" style="display: grid; grid-template-rows: minmax(3em, 15fr) minmax(3em, 85fr); grid-auto-columns: minmax(0, 1fr);">
+<div class="html-fill-item html-fill-container bslib-grid" style="display: grid; grid-template-columns: minmax(3em, 1fr);
+grid-auto-rows: minmax(0, 1fr);">
+<div class="card cell html-fill-item html-fill-container bslib-card" data-bslib-card-init="" data-require-bs-caller="card()" data-full-screen="false">
+<div class="card-body html-fill-item html-fill-container">
+<div class="code-copy-outer-scaffold html-fill-item html-fill-container"><div class="sourceCode cell-code hidden html-fill-item html-fill-container" id="cb6" data-startfrom="247" data-source-offset="-0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 246;"><span id="cb6-247"><a href="#cb6-247" aria-hidden="true" tabindex="-1"></a>isGeoSelected <span class="op">=</span> (selection_geo <span class="op">!==</span> <span class="kw">null</span>)<span class="op">;</span></span>
+<span id="cb6-248"><a href="#cb6-248" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-249"><a href="#cb6-249" aria-hidden="true" tabindex="-1"></a>htl<span class="op">.</span><span class="fu">html</span><span class="vs">`</span></span>
+<span id="cb6-250"><a href="#cb6-250" aria-hidden="true" tabindex="-1"></a><span class="vs">  &lt;strong&gt;Territoire sélectionné :&lt;/strong&gt; </span><span class="sc">${</span>isGeoSelected <span class="op">?</span> selection_geo<span class="op">.</span><span class="at">GEO_LABEL</span> <span class="op">:</span> <span class="st">""</span><span class="sc">}</span><span class="vs"> (</span><span class="sc">${</span>isGeoSelected <span class="op">?</span> selection_geo<span class="op">.</span><span class="at">GEO</span> <span class="op">:</span> <span class="st">""</span><span class="sc">}</span><span class="vs">)</span></span>
+<span id="cb6-251"><a href="#cb6-251" aria-hidden="true" tabindex="-1"></a><span class="vs">`</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display html-fill-item html-fill-container">
+<div class="html-fill-item html-fill-container">
+<div id="ojs-cell-6-1" data-nodetype="declaration" class="html-fill-item html-fill-container">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display html-fill-item html-fill-container">
+<div class="html-fill-item html-fill-container">
+<div id="ojs-cell-6-2" data-nodetype="expression" class="html-fill-item html-fill-container">
+
+</div>
+</div>
+</div>
+</div>
+<bslib-tooltip placement="auto" bsoptions="[]" data-require-bs-version="5" data-require-bs-caller="tooltip()">
+    <template>Expand</template>
+    <span class="bslib-full-screen-enter badge rounded-pill">
+        <svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 24 24" style="height:1em;width:1em;" aria-hidden="true" role="img"><path d="M20 5C20 4.4 19.6 4 19 4H13C12.4 4 12 3.6 12 3C12 2.4 12.4 2 13 2H21C21.6 2 22 2.4 22 3V11C22 11.6 21.6 12 21 12C20.4 12 20 11.6 20 11V5ZM4 19C4 19.6 4.4 20 5 20H11C11.6 20 12 20.4 12 21C12 21.6 11.6 22 11 22H3C2.4 22 2 21.6 2 21V13C2 12.4 2.4 12 3 12C3.6 12 4 12.4 4 13V19Z"></path></svg>
+    </span>
+</bslib-tooltip><script data-bslib-card-init="">bslib.Card.initializeAllCards();</script></div>
+</div>
+<div class="html-fill-item html-fill-container bslib-grid" style="display: grid; grid-template-columns: minmax(3em, 1fr) minmax(3em, 1fr);
+grid-auto-rows: minmax(0, 1fr);">
+<div class="cell hidden html-fill-item html-fill-container">
+<div class="code-copy-outer-scaffold html-fill-item html-fill-container"><div class="sourceCode cell-code hidden html-fill-item html-fill-container" id="cb7" data-startfrom="260" data-source-offset="-94"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 259;"><span id="cb7-260"><a href="#cb7-260" aria-hidden="true" tabindex="-1"></a>equip_brut <span class="op">=</span> isGeoSelected</span>
+<span id="cb7-261"><a href="#cb7-261" aria-hidden="true" tabindex="-1"></a><span class="op">?</span> db<span class="op">.</span><span class="fu">query</span>(<span class="vs">`</span></span>
+<span id="cb7-262"><a href="#cb7-262" aria-hidden="true" tabindex="-1"></a><span class="vs">  SELECT TAB_MEASURE_LABEL, OBS_VALUE</span></span>
+<span id="cb7-263"><a href="#cb7-263" aria-hidden="true" tabindex="-1"></a><span class="vs">  FROM read_parquet('</span><span class="sc">${</span>chemin_s3<span class="sc">}</span><span class="vs">')</span></span>
+<span id="cb7-264"><a href="#cb7-264" aria-hidden="true" tabindex="-1"></a><span class="vs">  WHERE TIME_PERIOD = '</span><span class="sc">${</span>selection_annee<span class="sc">}</span><span class="vs">'</span></span>
+<span id="cb7-265"><a href="#cb7-265" aria-hidden="true" tabindex="-1"></a><span class="vs">    AND GEO_OBJECT_LABEL = '</span><span class="sc">${</span>selection_type_geo<span class="sc">}</span><span class="vs">'</span></span>
+<span id="cb7-266"><a href="#cb7-266" aria-hidden="true" tabindex="-1"></a><span class="vs">    AND GEO = '</span><span class="sc">${</span>selection_geo<span class="op">.</span><span class="at">GEO</span><span class="sc">}</span><span class="vs">'</span></span>
+<span id="cb7-267"><a href="#cb7-267" aria-hidden="true" tabindex="-1"></a><span class="vs">    AND ID_TAB = 'EMP_T3'</span></span>
+<span id="cb7-268"><a href="#cb7-268" aria-hidden="true" tabindex="-1"></a><span class="vs">`</span>)</span>
+<span id="cb7-269"><a href="#cb7-269" aria-hidden="true" tabindex="-1"></a><span class="op">:</span> []<span class="op">;</span></span>
+<span id="cb7-270"><a href="#cb7-270" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-271"><a href="#cb7-271" aria-hidden="true" tabindex="-1"></a><span class="co">// 2. Classification corrigée.</span></span>
+<span id="cb7-272"><a href="#cb7-272" aria-hidden="true" tabindex="-1"></a><span class="co">// Important : dans TAB_MEASURE_LABEL, il n'y a pas de catégorie "sans emploi" isolée.</span></span>
+<span id="cb7-273"><a href="#cb7-273" aria-hidden="true" tabindex="-1"></a><span class="co">// - "Actif x CSP"          = TOTAL des actifs de cette CSP (occupés + non-occupés)</span></span>
+<span id="cb7-274"><a href="#cb7-274" aria-hidden="true" tabindex="-1"></a><span class="co">// - "Actif occupé x CSP"   = uniquement les actifs OCCUPÉS de cette CSP</span></span>
+<span id="cb7-275"><a href="#cb7-275" aria-hidden="true" tabindex="-1"></a><span class="co">// Le nombre de personnes "sans emploi" se déduit donc par soustraction : Total - Occupé.</span></span>
+<span id="cb7-276"><a href="#cb7-276" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">classer_pop</span>(label) {</span>
+<span id="cb7-277"><a href="#cb7-277" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="op">!</span>label) <span class="cf">return</span> <span class="kw">null</span><span class="op">;</span></span>
+<span id="cb7-278"><a href="#cb7-278" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> txt <span class="op">=</span> label<span class="op">.</span><span class="fu">toLowerCase</span>()<span class="op">;</span></span>
+<span id="cb7-279"><a href="#cb7-279" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-280"><a href="#cb7-280" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Identifier le statut (Total vs Occupé)</span></span>
+<span id="cb7-281"><a href="#cb7-281" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> act <span class="op">=</span> <span class="kw">null</span><span class="op">;</span></span>
+<span id="cb7-282"><a href="#cb7-282" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (txt<span class="op">.</span><span class="fu">includes</span>(<span class="st">"actif occupé x"</span>)) act <span class="op">=</span> <span class="st">"Occupé"</span><span class="op">;</span></span>
+<span id="cb7-283"><a href="#cb7-283" aria-hidden="true" tabindex="-1"></a>  <span class="cf">else</span> <span class="cf">if</span> (txt<span class="op">.</span><span class="fu">includes</span>(<span class="st">"actif x"</span>)) act <span class="op">=</span> <span class="st">"Total"</span><span class="op">;</span></span>
+<span id="cb7-284"><a href="#cb7-284" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="op">!</span>act) <span class="cf">return</span> <span class="kw">null</span><span class="op">;</span></span>
+<span id="cb7-285"><a href="#cb7-285" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-286"><a href="#cb7-286" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Identifier la CSP</span></span>
+<span id="cb7-287"><a href="#cb7-287" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> csp <span class="op">=</span> <span class="kw">null</span><span class="op">;</span></span>
+<span id="cb7-288"><a href="#cb7-288" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (txt<span class="op">.</span><span class="fu">includes</span>(<span class="st">"employés"</span>)) csp <span class="op">=</span> <span class="st">"Employés"</span><span class="op">;</span></span>
+<span id="cb7-289"><a href="#cb7-289" aria-hidden="true" tabindex="-1"></a>  <span class="cf">else</span> <span class="cf">if</span> (txt<span class="op">.</span><span class="fu">includes</span>(<span class="st">"cadres et professions intellectuelles supérieures"</span>)) csp <span class="op">=</span> <span class="st">"Cadres et professions intellectuelles supérieures"</span><span class="op">;</span></span>
+<span id="cb7-290"><a href="#cb7-290" aria-hidden="true" tabindex="-1"></a>  <span class="cf">else</span> <span class="cf">if</span> (txt<span class="op">.</span><span class="fu">includes</span>(<span class="st">"agriculteurs"</span>)) csp <span class="op">=</span> <span class="st">"Agriculteurs"</span><span class="op">;</span></span>
+<span id="cb7-291"><a href="#cb7-291" aria-hidden="true" tabindex="-1"></a>  <span class="cf">else</span> <span class="cf">if</span> (txt<span class="op">.</span><span class="fu">includes</span>(<span class="st">"artisans, commerçants et chefs d’entreprise"</span>)) csp <span class="op">=</span> <span class="st">"Artisans, commerçants et chefs d’entreprise"</span><span class="op">;</span></span>
+<span id="cb7-292"><a href="#cb7-292" aria-hidden="true" tabindex="-1"></a>  <span class="cf">else</span> <span class="cf">if</span> (txt<span class="op">.</span><span class="fu">includes</span>(<span class="st">"professions intermédiaires"</span>)) csp <span class="op">=</span> <span class="st">"Professions intermédiaires"</span><span class="op">;</span></span>
+<span id="cb7-293"><a href="#cb7-293" aria-hidden="true" tabindex="-1"></a>  <span class="cf">else</span> <span class="cf">if</span> (txt<span class="op">.</span><span class="fu">includes</span>(<span class="st">"ouvriers"</span>)) csp <span class="op">=</span> <span class="st">"Ouvriers"</span><span class="op">;</span></span>
+<span id="cb7-294"><a href="#cb7-294" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-295"><a href="#cb7-295" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="op">!</span>csp) <span class="cf">return</span> <span class="kw">null</span><span class="op">;</span></span>
+<span id="cb7-296"><a href="#cb7-296" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-297"><a href="#cb7-297" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> { <span class="dt">act</span><span class="op">:</span> act<span class="op">,</span> <span class="dt">csp</span><span class="op">:</span> csp }<span class="op">;</span></span>
+<span id="cb7-298"><a href="#cb7-298" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb7-299"><a href="#cb7-299" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-300"><a href="#cb7-300" aria-hidden="true" tabindex="-1"></a><span class="co">// 3. Filtrage et nettoyage</span></span>
+<span id="cb7-301"><a href="#cb7-301" aria-hidden="true" tabindex="-1"></a>equip_mutate <span class="op">=</span> equip_brut<span class="op">.</span><span class="fu">map</span>(<span class="kw">function</span>(d) {</span>
+<span id="cb7-302"><a href="#cb7-302" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> classification <span class="op">=</span> <span class="fu">classer_pop</span>(d<span class="op">.</span><span class="at">TAB_MEASURE_LABEL</span>)<span class="op">;</span></span>
+<span id="cb7-303"><a href="#cb7-303" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="op">!</span>classification) <span class="cf">return</span> <span class="kw">null</span><span class="op">;</span></span>
+<span id="cb7-304"><a href="#cb7-304" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-305"><a href="#cb7-305" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> {</span>
+<span id="cb7-306"><a href="#cb7-306" aria-hidden="true" tabindex="-1"></a>    <span class="dt">OBS_VALUE</span><span class="op">:</span> d<span class="op">.</span><span class="at">OBS_VALUE</span><span class="op">,</span></span>
+<span id="cb7-307"><a href="#cb7-307" aria-hidden="true" tabindex="-1"></a>    <span class="dt">ACT</span><span class="op">:</span> classification<span class="op">.</span><span class="at">act</span><span class="op">,</span></span>
+<span id="cb7-308"><a href="#cb7-308" aria-hidden="true" tabindex="-1"></a>    <span class="dt">CSP</span><span class="op">:</span> classification<span class="op">.</span><span class="at">csp</span></span>
+<span id="cb7-309"><a href="#cb7-309" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb7-310"><a href="#cb7-310" aria-hidden="true" tabindex="-1"></a>})<span class="op">.</span><span class="fu">filter</span>(d <span class="kw">=&gt;</span> d <span class="op">!==</span> <span class="kw">null</span>)<span class="op">;</span></span>
+<span id="cb7-311"><a href="#cb7-311" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-312"><a href="#cb7-312" aria-hidden="true" tabindex="-1"></a><span class="co">// 4. Agrégation : somme des valeurs par CSP x (Total / Occupé)</span></span>
+<span id="cb7-313"><a href="#cb7-313" aria-hidden="true" tabindex="-1"></a>equip_agrege <span class="op">=</span> d3<span class="op">.</span><span class="fu">flatRollup</span>(</span>
+<span id="cb7-314"><a href="#cb7-314" aria-hidden="true" tabindex="-1"></a>  equip_mutate<span class="op">,</span></span>
+<span id="cb7-315"><a href="#cb7-315" aria-hidden="true" tabindex="-1"></a>  v <span class="kw">=&gt;</span> d3<span class="op">.</span><span class="fu">sum</span>(v<span class="op">,</span> d <span class="kw">=&gt;</span> d<span class="op">.</span><span class="at">OBS_VALUE</span>)<span class="op">,</span></span>
+<span id="cb7-316"><a href="#cb7-316" aria-hidden="true" tabindex="-1"></a>  d <span class="kw">=&gt;</span> d<span class="op">.</span><span class="at">CSP</span><span class="op">,</span></span>
+<span id="cb7-317"><a href="#cb7-317" aria-hidden="true" tabindex="-1"></a>  d <span class="kw">=&gt;</span> d<span class="op">.</span><span class="at">ACT</span></span>
+<span id="cb7-318"><a href="#cb7-318" aria-hidden="true" tabindex="-1"></a>)<span class="op">;</span></span>
+<span id="cb7-319"><a href="#cb7-319" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-320"><a href="#cb7-320" aria-hidden="true" tabindex="-1"></a><span class="co">// 5. Reconstruction par CSP : on calcule "Sans Emploi" = Total - Occupé</span></span>
+<span id="cb7-321"><a href="#cb7-321" aria-hidden="true" tabindex="-1"></a>csp_map <span class="op">=</span> <span class="kw">new</span> <span class="bu">Map</span>()<span class="op">;</span></span>
+<span id="cb7-322"><a href="#cb7-322" aria-hidden="true" tabindex="-1"></a>equip_agrege<span class="op">.</span><span class="fu">forEach</span>(([csp<span class="op">,</span> act<span class="op">,</span> valeur]) <span class="kw">=&gt;</span> {</span>
+<span id="cb7-323"><a href="#cb7-323" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="op">!</span>csp_map<span class="op">.</span><span class="fu">has</span>(csp)) csp_map<span class="op">.</span><span class="fu">set</span>(csp<span class="op">,</span> {})<span class="op">;</span></span>
+<span id="cb7-324"><a href="#cb7-324" aria-hidden="true" tabindex="-1"></a>  csp_map<span class="op">.</span><span class="fu">get</span>(csp)[act] <span class="op">=</span> valeur<span class="op">;</span></span>
+<span id="cb7-325"><a href="#cb7-325" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display hidden html-fill-item html-fill-container">
+<div class="html-fill-item html-fill-container">
+<div id="ojs-cell-7-1" data-nodetype="declaration" class="html-fill-item html-fill-container">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden html-fill-item html-fill-container">
+<div class="html-fill-item html-fill-container">
+<div id="ojs-cell-7-2" data-nodetype="declaration" class="html-fill-item html-fill-container">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden html-fill-item html-fill-container">
+<div class="html-fill-item html-fill-container">
+<div id="ojs-cell-7-3" data-nodetype="declaration" class="html-fill-item html-fill-container">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden html-fill-item html-fill-container">
+<div class="html-fill-item html-fill-container">
+<div id="ojs-cell-7-4" data-nodetype="declaration" class="html-fill-item html-fill-container">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden html-fill-item html-fill-container">
+<div class="html-fill-item html-fill-container">
+<div id="ojs-cell-7-5" data-nodetype="declaration" class="html-fill-item html-fill-container">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden html-fill-item html-fill-container">
+<div class="html-fill-item html-fill-container">
+<div id="ojs-cell-7-6" data-nodetype="expression" class="html-fill-item html-fill-container">
+
+</div>
+</div>
+</div>
+<div class="code-copy-outer-scaffold html-fill-item html-fill-container"><div class="sourceCode cell-code hidden html-fill-item html-fill-container" id="cb8" data-startfrom="328" data-source-offset="-2375"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 327;"><span id="cb8-328"><a href="#cb8-328" aria-hidden="true" tabindex="-1"></a>ordre_csp <span class="op">=</span> [<span class="st">"Agriculteurs"</span><span class="op">,</span> <span class="st">"Artisans, commerçants et chefs d’entreprise"</span><span class="op">,</span> <span class="st">"Ouvriers"</span><span class="op">,</span> <span class="st">"Employés"</span><span class="op">,</span> <span class="st">"Professions intermédiaires"</span><span class="op">,</span> <span class="st">"Cadres et professions intellectuelles supérieures"</span>]<span class="op">;</span></span>
+<span id="cb8-329"><a href="#cb8-329" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-330"><a href="#cb8-330" aria-hidden="true" tabindex="-1"></a><span class="co">// 6. Calcul des parts locales : part d'occupés / sans emploi AU SEIN de chaque CSP</span></span>
+<span id="cb8-331"><a href="#cb8-331" aria-hidden="true" tabindex="-1"></a><span class="co">// (Avec Emploi + Sans Emploi = 100% pour chaque CSP)</span></span>
+<span id="cb8-332"><a href="#cb8-332" aria-hidden="true" tabindex="-1"></a>equip <span class="op">=</span> <span class="bu">Array</span><span class="op">.</span><span class="fu">from</span>(csp_map<span class="op">,</span> ([csp<span class="op">,</span> vals]) <span class="kw">=&gt;</span> {</span>
+<span id="cb8-333"><a href="#cb8-333" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> total <span class="op">=</span> vals[<span class="st">"Total"</span>] <span class="op">||</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb8-334"><a href="#cb8-334" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> occupe <span class="op">=</span> vals[<span class="st">"Occupé"</span>] <span class="op">||</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb8-335"><a href="#cb8-335" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> sans_emploi <span class="op">=</span> total <span class="op">-</span> occupe<span class="op">;</span></span>
+<span id="cb8-336"><a href="#cb8-336" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-337"><a href="#cb8-337" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> [</span>
+<span id="cb8-338"><a href="#cb8-338" aria-hidden="true" tabindex="-1"></a>    {</span>
+<span id="cb8-339"><a href="#cb8-339" aria-hidden="true" tabindex="-1"></a>      <span class="dt">CSP</span><span class="op">:</span> csp<span class="op">,</span></span>
+<span id="cb8-340"><a href="#cb8-340" aria-hidden="true" tabindex="-1"></a>      <span class="dt">ACT</span><span class="op">:</span> <span class="st">"Avec Emploi"</span><span class="op">,</span></span>
+<span id="cb8-341"><a href="#cb8-341" aria-hidden="true" tabindex="-1"></a>      <span class="dt">population_exacte</span><span class="op">:</span> occupe<span class="op">,</span></span>
+<span id="cb8-342"><a href="#cb8-342" aria-hidden="true" tabindex="-1"></a>      <span class="dt">part_locale</span><span class="op">:</span> total <span class="op">&gt;</span> <span class="dv">0</span> <span class="op">?</span> occupe <span class="op">/</span> total <span class="op">:</span> <span class="dv">0</span><span class="op">,</span></span>
+<span id="cb8-343"><a href="#cb8-343" aria-hidden="true" tabindex="-1"></a>      <span class="dt">pourcentage_affichage</span><span class="op">:</span> total <span class="op">&gt;</span> <span class="dv">0</span> <span class="op">?</span> (occupe <span class="op">/</span> total <span class="op">*</span> <span class="dv">100</span>)<span class="op">.</span><span class="fu">toFixed</span>(<span class="dv">1</span>) <span class="op">+</span> <span class="st">" %"</span> <span class="op">:</span> <span class="st">"0.0 %"</span></span>
+<span id="cb8-344"><a href="#cb8-344" aria-hidden="true" tabindex="-1"></a>    }<span class="op">,</span></span>
+<span id="cb8-345"><a href="#cb8-345" aria-hidden="true" tabindex="-1"></a>    {</span>
+<span id="cb8-346"><a href="#cb8-346" aria-hidden="true" tabindex="-1"></a>      <span class="dt">CSP</span><span class="op">:</span> csp<span class="op">,</span></span>
+<span id="cb8-347"><a href="#cb8-347" aria-hidden="true" tabindex="-1"></a>      <span class="dt">ACT</span><span class="op">:</span> <span class="st">"Sans Emploi"</span><span class="op">,</span></span>
+<span id="cb8-348"><a href="#cb8-348" aria-hidden="true" tabindex="-1"></a>      <span class="dt">population_exacte</span><span class="op">:</span> sans_emploi<span class="op">,</span></span>
+<span id="cb8-349"><a href="#cb8-349" aria-hidden="true" tabindex="-1"></a>      <span class="dt">part_locale</span><span class="op">:</span> total <span class="op">&gt;</span> <span class="dv">0</span> <span class="op">?</span> sans_emploi <span class="op">/</span> total <span class="op">:</span> <span class="dv">0</span><span class="op">,</span></span>
+<span id="cb8-350"><a href="#cb8-350" aria-hidden="true" tabindex="-1"></a>      <span class="dt">pourcentage_affichage</span><span class="op">:</span> total <span class="op">&gt;</span> <span class="dv">0</span> <span class="op">?</span> (sans_emploi <span class="op">/</span> total <span class="op">*</span> <span class="dv">100</span>)<span class="op">.</span><span class="fu">toFixed</span>(<span class="dv">1</span>) <span class="op">+</span> <span class="st">" %"</span> <span class="op">:</span> <span class="st">"0.0 %"</span></span>
+<span id="cb8-351"><a href="#cb8-351" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb8-352"><a href="#cb8-352" aria-hidden="true" tabindex="-1"></a>  ]<span class="op">;</span></span>
+<span id="cb8-353"><a href="#cb8-353" aria-hidden="true" tabindex="-1"></a>})<span class="op">.</span><span class="fu">flat</span>()<span class="op">;</span></span>
+<span id="cb8-354"><a href="#cb8-354" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-355"><a href="#cb8-355" aria-hidden="true" tabindex="-1"></a>equip_trie <span class="op">=</span> equip<span class="op">.</span><span class="fu">sort</span>((a<span class="op">,</span> b) <span class="kw">=&gt;</span> ordre_csp<span class="op">.</span><span class="fu">indexOf</span>(a<span class="op">.</span><span class="at">CSP</span>) <span class="op">-</span> ordre_csp<span class="op">.</span><span class="fu">indexOf</span>(b<span class="op">.</span><span class="at">CSP</span>))<span class="op">;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display hidden html-fill-item html-fill-container">
+<div class="html-fill-item html-fill-container">
+<div id="ojs-cell-7-7" data-nodetype="declaration" class="html-fill-item html-fill-container">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden html-fill-item html-fill-container">
+<div class="html-fill-item html-fill-container">
+<div id="ojs-cell-7-8" data-nodetype="declaration" class="html-fill-item html-fill-container">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display hidden html-fill-item html-fill-container">
+<div class="html-fill-item html-fill-container">
+<div id="ojs-cell-7-9" data-nodetype="declaration" class="html-fill-item html-fill-container">
+
+</div>
+</div>
+</div>
+</div><div class="card cell html-fill-item html-fill-container bslib-card" data-bslib-card-init="" data-require-bs-caller="card()" data-full-screen="false">
+<div class="card-body html-fill-item html-fill-container">
+<div class="code-copy-outer-scaffold html-fill-item html-fill-container"><div class="sourceCode cell-code hidden html-fill-item html-fill-container" id="cb9" data-startfrom="359" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 358;"><span id="cb9-359"><a href="#cb9-359" aria-hidden="true" tabindex="-1"></a><span class="co">// Graphique en barres groupées (dodge) : une paire de barres par CSP</span></span>
+<span id="cb9-360"><a href="#cb9-360" aria-hidden="true" tabindex="-1"></a>Plot<span class="op">.</span><span class="fu">plot</span>({</span>
+<span id="cb9-361"><a href="#cb9-361" aria-hidden="true" tabindex="-1"></a>  <span class="dt">title</span><span class="op">:</span> isGeoSelected <span class="op">?</span> <span class="vs">`Taux d'emploi par CSP – </span><span class="sc">${</span>selection_geo<span class="op">.</span><span class="at">GEO_LABEL</span><span class="sc">}</span><span class="vs">`</span> <span class="op">:</span> <span class="st">"Sélectionnez un territoire"</span><span class="op">,</span></span>
+<span id="cb9-362"><a href="#cb9-362" aria-hidden="true" tabindex="-1"></a>  <span class="dt">subtitle</span><span class="op">:</span> <span class="vs">`Année </span><span class="sc">${</span>selection_annee<span class="sc">}</span><span class="vs">`</span><span class="op">,</span></span>
+<span id="cb9-363"><a href="#cb9-363" aria-hidden="true" tabindex="-1"></a>  <span class="dt">marginBottom</span><span class="op">:</span> <span class="dv">60</span><span class="op">,</span></span>
+<span id="cb9-364"><a href="#cb9-364" aria-hidden="true" tabindex="-1"></a>  <span class="dt">marginLeft</span><span class="op">:</span> <span class="dv">50</span><span class="op">,</span></span>
+<span id="cb9-365"><a href="#cb9-365" aria-hidden="true" tabindex="-1"></a>  <span class="co">// L'axe X principal est masqué, car les labels sont gérés par le fx (facets)</span></span>
+<span id="cb9-366"><a href="#cb9-366" aria-hidden="true" tabindex="-1"></a>  <span class="dt">x</span><span class="op">:</span> { <span class="dt">axis</span><span class="op">:</span> <span class="kw">null</span> }<span class="op">,</span></span>
+<span id="cb9-367"><a href="#cb9-367" aria-hidden="true" tabindex="-1"></a>  <span class="dt">y</span><span class="op">:</span> {</span>
+<span id="cb9-368"><a href="#cb9-368" aria-hidden="true" tabindex="-1"></a>    <span class="dt">label</span><span class="op">:</span> <span class="st">"Part au sein de la CSP"</span><span class="op">,</span></span>
+<span id="cb9-369"><a href="#cb9-369" aria-hidden="true" tabindex="-1"></a>    <span class="dt">tickFormat</span><span class="op">:</span> <span class="st">"%"</span><span class="op">,</span></span>
+<span id="cb9-370"><a href="#cb9-370" aria-hidden="true" tabindex="-1"></a>    <span class="dt">grid</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb9-371"><a href="#cb9-371" aria-hidden="true" tabindex="-1"></a>    <span class="dt">domain</span><span class="op">:</span> [<span class="dv">0</span><span class="op">,</span> <span class="dv">1</span>]</span>
+<span id="cb9-372"><a href="#cb9-372" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span>
+<span id="cb9-373"><a href="#cb9-373" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Facet X : permet de grouper les barres par CSP</span></span>
+<span id="cb9-374"><a href="#cb9-374" aria-hidden="true" tabindex="-1"></a>  <span class="dt">fx</span><span class="op">:</span> {</span>
+<span id="cb9-375"><a href="#cb9-375" aria-hidden="true" tabindex="-1"></a>    <span class="dt">domain</span><span class="op">:</span> ordre_csp<span class="op">,</span></span>
+<span id="cb9-376"><a href="#cb9-376" aria-hidden="true" tabindex="-1"></a>    <span class="dt">label</span><span class="op">:</span> <span class="st">"CSP"</span><span class="op">,</span></span>
+<span id="cb9-377"><a href="#cb9-377" aria-hidden="true" tabindex="-1"></a>    <span class="dt">tickRotate</span><span class="op">:</span> <span class="op">-</span><span class="dv">30</span></span>
+<span id="cb9-378"><a href="#cb9-378" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span>
+<span id="cb9-379"><a href="#cb9-379" aria-hidden="true" tabindex="-1"></a>  <span class="dt">color</span><span class="op">:</span> {</span>
+<span id="cb9-380"><a href="#cb9-380" aria-hidden="true" tabindex="-1"></a>    <span class="dt">domain</span><span class="op">:</span> [<span class="st">"Avec Emploi"</span><span class="op">,</span> <span class="st">"Sans Emploi"</span>]<span class="op">,</span></span>
+<span id="cb9-381"><a href="#cb9-381" aria-hidden="true" tabindex="-1"></a>    <span class="dt">range</span><span class="op">:</span> [<span class="st">"lightblue"</span><span class="op">,</span> <span class="st">"pink"</span>]<span class="op">,</span></span>
+<span id="cb9-382"><a href="#cb9-382" aria-hidden="true" tabindex="-1"></a>    <span class="dt">legend</span><span class="op">:</span> <span class="kw">true</span></span>
+<span id="cb9-383"><a href="#cb9-383" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span>
+<span id="cb9-384"><a href="#cb9-384" aria-hidden="true" tabindex="-1"></a>  <span class="dt">marks</span><span class="op">:</span> [</span>
+<span id="cb9-385"><a href="#cb9-385" aria-hidden="true" tabindex="-1"></a>    Plot<span class="op">.</span><span class="fu">barY</span>(equip_trie<span class="op">,</span> {</span>
+<span id="cb9-386"><a href="#cb9-386" aria-hidden="true" tabindex="-1"></a>      <span class="dt">x</span><span class="op">:</span> <span class="st">"ACT"</span><span class="op">,</span></span>
+<span id="cb9-387"><a href="#cb9-387" aria-hidden="true" tabindex="-1"></a>      <span class="dt">y</span><span class="op">:</span> <span class="st">"part_locale"</span><span class="op">,</span></span>
+<span id="cb9-388"><a href="#cb9-388" aria-hidden="true" tabindex="-1"></a>      <span class="dt">fill</span><span class="op">:</span> <span class="st">"ACT"</span><span class="op">,</span></span>
+<span id="cb9-389"><a href="#cb9-389" aria-hidden="true" tabindex="-1"></a>      <span class="dt">fx</span><span class="op">:</span> <span class="st">"CSP"</span><span class="op">,</span></span>
+<span id="cb9-390"><a href="#cb9-390" aria-hidden="true" tabindex="-1"></a>      <span class="dt">title</span><span class="op">:</span> d <span class="kw">=&gt;</span> <span class="vs">`</span><span class="sc">${</span>d<span class="op">.</span><span class="at">ACT</span><span class="sc">}</span><span class="vs"> - </span><span class="sc">${</span>d<span class="op">.</span><span class="at">CSP</span><span class="sc">}\n${</span>d<span class="op">.</span><span class="at">population_exacte</span><span class="sc">}</span><span class="vs"> personnes (</span><span class="sc">${</span>(d<span class="op">.</span><span class="at">part_locale</span><span class="op">*</span><span class="dv">100</span>)<span class="op">.</span><span class="fu">toFixed</span>(<span class="dv">1</span>)<span class="sc">}</span><span class="vs">%)`</span> <span class="co">// Info-bulle au survol</span></span>
+<span id="cb9-391"><a href="#cb9-391" aria-hidden="true" tabindex="-1"></a>    })<span class="op">,</span></span>
+<span id="cb9-392"><a href="#cb9-392" aria-hidden="true" tabindex="-1"></a>    Plot<span class="op">.</span><span class="fu">ruleY</span>([<span class="dv">0</span>])</span>
+<span id="cb9-393"><a href="#cb9-393" aria-hidden="true" tabindex="-1"></a>  ]</span>
+<span id="cb9-394"><a href="#cb9-394" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display html-fill-item html-fill-container">
+<div id="ojs-cell-8" data-nodetype="expression" class="html-fill-item html-fill-container">
+
+</div>
+</div>
+</div>
+<bslib-tooltip placement="auto" bsoptions="[]" data-require-bs-version="5" data-require-bs-caller="tooltip()">
+    <template>Expand</template>
+    <span class="bslib-full-screen-enter badge rounded-pill">
+        <svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 24 24" style="height:1em;width:1em;" aria-hidden="true" role="img"><path d="M20 5C20 4.4 19.6 4 19 4H13C12.4 4 12 3.6 12 3C12 2.4 12.4 2 13 2H21C21.6 2 22 2.4 22 3V11C22 11.6 21.6 12 21 12C20.4 12 20 11.6 20 11V5ZM4 19C4 19.6 4.4 20 5 20H11C11.6 20 12 20.4 12 21C12 21.6 11.6 22 11 22H3C2.4 22 2 21.6 2 21V13C2 12.4 2.4 12 3 12C3.6 12 4 12.4 4 13V19Z"></path></svg>
+    </span>
+</bslib-tooltip><script data-bslib-card-init="">bslib.Card.initializeAllCards();</script></div><div class="card cell html-fill-item html-fill-container bslib-card" data-bslib-card-init="" data-require-bs-caller="card()" data-full-screen="false">
+<div class="card-body html-fill-item html-fill-container">
+<div class="code-copy-outer-scaffold html-fill-item html-fill-container"><div class="sourceCode cell-code hidden html-fill-item html-fill-container" id="cb10" data-startfrom="399" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 398;"><span id="cb10-399"><a href="#cb10-399" aria-hidden="true" tabindex="-1"></a><span class="co">// Histogramme empilé : une colonne par CSP, "Avec Emploi" + "Sans Emploi" empilés jusqu'à 100%</span></span>
+<span id="cb10-400"><a href="#cb10-400" aria-hidden="true" tabindex="-1"></a>Plot<span class="op">.</span><span class="fu">plot</span>({</span>
+<span id="cb10-401"><a href="#cb10-401" aria-hidden="true" tabindex="-1"></a>  <span class="dt">title</span><span class="op">:</span> isGeoSelected <span class="op">?</span> <span class="vs">`Répartition emploi / non-emploi par CSP – </span><span class="sc">${</span>selection_geo<span class="op">.</span><span class="at">GEO_LABEL</span><span class="sc">}</span><span class="vs">`</span> <span class="op">:</span> <span class="st">"Sélectionnez un territoire"</span><span class="op">,</span></span>
+<span id="cb10-402"><a href="#cb10-402" aria-hidden="true" tabindex="-1"></a>  <span class="dt">subtitle</span><span class="op">:</span> <span class="vs">`Année </span><span class="sc">${</span>selection_annee<span class="sc">}</span><span class="vs">`</span><span class="op">,</span></span>
+<span id="cb10-403"><a href="#cb10-403" aria-hidden="true" tabindex="-1"></a>  <span class="dt">marginBottom</span><span class="op">:</span> <span class="dv">80</span><span class="op">,</span></span>
+<span id="cb10-404"><a href="#cb10-404" aria-hidden="true" tabindex="-1"></a>  <span class="dt">marginLeft</span><span class="op">:</span> <span class="dv">50</span><span class="op">,</span></span>
+<span id="cb10-405"><a href="#cb10-405" aria-hidden="true" tabindex="-1"></a>  <span class="dt">x</span><span class="op">:</span> {</span>
+<span id="cb10-406"><a href="#cb10-406" aria-hidden="true" tabindex="-1"></a>    <span class="dt">domain</span><span class="op">:</span> ordre_csp<span class="op">,</span></span>
+<span id="cb10-407"><a href="#cb10-407" aria-hidden="true" tabindex="-1"></a>    <span class="dt">label</span><span class="op">:</span> <span class="kw">null</span><span class="op">,</span></span>
+<span id="cb10-408"><a href="#cb10-408" aria-hidden="true" tabindex="-1"></a>    <span class="dt">tickRotate</span><span class="op">:</span> <span class="op">-</span><span class="dv">30</span></span>
+<span id="cb10-409"><a href="#cb10-409" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span>
+<span id="cb10-410"><a href="#cb10-410" aria-hidden="true" tabindex="-1"></a>  <span class="dt">y</span><span class="op">:</span> {</span>
+<span id="cb10-411"><a href="#cb10-411" aria-hidden="true" tabindex="-1"></a>    <span class="dt">label</span><span class="op">:</span> <span class="st">"Part au sein de la CSP"</span><span class="op">,</span></span>
+<span id="cb10-412"><a href="#cb10-412" aria-hidden="true" tabindex="-1"></a>    <span class="dt">tickFormat</span><span class="op">:</span> <span class="st">"%"</span><span class="op">,</span></span>
+<span id="cb10-413"><a href="#cb10-413" aria-hidden="true" tabindex="-1"></a>    <span class="dt">grid</span><span class="op">:</span> <span class="kw">true</span><span class="op">,</span></span>
+<span id="cb10-414"><a href="#cb10-414" aria-hidden="true" tabindex="-1"></a>    <span class="dt">domain</span><span class="op">:</span> [<span class="dv">0</span><span class="op">,</span> <span class="dv">1</span>]</span>
+<span id="cb10-415"><a href="#cb10-415" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span>
+<span id="cb10-416"><a href="#cb10-416" aria-hidden="true" tabindex="-1"></a>  <span class="dt">color</span><span class="op">:</span> {</span>
+<span id="cb10-417"><a href="#cb10-417" aria-hidden="true" tabindex="-1"></a>    <span class="dt">domain</span><span class="op">:</span> [<span class="st">"Avec Emploi"</span><span class="op">,</span> <span class="st">"Sans Emploi"</span>]<span class="op">,</span></span>
+<span id="cb10-418"><a href="#cb10-418" aria-hidden="true" tabindex="-1"></a>    <span class="dt">range</span><span class="op">:</span> [<span class="st">"lightblue"</span><span class="op">,</span> <span class="st">"pink"</span>]<span class="op">,</span></span>
+<span id="cb10-419"><a href="#cb10-419" aria-hidden="true" tabindex="-1"></a>    <span class="dt">legend</span><span class="op">:</span> <span class="kw">true</span></span>
+<span id="cb10-420"><a href="#cb10-420" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span>
+<span id="cb10-421"><a href="#cb10-421" aria-hidden="true" tabindex="-1"></a>  <span class="dt">marks</span><span class="op">:</span> [</span>
+<span id="cb10-422"><a href="#cb10-422" aria-hidden="true" tabindex="-1"></a>    Plot<span class="op">.</span><span class="fu">barY</span>(equip_trie<span class="op">,</span> {</span>
+<span id="cb10-423"><a href="#cb10-423" aria-hidden="true" tabindex="-1"></a>      <span class="dt">x</span><span class="op">:</span> <span class="st">"CSP"</span><span class="op">,</span></span>
+<span id="cb10-424"><a href="#cb10-424" aria-hidden="true" tabindex="-1"></a>      <span class="dt">y</span><span class="op">:</span> <span class="st">"part_locale"</span><span class="op">,</span></span>
+<span id="cb10-425"><a href="#cb10-425" aria-hidden="true" tabindex="-1"></a>      <span class="dt">fill</span><span class="op">:</span> <span class="st">"ACT"</span><span class="op">,</span></span>
+<span id="cb10-426"><a href="#cb10-426" aria-hidden="true" tabindex="-1"></a>      <span class="dt">title</span><span class="op">:</span> d <span class="kw">=&gt;</span> <span class="vs">`</span><span class="sc">${</span>d<span class="op">.</span><span class="at">ACT</span><span class="sc">}</span><span class="vs"> - </span><span class="sc">${</span>d<span class="op">.</span><span class="at">CSP</span><span class="sc">}\n${</span>d<span class="op">.</span><span class="at">population_exacte</span><span class="sc">}</span><span class="vs"> personnes (</span><span class="sc">${</span>(d<span class="op">.</span><span class="at">part_locale</span><span class="op">*</span><span class="dv">100</span>)<span class="op">.</span><span class="fu">toFixed</span>(<span class="dv">1</span>)<span class="sc">}</span><span class="vs">%)`</span></span>
+<span id="cb10-427"><a href="#cb10-427" aria-hidden="true" tabindex="-1"></a>    })<span class="op">,</span></span>
+<span id="cb10-428"><a href="#cb10-428" aria-hidden="true" tabindex="-1"></a>    Plot<span class="op">.</span><span class="fu">ruleY</span>([<span class="dv">0</span>])</span>
+<span id="cb10-429"><a href="#cb10-429" aria-hidden="true" tabindex="-1"></a>  ]</span>
+<span id="cb10-430"><a href="#cb10-430" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display html-fill-item html-fill-container">
+<div id="ojs-cell-9" data-nodetype="expression" class="html-fill-item html-fill-container">
+
+</div>
+</div>
+</div>
+<bslib-tooltip placement="auto" bsoptions="[]" data-require-bs-version="5" data-require-bs-caller="tooltip()">
+    <template>Expand</template>
+    <span class="bslib-full-screen-enter badge rounded-pill">
+        <svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 24 24" style="height:1em;width:1em;" aria-hidden="true" role="img"><path d="M20 5C20 4.4 19.6 4 19 4H13C12.4 4 12 3.6 12 3C12 2.4 12.4 2 13 2H21C21.6 2 22 2.4 22 3V11C22 11.6 21.6 12 21 12C20.4 12 20 11.6 20 11V5ZM4 19C4 19.6 4.4 20 5 20H11C11.6 20 12 20.4 12 21C12 21.6 11.6 22 11 22H3C2.4 22 2 21.6 2 21V13C2 12.4 2.4 12 3 12C3.6 12 4 12.4 4 13V19Z"></path></svg>
+    </span>
+</bslib-tooltip><script data-bslib-card-init="">bslib.Card.initializeAllCards();</script></div><div id="3ade8a4a-fb1d-4a6c-8409-ac45482d5fc9" class="hidden html-fill-item html-fill-container">
+
+</div>
+</div>
+</div>
+</div>
+</div>
+</div></div><aside id="bslib-sidebar-1" class="sidebar html-fill-container html-fill-item"><div class="html-fill-container html-fill-item">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code hidden" id="cb2" data-startfrom="182" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 181;"><span id="cb2-182"><a href="#cb2-182" aria-hidden="true" tabindex="-1"></a>viewof selection_annee <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">select</span>(</span>
+<span id="cb2-183"><a href="#cb2-183" aria-hidden="true" tabindex="-1"></a>  [</span>
+<span id="cb2-184"><a href="#cb2-184" aria-hidden="true" tabindex="-1"></a>    <span class="st">"1968"</span><span class="op">,</span> <span class="st">"1975"</span><span class="op">,</span> <span class="st">"1982"</span><span class="op">,</span> <span class="st">"1990"</span><span class="op">,</span> <span class="st">"1999"</span><span class="op">,</span> <span class="st">"2006"</span><span class="op">,</span> </span>
+<span id="cb2-185"><a href="#cb2-185" aria-hidden="true" tabindex="-1"></a>    <span class="st">"2011"</span><span class="op">,</span> <span class="st">"2012"</span><span class="op">,</span> <span class="st">"2013"</span><span class="op">,</span> <span class="st">"2014"</span><span class="op">,</span> <span class="st">"2015"</span><span class="op">,</span> <span class="st">"2016"</span><span class="op">,</span> </span>
+<span id="cb2-186"><a href="#cb2-186" aria-hidden="true" tabindex="-1"></a>    <span class="st">"2017"</span><span class="op">,</span> <span class="st">"2018"</span><span class="op">,</span> <span class="st">"2019"</span><span class="op">,</span> <span class="st">"2020"</span><span class="op">,</span> <span class="st">"2021"</span><span class="op">,</span> <span class="st">"2022"</span><span class="op">,</span> </span>
+<span id="cb2-187"><a href="#cb2-187" aria-hidden="true" tabindex="-1"></a>    <span class="st">"2023"</span><span class="op">,</span> <span class="st">"2024"</span><span class="op">,</span> <span class="st">"2025"</span><span class="op">,</span> <span class="st">"2026"</span></span>
+<span id="cb2-188"><a href="#cb2-188" aria-hidden="true" tabindex="-1"></a>  ]<span class="op">,</span></span>
+<span id="cb2-189"><a href="#cb2-189" aria-hidden="true" tabindex="-1"></a>  {</span>
+<span id="cb2-190"><a href="#cb2-190" aria-hidden="true" tabindex="-1"></a>    <span class="dt">label</span><span class="op">:</span> <span class="st">"Année"</span><span class="op">,</span></span>
+<span id="cb2-191"><a href="#cb2-191" aria-hidden="true" tabindex="-1"></a>    <span class="dt">value</span><span class="op">:</span> <span class="st">"2023"</span></span>
+<span id="cb2-192"><a href="#cb2-192" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-193"><a href="#cb2-193" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-2" data-nodetype="declaration">
+
+</div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code hidden" id="cb3" data-startfrom="197" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 196;"><span id="cb3-197"><a href="#cb3-197" aria-hidden="true" tabindex="-1"></a>viewof selection_type_geo <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">select</span>(</span>
+<span id="cb3-198"><a href="#cb3-198" aria-hidden="true" tabindex="-1"></a>  [</span>
+<span id="cb3-199"><a href="#cb3-199" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Commune"</span><span class="op">,</span> <span class="st">"Unité urbaine 2020"</span><span class="op">,</span> <span class="st">"Bassin de vie 2022"</span><span class="op">,</span> <span class="st">"Intercommunalité-Métropole"</span><span class="op">,</span> </span>
+<span id="cb3-200"><a href="#cb3-200" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Aire d’attraction des villes 2020"</span><span class="op">,</span> <span class="st">"Arrondissement"</span><span class="op">,</span> <span class="st">"Zone d’emploi 2020"</span><span class="op">,</span> </span>
+<span id="cb3-201"><a href="#cb3-201" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Département"</span><span class="op">,</span> <span class="st">"Arrondissement municipal"</span><span class="op">,</span> <span class="st">"Région"</span><span class="op">,</span> <span class="st">"France"</span><span class="op">,</span> </span>
+<span id="cb3-202"><a href="#cb3-202" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Autres"</span><span class="op">,</span> <span class="st">"Collectivité et territoire français d’outre-mer"</span></span>
+<span id="cb3-203"><a href="#cb3-203" aria-hidden="true" tabindex="-1"></a>  ]<span class="op">,</span></span>
+<span id="cb3-204"><a href="#cb3-204" aria-hidden="true" tabindex="-1"></a>  {</span>
+<span id="cb3-205"><a href="#cb3-205" aria-hidden="true" tabindex="-1"></a>    <span class="dt">label</span><span class="op">:</span> <span class="st">"Type de zone"</span><span class="op">,</span></span>
+<span id="cb3-206"><a href="#cb3-206" aria-hidden="true" tabindex="-1"></a>    <span class="dt">value</span><span class="op">:</span> <span class="st">"Commune"</span></span>
+<span id="cb3-207"><a href="#cb3-207" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-208"><a href="#cb3-208" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div id="ojs-cell-3" data-nodetype="declaration">
+
+</div>
+</div>
+<div class="cell hidden">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code hidden" id="cb4" data-startfrom="213" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 212;"><span id="cb4-213"><a href="#cb4-213" aria-hidden="true" tabindex="-1"></a><span class="co">// Liste des territoires disponibles mis à jour dynamiquement selon l'aire urbaine choisie</span></span>
+<span id="cb4-214"><a href="#cb4-214" aria-hidden="true" tabindex="-1"></a>geo <span class="op">=</span> db<span class="op">.</span><span class="fu">query</span>(<span class="vs">`</span></span>
+<span id="cb4-215"><a href="#cb4-215" aria-hidden="true" tabindex="-1"></a><span class="vs">  SELECT DISTINCT GEO, GEO_LABEL</span></span>
+<span id="cb4-216"><a href="#cb4-216" aria-hidden="true" tabindex="-1"></a><span class="vs">  FROM read_parquet('</span><span class="sc">${</span>chemin_s3<span class="sc">}</span><span class="vs">')</span></span>
+<span id="cb4-217"><a href="#cb4-217" aria-hidden="true" tabindex="-1"></a><span class="vs">  WHERE ID_TAB = 'EQUIP_T1' AND GEO_OBJECT_LABEL = '</span><span class="sc">${</span>selection_type_geo<span class="sc">}</span><span class="vs">'</span></span>
+<span id="cb4-218"><a href="#cb4-218" aria-hidden="true" tabindex="-1"></a><span class="vs">  ORDER BY GEO_LABEL</span></span>
+<span id="cb4-219"><a href="#cb4-219" aria-hidden="true" tabindex="-1"></a><span class="vs">`</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display hidden">
+<div id="ojs-cell-4" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code hidden" id="cb5" data-startfrom="225" data-source-offset="-0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 224;"><span id="cb5-225"><a href="#cb5-225" aria-hidden="true" tabindex="-1"></a>viewof search_geo <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">search</span>(</span>
+<span id="cb5-226"><a href="#cb5-226" aria-hidden="true" tabindex="-1"></a>  geo<span class="op">,</span> {</span>
+<span id="cb5-227"><a href="#cb5-227" aria-hidden="true" tabindex="-1"></a>    <span class="dt">width</span><span class="op">:</span> <span class="st">"60%"</span><span class="op">,</span></span>
+<span id="cb5-228"><a href="#cb5-228" aria-hidden="true" tabindex="-1"></a>    <span class="dt">label</span><span class="op">:</span> <span class="st">"Territoire"</span><span class="op">,</span></span>
+<span id="cb5-229"><a href="#cb5-229" aria-hidden="true" tabindex="-1"></a>    <span class="dt">placeholder</span><span class="op">:</span> <span class="st">"Rechercher un territoire..."</span><span class="op">,</span></span>
+<span id="cb5-230"><a href="#cb5-230" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb5-231"><a href="#cb5-231" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-232"><a href="#cb5-232" aria-hidden="true" tabindex="-1"></a>viewof selection_geo <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">table</span>(</span>
+<span id="cb5-233"><a href="#cb5-233" aria-hidden="true" tabindex="-1"></a>  search_geo<span class="op">,</span> {</span>
+<span id="cb5-234"><a href="#cb5-234" aria-hidden="true" tabindex="-1"></a>    <span class="dt">multiple</span><span class="op">:</span> <span class="kw">false</span><span class="op">,</span></span>
+<span id="cb5-235"><a href="#cb5-235" aria-hidden="true" tabindex="-1"></a>    <span class="dt">value</span><span class="op">:</span> search_geo<span class="op">.</span><span class="at">length</span> <span class="op">&gt;</span> <span class="dv">0</span> <span class="op">?</span> search_geo[<span class="dv">0</span>] <span class="op">:</span> <span class="kw">null</span><span class="op">,</span></span>
+<span id="cb5-236"><a href="#cb5-236" aria-hidden="true" tabindex="-1"></a>    <span class="dt">rows</span><span class="op">:</span> <span class="dv">15</span><span class="op">,</span></span>
+<span id="cb5-237"><a href="#cb5-237" aria-hidden="true" tabindex="-1"></a>    <span class="dt">columns</span><span class="op">:</span> [<span class="st">"GEO_LABEL"</span><span class="op">,</span> <span class="st">"GEO"</span>]</span>
+<span id="cb5-238"><a href="#cb5-238" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-239"><a href="#cb5-239" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<div id="ojs-cell-5-1" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<div id="ojs-cell-5-2" data-nodetype="declaration">
+
+</div>
+</div>
+</div>
+</div></aside>
+<button class="collapse-toggle" type="button" title="Toggle sidebar" aria-expanded="true" aria-controls="bslib-sidebar-1">
+    <svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 16 16" class="bi bi-chevron-left collapse-icon" style="fill:currentColor;" aria-hidden="true" role="img">
+      <path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"></path>
+    </svg>
+</button>
+<script data-bslib-sidebar-init="">
+bslib.Sidebar.initCollapsibleAll()
+</script>
+</div>
+
+
+<script type="ojs-module-contents">
+eyJjb250ZW50cyI6W3sibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6IlxuLy8gMS4gQ3LDqWVyIG91IG91dnJpciB1bmUgY29ubmV4aW9uIER1Y2tEQiAow6lxdWl2YWxlbnQgZGJDb25uZWN0KGR1Y2tkYigpLCAuLi4pIGVuIFIpXG5kYiA9IER1Y2tEQkNsaWVudC5vZih7fSlcblxuLy8gNC4gRMOpZmluaXIgbCdhZHJlc3NlIGRlIHZvdHJlIGZpY2hpZXIgc3VyIGxlIFMzIGR1IFNTUCBDbG91ZCAow6lxdWl2YWxlbnQgY2hlbWluX3MzIGVuIFIpXG5jaGVtaW5fczMgPSAnaHR0cHM6Ly9taW5pby5sYWIuc3NwY2xvdWQuZnIvc2FyYWhiZWF1Y2FtcC9kb3NzaWVyX2NvbXBsZXQucGFycXVldCdcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMiIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6InZpZXdvZiBzZWxlY3Rpb25fYW5uZWUgPSBJbnB1dHMuc2VsZWN0KFxuICBbXG4gICAgXCIxOTY4XCIsIFwiMTk3NVwiLCBcIjE5ODJcIiwgXCIxOTkwXCIsIFwiMTk5OVwiLCBcIjIwMDZcIiwgXG4gICAgXCIyMDExXCIsIFwiMjAxMlwiLCBcIjIwMTNcIiwgXCIyMDE0XCIsIFwiMjAxNVwiLCBcIjIwMTZcIiwgXG4gICAgXCIyMDE3XCIsIFwiMjAxOFwiLCBcIjIwMTlcIiwgXCIyMDIwXCIsIFwiMjAyMVwiLCBcIjIwMjJcIiwgXG4gICAgXCIyMDIzXCIsIFwiMjAyNFwiLCBcIjIwMjVcIiwgXCIyMDI2XCJcbiAgXSxcbiAge1xuICAgIGxhYmVsOiBcIkFubsOpZVwiLFxuICAgIHZhbHVlOiBcIjIwMjNcIlxuICB9XG4pXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTMiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJ2aWV3b2Ygc2VsZWN0aW9uX3R5cGVfZ2VvID0gSW5wdXRzLnNlbGVjdChcbiAgW1xuICAgIFwiQ29tbXVuZVwiLCBcIlVuaXTDqSB1cmJhaW5lIDIwMjBcIiwgXCJCYXNzaW4gZGUgdmllIDIwMjJcIiwgXCJJbnRlcmNvbW11bmFsaXTDqS1Nw6l0cm9wb2xlXCIsIFxuICAgIFwiQWlyZSBk4oCZYXR0cmFjdGlvbiBkZXMgdmlsbGVzIDIwMjBcIiwgXCJBcnJvbmRpc3NlbWVudFwiLCBcIlpvbmUgZOKAmWVtcGxvaSAyMDIwXCIsIFxuICAgIFwiRMOpcGFydGVtZW50XCIsIFwiQXJyb25kaXNzZW1lbnQgbXVuaWNpcGFsXCIsIFwiUsOpZ2lvblwiLCBcIkZyYW5jZVwiLCBcbiAgICBcIkF1dHJlc1wiLCBcIkNvbGxlY3Rpdml0w6kgZXQgdGVycml0b2lyZSBmcmFuw6dhaXMgZOKAmW91dHJlLW1lclwiXG4gIF0sXG4gIHtcbiAgICBsYWJlbDogXCJUeXBlIGRlIHpvbmVcIixcbiAgICB2YWx1ZTogXCJDb21tdW5lXCJcbiAgfVxuKVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC00IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoiXG4vLyBMaXN0ZSBkZXMgdGVycml0b2lyZXMgZGlzcG9uaWJsZXMgbWlzIMOgIGpvdXIgZHluYW1pcXVlbWVudCBzZWxvbiBsJ2FpcmUgdXJiYWluZSBjaG9pc2llXG5nZW8gPSBkYi5xdWVyeShgXG4gIFNFTEVDVCBESVNUSU5DVCBHRU8sIEdFT19MQUJFTFxuICBGUk9NIHJlYWRfcGFycXVldCgnJHtjaGVtaW5fczN9JylcbiAgV0hFUkUgSURfVEFCID0gJ0VRVUlQX1QxJyBBTkQgR0VPX09CSkVDVF9MQUJFTCA9ICcke3NlbGVjdGlvbl90eXBlX2dlb30nXG4gIE9SREVSIEJZIEdFT19MQUJFTFxuYClcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtNSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6InZpZXdvZiBzZWFyY2hfZ2VvID0gSW5wdXRzLnNlYXJjaChcbiAgZ2VvLCB7XG4gICAgd2lkdGg6IFwiNjAlXCIsXG4gICAgbGFiZWw6IFwiVGVycml0b2lyZVwiLFxuICAgIHBsYWNlaG9sZGVyOiBcIlJlY2hlcmNoZXIgdW4gdGVycml0b2lyZS4uLlwiLFxuICB9KVxuXG52aWV3b2Ygc2VsZWN0aW9uX2dlbyA9IElucHV0cy50YWJsZShcbiAgc2VhcmNoX2dlbywge1xuICAgIG11bHRpcGxlOiBmYWxzZSxcbiAgICB2YWx1ZTogc2VhcmNoX2dlby5sZW5ndGggPiAwID8gc2VhcmNoX2dlb1swXSA6IG51bGwsXG4gICAgcm93czogMTUsXG4gICAgY29sdW1uczogW1wiR0VPX0xBQkVMXCIsIFwiR0VPXCJdXG4gIH1cbilcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtNiIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6ImlzR2VvU2VsZWN0ZWQgPSAoc2VsZWN0aW9uX2dlbyAhPT0gbnVsbCk7XG5cbmh0bC5odG1sYFxuICA8c3Ryb25nPlRlcnJpdG9pcmUgc8OpbGVjdGlvbm7DqSA6PC9zdHJvbmc+ICR7aXNHZW9TZWxlY3RlZCA/IHNlbGVjdGlvbl9nZW8uR0VPX0xBQkVMIDogXCJcIn0gKCR7aXNHZW9TZWxlY3RlZCA/IHNlbGVjdGlvbl9nZW8uR0VPIDogXCJcIn0pXG5gXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTciLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJcbi8vIDEuIE9uIHLDqWN1cMOocmUgbGVzIGRvbm7DqWVzIGRlIHBvcHVsYXRpb24gcG91ciBsYSB6b25lIChlbiBmaWx0cmFudCBzdXIgSURfVEFCID0gJ0VNUF9UMycpXG5lcXVpcF9icnV0ID0gaXNHZW9TZWxlY3RlZFxuPyBkYi5xdWVyeShgXG4gIFNFTEVDVCBUQUJfTUVBU1VSRV9MQUJFTCwgT0JTX1ZBTFVFXG4gIEZST00gcmVhZF9wYXJxdWV0KCcke2NoZW1pbl9zM30nKVxuICBXSEVSRSBUSU1FX1BFUklPRCA9ICcke3NlbGVjdGlvbl9hbm5lZX0nXG4gICAgQU5EIEdFT19PQkpFQ1RfTEFCRUwgPSAnJHtzZWxlY3Rpb25fdHlwZV9nZW99J1xuICAgIEFORCBHRU8gPSAnJHtzZWxlY3Rpb25fZ2VvLkdFT30nXG4gICAgQU5EIElEX1RBQiA9ICdFTVBfVDMnXG5gKVxuOiBbXTtcblxuLy8gMi4gQ2xhc3NpZmljYXRpb24gY29ycmlnw6llLlxuLy8gSW1wb3J0YW50IDogZGFucyBUQUJfTUVBU1VSRV9MQUJFTCwgaWwgbid5IGEgcGFzIGRlIGNhdMOpZ29yaWUgXCJzYW5zIGVtcGxvaVwiIGlzb2zDqWUuXG4vLyAtIFwiQWN0aWYgeCBDU1BcIiAgICAgICAgICA9IFRPVEFMIGRlcyBhY3RpZnMgZGUgY2V0dGUgQ1NQIChvY2N1cMOpcyArIG5vbi1vY2N1cMOpcylcbi8vIC0gXCJBY3RpZiBvY2N1cMOpIHggQ1NQXCIgICA9IHVuaXF1ZW1lbnQgbGVzIGFjdGlmcyBPQ0NVUMOJUyBkZSBjZXR0ZSBDU1Bcbi8vIExlIG5vbWJyZSBkZSBwZXJzb25uZXMgXCJzYW5zIGVtcGxvaVwiIHNlIGTDqWR1aXQgZG9uYyBwYXIgc291c3RyYWN0aW9uIDogVG90YWwgLSBPY2N1cMOpLlxuZnVuY3Rpb24gY2xhc3Nlcl9wb3AobGFiZWwpIHtcbiAgaWYgKCFsYWJlbCkgcmV0dXJuIG51bGw7XG4gIGxldCB0eHQgPSBsYWJlbC50b0xvd2VyQ2FzZSgpO1xuXG4gIC8vIElkZW50aWZpZXIgbGUgc3RhdHV0IChUb3RhbCB2cyBPY2N1cMOpKVxuICBsZXQgYWN0ID0gbnVsbDtcbiAgaWYgKHR4dC5pbmNsdWRlcyhcImFjdGlmIG9jY3Vww6kgeFwiKSkgYWN0ID0gXCJPY2N1cMOpXCI7XG4gIGVsc2UgaWYgKHR4dC5pbmNsdWRlcyhcImFjdGlmIHhcIikpIGFjdCA9IFwiVG90YWxcIjtcbiAgaWYgKCFhY3QpIHJldHVybiBudWxsO1xuXG4gIC8vIElkZW50aWZpZXIgbGEgQ1NQXG4gIGxldCBjc3AgPSBudWxsO1xuICBpZiAodHh0LmluY2x1ZGVzKFwiZW1wbG95w6lzXCIpKSBjc3AgPSBcIkVtcGxvecOpc1wiO1xuICBlbHNlIGlmICh0eHQuaW5jbHVkZXMoXCJjYWRyZXMgZXQgcHJvZmVzc2lvbnMgaW50ZWxsZWN0dWVsbGVzIHN1cMOpcmlldXJlc1wiKSkgY3NwID0gXCJDYWRyZXMgZXQgcHJvZmVzc2lvbnMgaW50ZWxsZWN0dWVsbGVzIHN1cMOpcmlldXJlc1wiO1xuICBlbHNlIGlmICh0eHQuaW5jbHVkZXMoXCJhZ3JpY3VsdGV1cnNcIikpIGNzcCA9IFwiQWdyaWN1bHRldXJzXCI7XG4gIGVsc2UgaWYgKHR4dC5pbmNsdWRlcyhcImFydGlzYW5zLCBjb21tZXLDp2FudHMgZXQgY2hlZnMgZOKAmWVudHJlcHJpc2VcIikpIGNzcCA9IFwiQXJ0aXNhbnMsIGNvbW1lcsOnYW50cyBldCBjaGVmcyBk4oCZZW50cmVwcmlzZVwiO1xuICBlbHNlIGlmICh0eHQuaW5jbHVkZXMoXCJwcm9mZXNzaW9ucyBpbnRlcm3DqWRpYWlyZXNcIikpIGNzcCA9IFwiUHJvZmVzc2lvbnMgaW50ZXJtw6lkaWFpcmVzXCI7XG4gIGVsc2UgaWYgKHR4dC5pbmNsdWRlcyhcIm91dnJpZXJzXCIpKSBjc3AgPSBcIk91dnJpZXJzXCI7XG5cbiAgaWYgKCFjc3ApIHJldHVybiBudWxsO1xuXG4gIHJldHVybiB7IGFjdDogYWN0LCBjc3A6IGNzcCB9O1xufVxuXG4vLyAzLiBGaWx0cmFnZSBldCBuZXR0b3lhZ2VcbmVxdWlwX211dGF0ZSA9IGVxdWlwX2JydXQubWFwKGZ1bmN0aW9uKGQpIHtcbiAgbGV0IGNsYXNzaWZpY2F0aW9uID0gY2xhc3Nlcl9wb3AoZC5UQUJfTUVBU1VSRV9MQUJFTCk7XG4gIGlmICghY2xhc3NpZmljYXRpb24pIHJldHVybiBudWxsO1xuXG4gIHJldHVybiB7XG4gICAgT0JTX1ZBTFVFOiBkLk9CU19WQUxVRSxcbiAgICBBQ1Q6IGNsYXNzaWZpY2F0aW9uLmFjdCxcbiAgICBDU1A6IGNsYXNzaWZpY2F0aW9uLmNzcFxuICB9O1xufSkuZmlsdGVyKGQgPT4gZCAhPT0gbnVsbCk7XG5cbi8vIDQuIEFncsOpZ2F0aW9uIDogc29tbWUgZGVzIHZhbGV1cnMgcGFyIENTUCB4IChUb3RhbCAvIE9jY3Vww6kpXG5lcXVpcF9hZ3JlZ2UgPSBkMy5mbGF0Um9sbHVwKFxuICBlcXVpcF9tdXRhdGUsXG4gIHYgPT4gZDMuc3VtKHYsIGQgPT4gZC5PQlNfVkFMVUUpLFxuICBkID0+IGQuQ1NQLFxuICBkID0+IGQuQUNUXG4pO1xuXG4vLyA1LiBSZWNvbnN0cnVjdGlvbiBwYXIgQ1NQIDogb24gY2FsY3VsZSBcIlNhbnMgRW1wbG9pXCIgPSBUb3RhbCAtIE9jY3Vww6lcbmNzcF9tYXAgPSBuZXcgTWFwKCk7XG5lcXVpcF9hZ3JlZ2UuZm9yRWFjaCgoW2NzcCwgYWN0LCB2YWxldXJdKSA9PiB7XG4gIGlmICghY3NwX21hcC5oYXMoY3NwKSkgY3NwX21hcC5zZXQoY3NwLCB7fSk7XG4gIGNzcF9tYXAuZ2V0KGNzcClbYWN0XSA9IHZhbGV1cjtcbn0pO1xuXG4vLyBPcmRyZSBwb3VyIGwnYWZmaWNoYWdlXG5vcmRyZV9jc3AgPSBbXCJBZ3JpY3VsdGV1cnNcIiwgXCJBcnRpc2FucywgY29tbWVyw6dhbnRzIGV0IGNoZWZzIGTigJllbnRyZXByaXNlXCIsIFwiT3V2cmllcnNcIiwgXCJFbXBsb3nDqXNcIiwgXCJQcm9mZXNzaW9ucyBpbnRlcm3DqWRpYWlyZXNcIiwgXCJDYWRyZXMgZXQgcHJvZmVzc2lvbnMgaW50ZWxsZWN0dWVsbGVzIHN1cMOpcmlldXJlc1wiXTtcblxuLy8gNi4gQ2FsY3VsIGRlcyBwYXJ0cyBsb2NhbGVzIDogcGFydCBkJ29jY3Vww6lzIC8gc2FucyBlbXBsb2kgQVUgU0VJTiBkZSBjaGFxdWUgQ1NQXG4vLyAoQXZlYyBFbXBsb2kgKyBTYW5zIEVtcGxvaSA9IDEwMCUgcG91ciBjaGFxdWUgQ1NQKVxuZXF1aXAgPSBBcnJheS5mcm9tKGNzcF9tYXAsIChbY3NwLCB2YWxzXSkgPT4ge1xuICBsZXQgdG90YWwgPSB2YWxzW1wiVG90YWxcIl0gfHwgMDtcbiAgbGV0IG9jY3VwZSA9IHZhbHNbXCJPY2N1cMOpXCJdIHx8IDA7XG4gIGxldCBzYW5zX2VtcGxvaSA9IHRvdGFsIC0gb2NjdXBlO1xuXG4gIHJldHVybiBbXG4gICAge1xuICAgICAgQ1NQOiBjc3AsXG4gICAgICBBQ1Q6IFwiQXZlYyBFbXBsb2lcIixcbiAgICAgIHBvcHVsYXRpb25fZXhhY3RlOiBvY2N1cGUsXG4gICAgICBwYXJ0X2xvY2FsZTogdG90YWwgPiAwID8gb2NjdXBlIC8gdG90YWwgOiAwLFxuICAgICAgcG91cmNlbnRhZ2VfYWZmaWNoYWdlOiB0b3RhbCA+IDAgPyAob2NjdXBlIC8gdG90YWwgKiAxMDApLnRvRml4ZWQoMSkgKyBcIiAlXCIgOiBcIjAuMCAlXCJcbiAgICB9LFxuICAgIHtcbiAgICAgIENTUDogY3NwLFxuICAgICAgQUNUOiBcIlNhbnMgRW1wbG9pXCIsXG4gICAgICBwb3B1bGF0aW9uX2V4YWN0ZTogc2Fuc19lbXBsb2ksXG4gICAgICBwYXJ0X2xvY2FsZTogdG90YWwgPiAwID8gc2Fuc19lbXBsb2kgLyB0b3RhbCA6IDAsXG4gICAgICBwb3VyY2VudGFnZV9hZmZpY2hhZ2U6IHRvdGFsID4gMCA/IChzYW5zX2VtcGxvaSAvIHRvdGFsICogMTAwKS50b0ZpeGVkKDEpICsgXCIgJVwiIDogXCIwLjAgJVwiXG4gICAgfVxuICBdO1xufSkuZmxhdCgpO1xuXG5lcXVpcF90cmllID0gZXF1aXAuc29ydCgoYSwgYikgPT4gb3JkcmVfY3NwLmluZGV4T2YoYS5DU1ApIC0gb3JkcmVfY3NwLmluZGV4T2YoYi5DU1ApKTtcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtOCIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6Ii8vIEdyYXBoaXF1ZSBlbiBiYXJyZXMgZ3JvdXDDqWVzIChkb2RnZSkgOiB1bmUgcGFpcmUgZGUgYmFycmVzIHBhciBDU1BcblBsb3QucGxvdCh7XG4gIHRpdGxlOiBpc0dlb1NlbGVjdGVkID8gYFRhdXggZCdlbXBsb2kgcGFyIENTUCDigJMgJHtzZWxlY3Rpb25fZ2VvLkdFT19MQUJFTH1gIDogXCJTw6lsZWN0aW9ubmV6IHVuIHRlcnJpdG9pcmVcIixcbiAgc3VidGl0bGU6IGBBbm7DqWUgJHtzZWxlY3Rpb25fYW5uZWV9YCxcbiAgbWFyZ2luQm90dG9tOiA2MCxcbiAgbWFyZ2luTGVmdDogNTAsXG4gIC8vIEwnYXhlIFggcHJpbmNpcGFsIGVzdCBtYXNxdcOpLCBjYXIgbGVzIGxhYmVscyBzb250IGfDqXLDqXMgcGFyIGxlIGZ4IChmYWNldHMpXG4gIHg6IHsgYXhpczogbnVsbCB9LFxuICB5OiB7XG4gICAgbGFiZWw6IFwiUGFydCBhdSBzZWluIGRlIGxhIENTUFwiLFxuICAgIHRpY2tGb3JtYXQ6IFwiJVwiLFxuICAgIGdyaWQ6IHRydWUsXG4gICAgZG9tYWluOiBbMCwgMV1cbiAgfSxcbiAgLy8gRmFjZXQgWCA6IHBlcm1ldCBkZSBncm91cGVyIGxlcyBiYXJyZXMgcGFyIENTUFxuICBmeDoge1xuICAgIGRvbWFpbjogb3JkcmVfY3NwLFxuICAgIGxhYmVsOiBcIkNTUFwiLFxuICAgIHRpY2tSb3RhdGU6IC0zMFxuICB9LFxuICBjb2xvcjoge1xuICAgIGRvbWFpbjogW1wiQXZlYyBFbXBsb2lcIiwgXCJTYW5zIEVtcGxvaVwiXSxcbiAgICByYW5nZTogW1wibGlnaHRibHVlXCIsIFwicGlua1wiXSxcbiAgICBsZWdlbmQ6IHRydWVcbiAgfSxcbiAgbWFya3M6IFtcbiAgICBQbG90LmJhclkoZXF1aXBfdHJpZSwge1xuICAgICAgeDogXCJBQ1RcIixcbiAgICAgIHk6IFwicGFydF9sb2NhbGVcIixcbiAgICAgIGZpbGw6IFwiQUNUXCIsXG4gICAgICBmeDogXCJDU1BcIixcbiAgICAgIHRpdGxlOiBkID0+IGAke2QuQUNUfSAtICR7ZC5DU1B9XFxuJHtkLnBvcHVsYXRpb25fZXhhY3RlfSBwZXJzb25uZXMgKCR7KGQucGFydF9sb2NhbGUqMTAwKS50b0ZpeGVkKDEpfSUpYCAvLyBJbmZvLWJ1bGxlIGF1IHN1cnZvbFxuICAgIH0pLFxuICAgIFBsb3QucnVsZVkoWzBdKVxuICBdXG59KVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC05IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoiLy8gSGlzdG9ncmFtbWUgZW1waWzDqSA6IHVuZSBjb2xvbm5lIHBhciBDU1AsIFwiQXZlYyBFbXBsb2lcIiArIFwiU2FucyBFbXBsb2lcIiBlbXBpbMOpcyBqdXNxdSfDoCAxMDAlXG5QbG90LnBsb3Qoe1xuICB0aXRsZTogaXNHZW9TZWxlY3RlZCA/IGBSw6lwYXJ0aXRpb24gZW1wbG9pIC8gbm9uLWVtcGxvaSBwYXIgQ1NQIOKAkyAke3NlbGVjdGlvbl9nZW8uR0VPX0xBQkVMfWAgOiBcIlPDqWxlY3Rpb25uZXogdW4gdGVycml0b2lyZVwiLFxuICBzdWJ0aXRsZTogYEFubsOpZSAke3NlbGVjdGlvbl9hbm5lZX1gLFxuICBtYXJnaW5Cb3R0b206IDgwLFxuICBtYXJnaW5MZWZ0OiA1MCxcbiAgeDoge1xuICAgIGRvbWFpbjogb3JkcmVfY3NwLFxuICAgIGxhYmVsOiBudWxsLFxuICAgIHRpY2tSb3RhdGU6IC0zMFxuICB9LFxuICB5OiB7XG4gICAgbGFiZWw6IFwiUGFydCBhdSBzZWluIGRlIGxhIENTUFwiLFxuICAgIHRpY2tGb3JtYXQ6IFwiJVwiLFxuICAgIGdyaWQ6IHRydWUsXG4gICAgZG9tYWluOiBbMCwgMV1cbiAgfSxcbiAgY29sb3I6IHtcbiAgICBkb21haW46IFtcIkF2ZWMgRW1wbG9pXCIsIFwiU2FucyBFbXBsb2lcIl0sXG4gICAgcmFuZ2U6IFtcImxpZ2h0Ymx1ZVwiLCBcInBpbmtcIl0sXG4gICAgbGVnZW5kOiB0cnVlXG4gIH0sXG4gIG1hcmtzOiBbXG4gICAgUGxvdC5iYXJZKGVxdWlwX3RyaWUsIHtcbiAgICAgIHg6IFwiQ1NQXCIsXG4gICAgICB5OiBcInBhcnRfbG9jYWxlXCIsXG4gICAgICBmaWxsOiBcIkFDVFwiLFxuICAgICAgdGl0bGU6IGQgPT4gYCR7ZC5BQ1R9IC0gJHtkLkNTUH1cXG4ke2QucG9wdWxhdGlvbl9leGFjdGV9IHBlcnNvbm5lcyAoJHsoZC5wYXJ0X2xvY2FsZSoxMDApLnRvRml4ZWQoMSl9JSlgXG4gICAgfSksXG4gICAgUGxvdC5ydWxlWShbMF0pXG4gIF1cbn0pXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXRRdWlldCIsInNvdXJjZSI6InNoaW55SW5wdXQoJ3NlbGVjdGlvbl9hbm5lZScpIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0UXVpZXQiLCJzb3VyY2UiOiJzaGlueUlucHV0KCdzZWxlY3Rpb25fdHlwZV9nZW8nKSJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldFF1aWV0Iiwic291cmNlIjoic2hpbnlJbnB1dCgnc2VhcmNoX2dlbycpIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0UXVpZXQiLCJzb3VyY2UiOiJzaGlueUlucHV0KCdzZWxlY3Rpb25fZ2VvJykifV19
+</script>
+<script type="module">
+if (window.location.protocol === "file:") { alert("The OJS runtime does not work with file:// URLs. Please use a web server to view this document."); }
+window._ojs.paths.runtimeToDoc = "../../..";
+window._ojs.paths.runtimeToRoot = "../../..";
+window._ojs.paths.docToRoot = "";
+window._ojs.selfContained = false;
+window._ojs.runtime.interpretFromScriptTags();
+</script>
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /container fluid -->
+
+<script type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (_event) {
+  if (window.bslib.Card) {
+    window.bslib.Card.initializeAllCards();
+  }
+}); 
+</script>
+  
+
+
+
+</body></html>

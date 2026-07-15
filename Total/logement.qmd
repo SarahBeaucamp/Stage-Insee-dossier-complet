@@ -121,7 +121,8 @@ include-in-header:
           { label: "Créations d'entreprises et d'établissements en 2025", href: "creation.qmd"},
           { label: "Logement en 2023", href: "logement.qmd"},
           { label: "Famille", href: "famille.qmd"},
-          { label: "Structure de la population", href: "population.qmd"}
+          { label: "Structure de la population", href: "population.qmd"},
+          { label: "Population active, emploi et chômage au sens du recensement en 2023", href: "emploi.qmd"}
         ];
         
         var brandContainer = document.querySelector("#quarto-dashboard-header .navbar-brand-container");
