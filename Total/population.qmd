@@ -363,7 +363,7 @@ Plot.plot({
   },
   color: { 
     domain: ["Homme", "Femme"], 
-    range: ["lightblue", "pink"], 
+    range: ["#174695", "#FB5A5A"], 
     legend: true 
   },
   marks: [
@@ -421,7 +421,7 @@ Plot.plot({
   },
   color: {
     domain: ["Homme", "Femme"],
-    range: ["lightblue", "pink"],
+    range: ["#174695", "#FB5A5A"],
     legend: true
   },
   marks: [

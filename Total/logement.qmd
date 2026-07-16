@@ -492,7 +492,7 @@ Plot.plot({
     Plot.barX(taille_occup_trie, { 
       x: "part_groupe", 
       y: "occupation", 
-      fill: "steelblue", 
+      fill: "#174695", 
       title: d => `${d.occupation} : ${d.part_groupe.toFixed(1)}% (${d.total_groupe} logements)` 
     }),
     Plot.ruleX([0])
@@ -629,7 +629,7 @@ Plot.plot({
     Plot.barX(date_resi_trie, { 
       x: "part_groupe", 
       y: "date", 
-      fill: "steelblue", 
+      fill: "#174695", 
       title: d => `${d.date} : ${d.part_groupe.toFixed(1)}% (${d.total_groupe} logements)` 
     }),
     Plot.ruleX([0])

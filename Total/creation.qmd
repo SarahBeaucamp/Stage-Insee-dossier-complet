@@ -441,7 +441,7 @@ Plot.plot({
     label: null 
   },
   marks: [
-    Plot.barX(data_clean5, { x: "total_groupe", y: "secteur5", fill: "steelblue" }),
+    Plot.barX(data_clean5, { x: "total_groupe", y: "secteur5", fill: "#174695" }),
     Plot.ruleX([0])
   ]
 })
@@ -565,7 +565,7 @@ Plot.plot({
     grid: true 
   },
   marks: [
-    Plot.barY(eco_act_trie, { x: "secteur_act", y: "total_groupe", fill: "steelblue" }),
+    Plot.barY(eco_act_trie, { x: "secteur_act", y: "total_groupe", fill: "#174695" }),
     Plot.ruleY([0])
   ]
 })
@@ -690,7 +690,7 @@ Plot.plot({
     grid: true 
   },
   marks: [
-    Plot.barY(etab_trie4, { x: "secteur_act", y: "total_groupe", fill: "steelblue" }),
+    Plot.barY(etab_trie4, { x: "secteur_act", y: "total_groupe", fill: "#174695" }),
     Plot.ruleY([0])
   ]
 })

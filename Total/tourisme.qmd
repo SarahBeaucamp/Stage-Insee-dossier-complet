@@ -335,7 +335,7 @@ Plot.plot({
     grid: true 
   },
   marks: [
-    Plot.barY(equip_trie1, { x: "etoiles", y: "total_groupe", fill: "steelblue" }),
+    Plot.barY(equip_trie1, { x: "etoiles", y: "total_groupe", fill: "#174695" }),
     Plot.ruleY([0])
   ]
 })
@@ -452,7 +452,7 @@ Plot.plot({
     grid: true 
   },
   marks: [
-    Plot.barY(equip_trie2, { x: "etoiles", y: "total_groupe", fill: "steelblue" }),
+    Plot.barY(equip_trie2, { x: "etoiles", y: "total_groupe", fill: "#174695" }),
     Plot.ruleY([0])
   ]
 })
@@ -540,7 +540,7 @@ Plot.plot({
   x: { label: "Nombre de lits", grid: true },
   y: { label: null },
   marks: [
-    Plot.barX(equip_synthese3, { y: "categorie", x: "total_groupe", fill: "steelblue" }),
+    Plot.barX(equip_synthese3, { y: "categorie", x: "total_groupe", fill: "#174695" }),
     Plot.ruleX([0])
   ]
 })

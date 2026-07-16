@@ -189,7 +189,7 @@ viewof selection_annee = Inputs.select(
   ],
   {
     label: "Année",
-    value: "2023"
+    value: "2022"
   }
 )
 ```
@@ -400,7 +400,7 @@ Plot.plot({
   },
   color: {
     domain: ["Avec Emploi", "Sans Emploi"],
-    range: ["lightblue", "pink"],
+    range: ["#174695", "#FB5A5A"],
     legend: true
   },
   marks: [
@@ -436,7 +436,7 @@ Plot.plot({
   },
   color: {
     domain: ["Avec Emploi", "Sans Emploi"],
-    range: ["lightblue", "pink"],
+    range: ["#174695", "#FB5A5A"],
     legend: true
   },
   marks: [

@@ -324,7 +324,7 @@ Plot.plot({
   x: { label: null, tickRotate: -20 },
   y: { label: null, grid: true },
   marks: [
-    Plot.barY(equip1, { x: "équipements", y: "total_groupe", fill: "steelblue" }),
+    Plot.barY(equip1, { x: "équipements", y: "total_groupe", fill: "#174695" }),
     Plot.ruleY([0])
   ]
 })
@@ -428,7 +428,7 @@ Plot.plot({
   x: { label: null, tickRotate: -20 },
   y: { label: null, grid: true },
   marks: [
-    Plot.barY(equip2, { x: "équipements", y: "total_groupe", fill: "steelblue" }),
+    Plot.barY(equip2, { x: "équipements", y: "total_groupe", fill: "#174695" }),
     Plot.ruleY([0])
   ]
 })
@@ -527,7 +527,7 @@ Plot.plot({
   x: { label: null, tickRotate: -20 },
   y: { label: null, grid: true },
   marks: [
-    Plot.barY(equip3, { x: "équipements", y: "total_groupe", fill: "steelblue" }),
+    Plot.barY(equip3, { x: "équipements", y: "total_groupe", fill: "#174695" }),
     Plot.ruleY([0])
   ]
 })
