@@ -1,5 +1,5 @@
 ---
-title: "Créations d'entreprises et d'établissements en 2025"
+title: "Créations d'entreprises et d'établissements"
 format: 
   dashboard:
     nav-buttons: []
@@ -118,7 +118,7 @@ include-in-header:
         var themes = [
           { label: "Équipements et services à la population en 2024", href: "equipements.html" },
           { label: "Tourisme en 2026", href: "tourisme.html" },
-          { label: "Créations d'entreprises et d'établissements en 2025", href: "creation.qmd"},
+          { label: "Créations d'entreprises et d'établissements", href: "creation.qmd"},
           { label: "Logement en 2023", href: "logement.qmd"},
           { label: "Famille", href: "famille.qmd"},
           { label: "Structure de la population", href: "population.qmd"},
