@@ -25,6 +25,15 @@ include-in-header:
           color: #ffffff !important;
         }
 
+        /* ===== Onglet fixe "Chiffres clés" (hors menu déroulant) ===== */
+        #quarto-dashboard-header .navbar-nav > li.nav-item > a.nav-link.onglet-fixe {
+          color: rgba(255,255,255,0.85);
+        }
+        #quarto-dashboard-header .navbar-nav > li.nav-item > a.nav-link.onglet-fixe:hover,
+        #quarto-dashboard-header .navbar-nav > li.nav-item > a.nav-link.onglet-fixe.active {
+          color: #ffffff;
+        }
+
         /* ===== Menu "Thèmes" (titre transformé en dropdown) ===== */
         #quarto-dashboard-header .navbar-brand-container {
           position: relative;
@@ -72,9 +81,25 @@ include-in-header:
       <script>
       document.addEventListener("DOMContentLoaded", function () {
         // ----- 1. Sous-menu "Pages" : regroupe les sous-thèmes de la page courante -----
+        // Sauf les onglets listés dans "onglets_fixes", qui restent visibles
+        // directement dans la barre bleue, juste après le menu "Pages".
         var navList = document.querySelector("#quarto-dashboard-header .navbar-nav");
         if (navList) {
           var items = Array.from(navList.querySelectorAll(":scope > li.nav-item"));
+
+          var onglets_fixes = ["Chiffres clés"];
+          var itemsFixes = [];
+
+          items = items.filter(function (li) {
+            var link = li.querySelector("a.nav-link");
+            var label = link ? link.textContent.trim() : "";
+            if (onglets_fixes.indexOf(label) !== -1) {
+              itemsFixes.push(li);
+              return false;
+            }
+            return true;
+          });
+
           if (items.length > 0) {
             var dropdownLi = document.createElement("li");
             dropdownLi.className = "nav-item dropdown";
@@ -112,6 +137,13 @@ include-in-header:
               if (link) toggle.textContent = link.textContent.trim();
             });
           }
+
+          // Réinjection des onglets fixes juste après le menu déroulant "Pages"
+          itemsFixes.forEach(function (li) {
+            var link = li.querySelector("a.nav-link");
+            if (link) link.classList.add("onglet-fixe");
+            navList.appendChild(li);
+          });
         }
 
         // ----- 2. Menu "Thèmes" : navigation entre les dashboards -----
@@ -126,7 +158,7 @@ include-in-header:
           { label: "Naissances et décès domiciliés", href: "naissances_deces.html" },
           { label: "Nombre d'électeurs inscrits sur liste principale par élection", href: "electeurs.html" }
         ];
-
+        
         var brandContainer = document.querySelector("#quarto-dashboard-header .navbar-brand-container");
         if (brandContainer) {
           // Sur les dashboards, le titre n'est pas toujours dans un <a class="navbar-brand">
@@ -341,3 +373,50 @@ Inputs.table(solde, {
   }
 })
 ```
+
+# Chiffres clés
+
+## Territoire sélectionné {height="15%"}
+
+```{ojs geo3_cc}
+htl.html`
+  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
+`
+```
+
+## Résultat
+
+::: {.card title="Chiffres clés du territoire"}
+
+```{ojs population}
+population_brut = isGeoSelected
+? db.query(`
+  SELECT OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '${selection_annee}'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'POP_T0'
+    AND TAB_MEASURE_LABEL = 'Population'
+`)
+: [];
+
+population_valeur = population_brut.length > 0 ? population_brut[0].OBS_VALUE : null;
+```
+
+```{ojs representation}
+htl.html`
+  <div style="display: flex; align-items: center; justify-content: center; height: 100%; min-height: 250px;">
+    <div style="text-align: center; font-family: sans-serif;">
+      <div style="font-size: 14px; color: #555; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">
+        Nombre d'habitants en 2022 ${isGeoSelected ? `– ${selection_geo.GEO_LABEL}` : ""} 
+      </div>
+      <div style="font-size: 48px; font-weight: bold; color: #145CBF;">
+        ${!isGeoSelected ? "—" : (population_valeur !== null ? population_valeur.toLocaleString("fr-FR") : "Non disponible")}
+      </div>
+    </div>
+  </div>
+`
+```
+
+:::

@@ -106,6 +106,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     color: #ffffff !important;
   }
 
+  /* ===== Onglet fixe "Chiffres clés" (hors menu déroulant) ===== */
+  #quarto-dashboard-header .navbar-nav > li.nav-item > a.nav-link.onglet-fixe {
+    color: rgba(255,255,255,0.85);
+  }
+  #quarto-dashboard-header .navbar-nav > li.nav-item > a.nav-link.onglet-fixe:hover,
+  #quarto-dashboard-header .navbar-nav > li.nav-item > a.nav-link.onglet-fixe.active {
+    color: #ffffff;
+  }
+
   /* ===== Menu "Thèmes" (titre transformé en dropdown) ===== */
   #quarto-dashboard-header .navbar-brand-container {
     position: relative;
@@ -153,9 +162,25 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script>
 document.addEventListener("DOMContentLoaded", function () {
   // ----- 1. Sous-menu "Pages" : regroupe les sous-thèmes de la page courante -----
+  // Sauf les onglets listés dans "onglets_fixes", qui restent visibles
+  // directement dans la barre bleue, juste après le menu "Pages".
   var navList = document.querySelector("#quarto-dashboard-header .navbar-nav");
   if (navList) {
     var items = Array.from(navList.querySelectorAll(":scope > li.nav-item"));
+
+    var onglets_fixes = ["Chiffres clés"];
+    var itemsFixes = [];
+
+    items = items.filter(function (li) {
+      var link = li.querySelector("a.nav-link");
+      var label = link ? link.textContent.trim() : "";
+      if (onglets_fixes.indexOf(label) !== -1) {
+        itemsFixes.push(li);
+        return false;
+      }
+      return true;
+    });
+
     if (items.length > 0) {
       var dropdownLi = document.createElement("li");
       dropdownLi.className = "nav-item dropdown";
@@ -193,6 +218,13 @@ document.addEventListener("DOMContentLoaded", function () {
         if (link) toggle.textContent = link.textContent.trim();
       });
     }
+
+    // Réinjection des onglets fixes juste après le menu déroulant "Pages"
+    itemsFixes.forEach(function (li) {
+      var link = li.querySelector("a.nav-link");
+      if (link) link.classList.add("onglet-fixe");
+      navList.appendChild(li);
+    });
   }
 
   // ----- 2. Menu "Thèmes" : navigation entre les dashboards -----
@@ -271,16 +303,16 @@ document.addEventListener("DOMContentLoaded", function () {
         
       </div>
     </div>
-<div id="dashboard-collapse" class="navbar-collapse collapse"><ul class="navbar-nav navbar-nav-scroll me-auto" role="tablist"><li class="nav-item" role="presentation"><a id="tab-nombre-délecteurs-inscrits-sur-liste-principale-par-élection" class="nav-link active" data-bs-toggle="tab" role="tab" data-bs-target="#nombre-délecteurs-inscrits-sur-liste-principale-par-élection" data-scrolling="false" href="#nombre-délecteurs-inscrits-sur-liste-principale-par-élection" aria-controls="nombre-délecteurs-inscrits-sur-liste-principale-par-élection" aria-selected="true"><span class="nav-link-text">Nombre d’électeurs inscrits sur liste principale par élection</span></a></li></ul></div></div>
+<div id="dashboard-collapse" class="navbar-collapse collapse"><ul class="navbar-nav navbar-nav-scroll me-auto" role="tablist"><li class="nav-item" role="presentation"><a id="tab-nombre-délecteurs-inscrits-sur-liste-principale-par-élection" class="nav-link active" data-bs-toggle="tab" role="tab" data-bs-target="#nombre-délecteurs-inscrits-sur-liste-principale-par-élection" data-scrolling="false" href="#nombre-délecteurs-inscrits-sur-liste-principale-par-élection" aria-controls="nombre-délecteurs-inscrits-sur-liste-principale-par-élection" aria-selected="true"><span class="nav-link-text">Nombre d’électeurs inscrits sur liste principale par élection</span></a></li><li class="nav-item" role="presentation"><a id="tab-chiffres-clés" class="nav-link" data-bs-toggle="tab" role="tab" data-bs-target="#chiffres-clés" data-scrolling="false" href="#chiffres-clés" aria-controls="chiffres-clés" aria-selected="false"><span class="nav-link-text">Chiffres clés</span></a></li></ul></div></div>
 </nav>
 </header>
 <div class="page-layout-custom quarto-dashboard-content bslib-gap-spacing html-fill-container bslib-page-fill quarto-dashboard-pages dashboard-sidebar-container">  
 
 <div class="cell hidden bslib-grid-item html-fill-item">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code hidden" id="cb1" data-startfrom="176" data-source-offset="-87"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 175;"><span id="cb1-176"><a href="#cb1-176" aria-hidden="true" tabindex="-1"></a>db <span class="op">=</span> DuckDBClient<span class="op">.</span><span class="fu">of</span>({})</span>
-<span id="cb1-177"><a href="#cb1-177" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-178"><a href="#cb1-178" aria-hidden="true" tabindex="-1"></a><span class="co">// 4. Définir l'adresse de votre fichier sur le S3 du SSP Cloud (équivalent chemin_s3 en R)</span></span>
-<span id="cb1-179"><a href="#cb1-179" aria-hidden="true" tabindex="-1"></a>chemin_s3 <span class="op">=</span> <span class="st">'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code hidden" id="cb1" data-startfrom="208" data-source-offset="-87"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 207;"><span id="cb1-208"><a href="#cb1-208" aria-hidden="true" tabindex="-1"></a>db <span class="op">=</span> DuckDBClient<span class="op">.</span><span class="fu">of</span>({})</span>
+<span id="cb1-209"><a href="#cb1-209" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-210"><a href="#cb1-210" aria-hidden="true" tabindex="-1"></a><span class="co">// 4. Définir l'adresse de votre fichier sur le S3 du SSP Cloud (équivalent chemin_s3 en R)</span></span>
+<span id="cb1-211"><a href="#cb1-211" aria-hidden="true" tabindex="-1"></a>chemin_s3 <span class="op">=</span> <span class="st">'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display hidden">
 <div>
 <div id="ojs-cell-1-1" data-nodetype="declaration">
@@ -305,21 +337,21 @@ grid-auto-rows: minmax(0, 1fr);">
 grid-auto-rows: minmax(0, 1fr);">
 <div class="card cell html-fill-item html-fill-container bslib-card" data-bslib-card-init="" data-require-bs-caller="card()" data-full-screen="false">
 <div class="card-body html-fill-item html-fill-container">
-<div class="code-copy-outer-scaffold html-fill-item html-fill-container"><div class="sourceCode cell-code hidden html-fill-item html-fill-container" id="cb5" data-startfrom="234" data-source-offset="-0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 233;"><span id="cb5-234"><a href="#cb5-234" aria-hidden="true" tabindex="-1"></a>isGeoSelected <span class="op">=</span> (selection_geo <span class="op">!==</span> <span class="kw">null</span>)<span class="op">;</span></span>
-<span id="cb5-235"><a href="#cb5-235" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-236"><a href="#cb5-236" aria-hidden="true" tabindex="-1"></a>htl<span class="op">.</span><span class="fu">html</span><span class="vs">`</span></span>
-<span id="cb5-237"><a href="#cb5-237" aria-hidden="true" tabindex="-1"></a><span class="vs">  &lt;strong&gt;Territoire sélectionné :&lt;/strong&gt; </span><span class="sc">${</span>isGeoSelected <span class="op">?</span> selection_geo<span class="op">.</span><span class="at">GEO_LABEL</span> <span class="op">:</span> <span class="st">""</span><span class="sc">}</span><span class="vs"> (</span><span class="sc">${</span>isGeoSelected <span class="op">?</span> selection_geo<span class="op">.</span><span class="at">GEO</span> <span class="op">:</span> <span class="st">""</span><span class="sc">}</span><span class="vs">)</span></span>
-<span id="cb5-238"><a href="#cb5-238" aria-hidden="true" tabindex="-1"></a><span class="vs">`</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold html-fill-item html-fill-container"><div class="sourceCode cell-code hidden html-fill-item html-fill-container" id="cb6" data-startfrom="281" data-source-offset="-0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 280;"><span id="cb6-281"><a href="#cb6-281" aria-hidden="true" tabindex="-1"></a>isGeoSelected <span class="op">=</span> (selection_geo <span class="op">!==</span> <span class="kw">null</span>)<span class="op">;</span></span>
+<span id="cb6-282"><a href="#cb6-282" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-283"><a href="#cb6-283" aria-hidden="true" tabindex="-1"></a>htl<span class="op">.</span><span class="fu">html</span><span class="vs">`</span></span>
+<span id="cb6-284"><a href="#cb6-284" aria-hidden="true" tabindex="-1"></a><span class="vs">  &lt;strong&gt;Territoire sélectionné :&lt;/strong&gt; </span><span class="sc">${</span>isGeoSelected <span class="op">?</span> selection_geo<span class="op">.</span><span class="at">GEO_LABEL</span> <span class="op">:</span> <span class="st">""</span><span class="sc">}</span><span class="vs"> (</span><span class="sc">${</span>isGeoSelected <span class="op">?</span> selection_geo<span class="op">.</span><span class="at">GEO</span> <span class="op">:</span> <span class="st">""</span><span class="sc">}</span><span class="vs">)</span></span>
+<span id="cb6-285"><a href="#cb6-285" aria-hidden="true" tabindex="-1"></a><span class="vs">`</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display html-fill-item html-fill-container">
 <div class="html-fill-item html-fill-container">
-<div id="ojs-cell-5-1" data-nodetype="declaration" class="html-fill-item html-fill-container">
+<div id="ojs-cell-6-1" data-nodetype="declaration" class="html-fill-item html-fill-container">
 
 </div>
 </div>
 </div>
 <div class="cell-output cell-output-display html-fill-item html-fill-container">
 <div class="html-fill-item html-fill-container">
-<div id="ojs-cell-5-2" data-nodetype="expression" class="html-fill-item html-fill-container">
+<div id="ojs-cell-6-2" data-nodetype="expression" class="html-fill-item html-fill-container">
 
 </div>
 </div>
@@ -335,66 +367,66 @@ grid-auto-rows: minmax(0, 1fr);">
 <div class="html-fill-item html-fill-container bslib-grid" style="display: grid; grid-template-columns: minmax(3em, 1fr) minmax(3em, 1fr);
 grid-auto-rows: minmax(0, 1fr);">
 <div class="cell hidden html-fill-item html-fill-container">
-<div class="code-copy-outer-scaffold html-fill-item html-fill-container"><div class="sourceCode cell-code hidden html-fill-item html-fill-container" id="cb6" data-startfrom="245" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 244;"><span id="cb6-245"><a href="#cb6-245" aria-hidden="true" tabindex="-1"></a><span class="co">// r &lt;- dossier_complet %&gt;% filter(GEO == "44109", ID_TAB == "EQUIP_T1") %&gt;% distinct(TAB_MEASURE_LABEL) %&gt;% collect()</span></span>
-<span id="cb6-246"><a href="#cb6-246" aria-hidden="true" tabindex="-1"></a><span class="co">// (étape de contrôle en R, non nécessaire pour l'affichage final, donc non reprise ici)</span></span>
-<span id="cb6-247"><a href="#cb6-247" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-248"><a href="#cb6-248" aria-hidden="true" tabindex="-1"></a><span class="co">// equip &lt;- dossier_complet %&gt;%</span></span>
-<span id="cb6-249"><a href="#cb6-249" aria-hidden="true" tabindex="-1"></a><span class="co">//   filter(</span></span>
-<span id="cb6-250"><a href="#cb6-250" aria-hidden="true" tabindex="-1"></a><span class="co">//     TIME_PERIOD == "2024",</span></span>
-<span id="cb6-251"><a href="#cb6-251" aria-hidden="true" tabindex="-1"></a><span class="co">//     GEO_OBJECT_LABEL == "Commune",</span></span>
-<span id="cb6-252"><a href="#cb6-252" aria-hidden="true" tabindex="-1"></a><span class="co">//     GEO == "44109",</span></span>
-<span id="cb6-253"><a href="#cb6-253" aria-hidden="true" tabindex="-1"></a><span class="co">//     ID_TAB == "EQUIP_T1",</span></span>
-<span id="cb6-254"><a href="#cb6-254" aria-hidden="true" tabindex="-1"></a><span class="co">//     TAB_MEASURE_LABEL %in% c(...)</span></span>
-<span id="cb6-255"><a href="#cb6-255" aria-hidden="true" tabindex="-1"></a><span class="co">//   )</span></span>
-<span id="cb6-256"><a href="#cb6-256" aria-hidden="true" tabindex="-1"></a>elec <span class="op">=</span> isGeoSelected</span>
-<span id="cb6-257"><a href="#cb6-257" aria-hidden="true" tabindex="-1"></a><span class="op">?</span> db<span class="op">.</span><span class="fu">query</span>(<span class="vs">`</span></span>
-<span id="cb6-258"><a href="#cb6-258" aria-hidden="true" tabindex="-1"></a><span class="vs">  SELECT TIME_PERIOD, TAB_MEASURE_LABEL, OBS_VALUE</span></span>
-<span id="cb6-259"><a href="#cb6-259" aria-hidden="true" tabindex="-1"></a><span class="vs">  FROM read_parquet('</span><span class="sc">${</span>chemin_s3<span class="sc">}</span><span class="vs">')</span></span>
-<span id="cb6-260"><a href="#cb6-260" aria-hidden="true" tabindex="-1"></a><span class="vs">  WHERE GEO_OBJECT_LABEL = '</span><span class="sc">${</span>selection_type_geo<span class="sc">}</span><span class="vs">'</span></span>
-<span id="cb6-261"><a href="#cb6-261" aria-hidden="true" tabindex="-1"></a><span class="vs">    AND GEO = '</span><span class="sc">${</span>selection_geo<span class="op">.</span><span class="at">GEO</span><span class="sc">}</span><span class="vs">'</span></span>
-<span id="cb6-262"><a href="#cb6-262" aria-hidden="true" tabindex="-1"></a><span class="vs">    AND ID_TAB = 'REU'</span></span>
-<span id="cb6-263"><a href="#cb6-263" aria-hidden="true" tabindex="-1"></a><span class="vs">`</span>)</span>
-<span id="cb6-264"><a href="#cb6-264" aria-hidden="true" tabindex="-1"></a><span class="op">:</span> []<span class="op">;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold html-fill-item html-fill-container"><div class="sourceCode cell-code hidden html-fill-item html-fill-container" id="cb7" data-startfrom="292" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 291;"><span id="cb7-292"><a href="#cb7-292" aria-hidden="true" tabindex="-1"></a><span class="co">// r &lt;- dossier_complet %&gt;% filter(GEO == "44109", ID_TAB == "EQUIP_T1") %&gt;% distinct(TAB_MEASURE_LABEL) %&gt;% collect()</span></span>
+<span id="cb7-293"><a href="#cb7-293" aria-hidden="true" tabindex="-1"></a><span class="co">// (étape de contrôle en R, non nécessaire pour l'affichage final, donc non reprise ici)</span></span>
+<span id="cb7-294"><a href="#cb7-294" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-295"><a href="#cb7-295" aria-hidden="true" tabindex="-1"></a><span class="co">// equip &lt;- dossier_complet %&gt;%</span></span>
+<span id="cb7-296"><a href="#cb7-296" aria-hidden="true" tabindex="-1"></a><span class="co">//   filter(</span></span>
+<span id="cb7-297"><a href="#cb7-297" aria-hidden="true" tabindex="-1"></a><span class="co">//     TIME_PERIOD == "2024",</span></span>
+<span id="cb7-298"><a href="#cb7-298" aria-hidden="true" tabindex="-1"></a><span class="co">//     GEO_OBJECT_LABEL == "Commune",</span></span>
+<span id="cb7-299"><a href="#cb7-299" aria-hidden="true" tabindex="-1"></a><span class="co">//     GEO == "44109",</span></span>
+<span id="cb7-300"><a href="#cb7-300" aria-hidden="true" tabindex="-1"></a><span class="co">//     ID_TAB == "EQUIP_T1",</span></span>
+<span id="cb7-301"><a href="#cb7-301" aria-hidden="true" tabindex="-1"></a><span class="co">//     TAB_MEASURE_LABEL %in% c(...)</span></span>
+<span id="cb7-302"><a href="#cb7-302" aria-hidden="true" tabindex="-1"></a><span class="co">//   )</span></span>
+<span id="cb7-303"><a href="#cb7-303" aria-hidden="true" tabindex="-1"></a>elec <span class="op">=</span> isGeoSelected</span>
+<span id="cb7-304"><a href="#cb7-304" aria-hidden="true" tabindex="-1"></a><span class="op">?</span> db<span class="op">.</span><span class="fu">query</span>(<span class="vs">`</span></span>
+<span id="cb7-305"><a href="#cb7-305" aria-hidden="true" tabindex="-1"></a><span class="vs">  SELECT TIME_PERIOD, TAB_MEASURE_LABEL, OBS_VALUE</span></span>
+<span id="cb7-306"><a href="#cb7-306" aria-hidden="true" tabindex="-1"></a><span class="vs">  FROM read_parquet('</span><span class="sc">${</span>chemin_s3<span class="sc">}</span><span class="vs">')</span></span>
+<span id="cb7-307"><a href="#cb7-307" aria-hidden="true" tabindex="-1"></a><span class="vs">  WHERE GEO_OBJECT_LABEL = '</span><span class="sc">${</span>selection_type_geo<span class="sc">}</span><span class="vs">'</span></span>
+<span id="cb7-308"><a href="#cb7-308" aria-hidden="true" tabindex="-1"></a><span class="vs">    AND GEO = '</span><span class="sc">${</span>selection_geo<span class="op">.</span><span class="at">GEO</span><span class="sc">}</span><span class="vs">'</span></span>
+<span id="cb7-309"><a href="#cb7-309" aria-hidden="true" tabindex="-1"></a><span class="vs">    AND ID_TAB = 'REU'</span></span>
+<span id="cb7-310"><a href="#cb7-310" aria-hidden="true" tabindex="-1"></a><span class="vs">`</span>)</span>
+<span id="cb7-311"><a href="#cb7-311" aria-hidden="true" tabindex="-1"></a><span class="op">:</span> []<span class="op">;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display hidden html-fill-item html-fill-container">
-<div id="ojs-cell-6" data-nodetype="declaration" class="html-fill-item html-fill-container">
+<div id="ojs-cell-7" data-nodetype="declaration" class="html-fill-item html-fill-container">
 
 </div>
 </div>
 </div><div class="card cell html-fill-item html-fill-container bslib-card" data-bslib-card-init="" data-require-bs-caller="card()" data-full-screen="false">
 <div class="card-body html-fill-item html-fill-container">
-<div class="code-copy-outer-scaffold html-fill-item html-fill-container"><div class="sourceCode cell-code hidden html-fill-item html-fill-container" id="cb7" data-startfrom="271" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 270;"><span id="cb7-271"><a href="#cb7-271" aria-hidden="true" tabindex="-1"></a>Plot<span class="op">.</span><span class="fu">plot</span>({</span>
-<span id="cb7-272"><a href="#cb7-272" aria-hidden="true" tabindex="-1"></a>  <span class="dt">title</span><span class="op">:</span> <span class="st">"Nombre d'électeurs inscrits sur liste principale par élection"</span><span class="op">,</span></span>
-<span id="cb7-273"><a href="#cb7-273" aria-hidden="true" tabindex="-1"></a>  <span class="dt">marginBottom</span><span class="op">:</span> <span class="dv">40</span><span class="op">,</span></span>
-<span id="cb7-274"><a href="#cb7-274" aria-hidden="true" tabindex="-1"></a>  <span class="dt">x</span><span class="op">:</span> { </span>
-<span id="cb7-275"><a href="#cb7-275" aria-hidden="true" tabindex="-1"></a>    <span class="dt">label</span><span class="op">:</span> <span class="st">"Année de l'élection"</span><span class="op">,</span> </span>
-<span id="cb7-276"><a href="#cb7-276" aria-hidden="true" tabindex="-1"></a>    <span class="dt">tickFormat</span><span class="op">:</span> <span class="st">"d"</span> <span class="co">// Empêche d'afficher les années avec des virgules (ex: 2,022)</span></span>
-<span id="cb7-277"><a href="#cb7-277" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span>
-<span id="cb7-278"><a href="#cb7-278" aria-hidden="true" tabindex="-1"></a>  <span class="dt">y</span><span class="op">:</span> { </span>
-<span id="cb7-279"><a href="#cb7-279" aria-hidden="true" tabindex="-1"></a>    <span class="dt">label</span><span class="op">:</span> <span class="st">"Nombre d'électeurs"</span><span class="op">,</span> </span>
-<span id="cb7-280"><a href="#cb7-280" aria-hidden="true" tabindex="-1"></a>    <span class="dt">grid</span><span class="op">:</span> <span class="kw">true</span> </span>
-<span id="cb7-281"><a href="#cb7-281" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span>
-<span id="cb7-282"><a href="#cb7-282" aria-hidden="true" tabindex="-1"></a>  <span class="dt">marks</span><span class="op">:</span> [</span>
-<span id="cb7-283"><a href="#cb7-283" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 1. Trace une ligne bleue continue entre toutes les années</span></span>
-<span id="cb7-284"><a href="#cb7-284" aria-hidden="true" tabindex="-1"></a>    Plot<span class="op">.</span><span class="fu">line</span>(elec<span class="op">,</span> { </span>
-<span id="cb7-285"><a href="#cb7-285" aria-hidden="true" tabindex="-1"></a>      <span class="dt">x</span><span class="op">:</span> <span class="st">"TIME_PERIOD"</span><span class="op">,</span> </span>
-<span id="cb7-286"><a href="#cb7-286" aria-hidden="true" tabindex="-1"></a>      <span class="dt">y</span><span class="op">:</span> <span class="st">"OBS_VALUE"</span><span class="op">,</span> </span>
-<span id="cb7-287"><a href="#cb7-287" aria-hidden="true" tabindex="-1"></a>      <span class="dt">stroke</span><span class="op">:</span> <span class="st">"blue"</span><span class="op">,</span> </span>
-<span id="cb7-288"><a href="#cb7-288" aria-hidden="true" tabindex="-1"></a>      <span class="dt">strokeWidth</span><span class="op">:</span> <span class="dv">2</span> </span>
-<span id="cb7-289"><a href="#cb7-289" aria-hidden="true" tabindex="-1"></a>    })<span class="op">,</span></span>
-<span id="cb7-290"><a href="#cb7-290" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb7-291"><a href="#cb7-291" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 2. Ajoute les points avec une info-bulle au survol</span></span>
-<span id="cb7-292"><a href="#cb7-292" aria-hidden="true" tabindex="-1"></a>    Plot<span class="op">.</span><span class="fu">dot</span>(elec<span class="op">,</span> { </span>
-<span id="cb7-293"><a href="#cb7-293" aria-hidden="true" tabindex="-1"></a>      <span class="dt">x</span><span class="op">:</span> <span class="st">"TIME_PERIOD"</span><span class="op">,</span> </span>
-<span id="cb7-294"><a href="#cb7-294" aria-hidden="true" tabindex="-1"></a>      <span class="dt">y</span><span class="op">:</span> <span class="st">"OBS_VALUE"</span><span class="op">,</span> </span>
-<span id="cb7-295"><a href="#cb7-295" aria-hidden="true" tabindex="-1"></a>      <span class="dt">fill</span><span class="op">:</span> <span class="st">"#174695"</span><span class="op">,</span> </span>
-<span id="cb7-296"><a href="#cb7-296" aria-hidden="true" tabindex="-1"></a>      <span class="dt">r</span><span class="op">:</span> <span class="dv">4</span><span class="op">,</span></span>
-<span id="cb7-297"><a href="#cb7-297" aria-hidden="true" tabindex="-1"></a>      <span class="co">// Ajout interactif : affiche les infos quand on passe la souris sur le point</span></span>
-<span id="cb7-298"><a href="#cb7-298" aria-hidden="true" tabindex="-1"></a>      <span class="dt">title</span><span class="op">:</span> (d) <span class="kw">=&gt;</span> <span class="vs">`</span><span class="sc">${</span>d<span class="op">.</span><span class="at">TAB_MEASURE_LABEL</span><span class="sc">}</span><span class="vs"> (</span><span class="sc">${</span>d<span class="op">.</span><span class="at">TIME_PERIOD</span><span class="sc">}</span><span class="vs">)</span><span class="sc">\n</span><span class="vs">Électeurs : </span><span class="sc">${</span>d<span class="op">.</span><span class="at">OBS_VALUE</span><span class="sc">}</span><span class="vs">`</span></span>
-<span id="cb7-299"><a href="#cb7-299" aria-hidden="true" tabindex="-1"></a>    })</span>
-<span id="cb7-300"><a href="#cb7-300" aria-hidden="true" tabindex="-1"></a>  ]</span>
-<span id="cb7-301"><a href="#cb7-301" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold html-fill-item html-fill-container"><div class="sourceCode cell-code hidden html-fill-item html-fill-container" id="cb8" data-startfrom="318" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 317;"><span id="cb8-318"><a href="#cb8-318" aria-hidden="true" tabindex="-1"></a>Plot<span class="op">.</span><span class="fu">plot</span>({</span>
+<span id="cb8-319"><a href="#cb8-319" aria-hidden="true" tabindex="-1"></a>  <span class="dt">title</span><span class="op">:</span> <span class="st">"Nombre d'électeurs inscrits sur liste principale par élection"</span><span class="op">,</span></span>
+<span id="cb8-320"><a href="#cb8-320" aria-hidden="true" tabindex="-1"></a>  <span class="dt">marginBottom</span><span class="op">:</span> <span class="dv">40</span><span class="op">,</span></span>
+<span id="cb8-321"><a href="#cb8-321" aria-hidden="true" tabindex="-1"></a>  <span class="dt">x</span><span class="op">:</span> { </span>
+<span id="cb8-322"><a href="#cb8-322" aria-hidden="true" tabindex="-1"></a>    <span class="dt">label</span><span class="op">:</span> <span class="st">"Année de l'élection"</span><span class="op">,</span> </span>
+<span id="cb8-323"><a href="#cb8-323" aria-hidden="true" tabindex="-1"></a>    <span class="dt">tickFormat</span><span class="op">:</span> <span class="st">"d"</span> <span class="co">// Empêche d'afficher les années avec des virgules (ex: 2,022)</span></span>
+<span id="cb8-324"><a href="#cb8-324" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span>
+<span id="cb8-325"><a href="#cb8-325" aria-hidden="true" tabindex="-1"></a>  <span class="dt">y</span><span class="op">:</span> { </span>
+<span id="cb8-326"><a href="#cb8-326" aria-hidden="true" tabindex="-1"></a>    <span class="dt">label</span><span class="op">:</span> <span class="st">"Nombre d'électeurs"</span><span class="op">,</span> </span>
+<span id="cb8-327"><a href="#cb8-327" aria-hidden="true" tabindex="-1"></a>    <span class="dt">grid</span><span class="op">:</span> <span class="kw">true</span> </span>
+<span id="cb8-328"><a href="#cb8-328" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span></span>
+<span id="cb8-329"><a href="#cb8-329" aria-hidden="true" tabindex="-1"></a>  <span class="dt">marks</span><span class="op">:</span> [</span>
+<span id="cb8-330"><a href="#cb8-330" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 1. Trace une ligne bleue continue entre toutes les années</span></span>
+<span id="cb8-331"><a href="#cb8-331" aria-hidden="true" tabindex="-1"></a>    Plot<span class="op">.</span><span class="fu">line</span>(elec<span class="op">,</span> { </span>
+<span id="cb8-332"><a href="#cb8-332" aria-hidden="true" tabindex="-1"></a>      <span class="dt">x</span><span class="op">:</span> <span class="st">"TIME_PERIOD"</span><span class="op">,</span> </span>
+<span id="cb8-333"><a href="#cb8-333" aria-hidden="true" tabindex="-1"></a>      <span class="dt">y</span><span class="op">:</span> <span class="st">"OBS_VALUE"</span><span class="op">,</span> </span>
+<span id="cb8-334"><a href="#cb8-334" aria-hidden="true" tabindex="-1"></a>      <span class="dt">stroke</span><span class="op">:</span> <span class="st">"blue"</span><span class="op">,</span> </span>
+<span id="cb8-335"><a href="#cb8-335" aria-hidden="true" tabindex="-1"></a>      <span class="dt">strokeWidth</span><span class="op">:</span> <span class="dv">2</span> </span>
+<span id="cb8-336"><a href="#cb8-336" aria-hidden="true" tabindex="-1"></a>    })<span class="op">,</span></span>
+<span id="cb8-337"><a href="#cb8-337" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb8-338"><a href="#cb8-338" aria-hidden="true" tabindex="-1"></a>    <span class="co">// 2. Ajoute les points avec une info-bulle au survol</span></span>
+<span id="cb8-339"><a href="#cb8-339" aria-hidden="true" tabindex="-1"></a>    Plot<span class="op">.</span><span class="fu">dot</span>(elec<span class="op">,</span> { </span>
+<span id="cb8-340"><a href="#cb8-340" aria-hidden="true" tabindex="-1"></a>      <span class="dt">x</span><span class="op">:</span> <span class="st">"TIME_PERIOD"</span><span class="op">,</span> </span>
+<span id="cb8-341"><a href="#cb8-341" aria-hidden="true" tabindex="-1"></a>      <span class="dt">y</span><span class="op">:</span> <span class="st">"OBS_VALUE"</span><span class="op">,</span> </span>
+<span id="cb8-342"><a href="#cb8-342" aria-hidden="true" tabindex="-1"></a>      <span class="dt">fill</span><span class="op">:</span> <span class="st">"#174695"</span><span class="op">,</span> </span>
+<span id="cb8-343"><a href="#cb8-343" aria-hidden="true" tabindex="-1"></a>      <span class="dt">r</span><span class="op">:</span> <span class="dv">4</span><span class="op">,</span></span>
+<span id="cb8-344"><a href="#cb8-344" aria-hidden="true" tabindex="-1"></a>      <span class="co">// Ajout interactif : affiche les infos quand on passe la souris sur le point</span></span>
+<span id="cb8-345"><a href="#cb8-345" aria-hidden="true" tabindex="-1"></a>      <span class="dt">title</span><span class="op">:</span> (d) <span class="kw">=&gt;</span> <span class="vs">`</span><span class="sc">${</span>d<span class="op">.</span><span class="at">TAB_MEASURE_LABEL</span><span class="sc">}</span><span class="vs"> (</span><span class="sc">${</span>d<span class="op">.</span><span class="at">TIME_PERIOD</span><span class="sc">}</span><span class="vs">)</span><span class="sc">\n</span><span class="vs">Électeurs : </span><span class="sc">${</span>d<span class="op">.</span><span class="at">OBS_VALUE</span><span class="sc">}</span><span class="vs">`</span></span>
+<span id="cb8-346"><a href="#cb8-346" aria-hidden="true" tabindex="-1"></a>    })</span>
+<span id="cb8-347"><a href="#cb8-347" aria-hidden="true" tabindex="-1"></a>  ]</span>
+<span id="cb8-348"><a href="#cb8-348" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display html-fill-item html-fill-container">
-<div id="ojs-cell-7" data-nodetype="expression" class="html-fill-item html-fill-container">
+<div id="ojs-cell-8" data-nodetype="expression" class="html-fill-item html-fill-container">
 
 </div>
 </div>
@@ -406,31 +438,115 @@ grid-auto-rows: minmax(0, 1fr);">
     </span>
 </bslib-tooltip><script data-bslib-card-init="">bslib.Card.initializeAllCards();</script></div><div class="card cell html-fill-item html-fill-container bslib-card" data-bslib-card-init="" data-require-bs-caller="card()" data-full-screen="false">
 <div class="card-body html-fill-item html-fill-container">
-<div class="code-copy-outer-scaffold html-fill-item html-fill-container"><div class="sourceCode cell-code hidden html-fill-item html-fill-container" id="cb8" data-startfrom="307" data-source-offset="-82"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 306;"><span id="cb8-307"><a href="#cb8-307" aria-hidden="true" tabindex="-1"></a>elec_pour_tableau <span class="op">=</span> {</span>
-<span id="cb8-308"><a href="#cb8-308" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> elec<span class="op">.</span><span class="fu">slice</span>()<span class="op">.</span><span class="fu">sort</span>((a<span class="op">,</span> b) <span class="kw">=&gt;</span> d3<span class="op">.</span><span class="fu">ascending</span>(a<span class="op">.</span><span class="at">TIME_PERIOD</span><span class="op">,</span> b<span class="op">.</span><span class="at">TIME_PERIOD</span>))<span class="op">;</span></span>
-<span id="cb8-309"><a href="#cb8-309" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb8-310"><a href="#cb8-310" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-311"><a href="#cb8-311" aria-hidden="true" tabindex="-1"></a><span class="co">// 2. Affichage du tableau interactif</span></span>
-<span id="cb8-312"><a href="#cb8-312" aria-hidden="true" tabindex="-1"></a>Inputs<span class="op">.</span><span class="fu">table</span>(elec_pour_tableau<span class="op">,</span> {</span>
-<span id="cb8-313"><a href="#cb8-313" aria-hidden="true" tabindex="-1"></a>  <span class="dt">columns</span><span class="op">:</span> [<span class="st">"TIME_PERIOD"</span><span class="op">,</span> <span class="st">"TAB_MEASURE_LABEL"</span><span class="op">,</span> <span class="st">"OBS_VALUE"</span>]<span class="op">,</span></span>
-<span id="cb8-314"><a href="#cb8-314" aria-hidden="true" tabindex="-1"></a>  <span class="dt">header</span><span class="op">:</span> {</span>
-<span id="cb8-315"><a href="#cb8-315" aria-hidden="true" tabindex="-1"></a>    <span class="dt">TIME_PERIOD</span><span class="op">:</span> <span class="st">"Année"</span><span class="op">,</span></span>
-<span id="cb8-316"><a href="#cb8-316" aria-hidden="true" tabindex="-1"></a>    <span class="dt">TAB_MEASURE_LABEL</span><span class="op">:</span> <span class="st">"Type d'élection"</span><span class="op">,</span></span>
-<span id="cb8-317"><a href="#cb8-317" aria-hidden="true" tabindex="-1"></a>    <span class="dt">OBS_VALUE</span><span class="op">:</span> <span class="st">"Nombre d'électeurs"</span></span>
-<span id="cb8-318"><a href="#cb8-318" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb8-319"><a href="#cb8-319" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold html-fill-item html-fill-container"><div class="sourceCode cell-code hidden html-fill-item html-fill-container" id="cb9" data-startfrom="354" data-source-offset="-82"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 353;"><span id="cb9-354"><a href="#cb9-354" aria-hidden="true" tabindex="-1"></a>elec_pour_tableau <span class="op">=</span> {</span>
+<span id="cb9-355"><a href="#cb9-355" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> elec<span class="op">.</span><span class="fu">slice</span>()<span class="op">.</span><span class="fu">sort</span>((a<span class="op">,</span> b) <span class="kw">=&gt;</span> d3<span class="op">.</span><span class="fu">ascending</span>(a<span class="op">.</span><span class="at">TIME_PERIOD</span><span class="op">,</span> b<span class="op">.</span><span class="at">TIME_PERIOD</span>))<span class="op">;</span></span>
+<span id="cb9-356"><a href="#cb9-356" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb9-357"><a href="#cb9-357" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-358"><a href="#cb9-358" aria-hidden="true" tabindex="-1"></a><span class="co">// 2. Affichage du tableau interactif</span></span>
+<span id="cb9-359"><a href="#cb9-359" aria-hidden="true" tabindex="-1"></a>Inputs<span class="op">.</span><span class="fu">table</span>(elec_pour_tableau<span class="op">,</span> {</span>
+<span id="cb9-360"><a href="#cb9-360" aria-hidden="true" tabindex="-1"></a>  <span class="dt">columns</span><span class="op">:</span> [<span class="st">"TIME_PERIOD"</span><span class="op">,</span> <span class="st">"TAB_MEASURE_LABEL"</span><span class="op">,</span> <span class="st">"OBS_VALUE"</span>]<span class="op">,</span></span>
+<span id="cb9-361"><a href="#cb9-361" aria-hidden="true" tabindex="-1"></a>  <span class="dt">header</span><span class="op">:</span> {</span>
+<span id="cb9-362"><a href="#cb9-362" aria-hidden="true" tabindex="-1"></a>    <span class="dt">TIME_PERIOD</span><span class="op">:</span> <span class="st">"Année"</span><span class="op">,</span></span>
+<span id="cb9-363"><a href="#cb9-363" aria-hidden="true" tabindex="-1"></a>    <span class="dt">TAB_MEASURE_LABEL</span><span class="op">:</span> <span class="st">"Type d'élection"</span><span class="op">,</span></span>
+<span id="cb9-364"><a href="#cb9-364" aria-hidden="true" tabindex="-1"></a>    <span class="dt">OBS_VALUE</span><span class="op">:</span> <span class="st">"Nombre d'électeurs"</span></span>
+<span id="cb9-365"><a href="#cb9-365" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb9-366"><a href="#cb9-366" aria-hidden="true" tabindex="-1"></a>})</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display html-fill-item html-fill-container">
 <div class="html-fill-item html-fill-container">
-<div id="ojs-cell-8-1" data-nodetype="declaration" class="html-fill-item html-fill-container">
+<div id="ojs-cell-9-1" data-nodetype="declaration" class="html-fill-item html-fill-container">
 
 </div>
 </div>
 </div>
 <div class="cell-output cell-output-display html-fill-item html-fill-container">
 <div class="html-fill-item html-fill-container">
-<div id="ojs-cell-8-2" data-nodetype="expression" class="html-fill-item html-fill-container">
+<div id="ojs-cell-9-2" data-nodetype="expression" class="html-fill-item html-fill-container">
 
 </div>
+</div>
+</div>
+</div>
+<bslib-tooltip placement="auto" bsoptions="[]" data-require-bs-version="5" data-require-bs-caller="tooltip()">
+    <template>Expand</template>
+    <span class="bslib-full-screen-enter badge rounded-pill">
+        <svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 24 24" style="height:1em;width:1em;" aria-hidden="true" role="img"><path d="M20 5C20 4.4 19.6 4 19 4H13C12.4 4 12 3.6 12 3C12 2.4 12.4 2 13 2H21C21.6 2 22 2.4 22 3V11C22 11.6 21.6 12 21 12C20.4 12 20 11.6 20 11V5ZM4 19C4 19.6 4.4 20 5 20H11C11.6 20 12 20.4 12 21C12 21.6 11.6 22 11 22H3C2.4 22 2 21.6 2 21V13C2 12.4 2.4 12 3 12C3.6 12 4 12.4 4 13V19Z"></path></svg>
+    </span>
+</bslib-tooltip><script data-bslib-card-init="">bslib.Card.initializeAllCards();</script></div>
+</div>
+</div>
+</div><div id="chiffres-clés" class="dashboard-page tab-pane grid-skip html-fill-item html-fill-container" data-orientation="rows" aria-labelledby="tab-chiffres-clés">
+<div class="html-fill-item html-fill-container bslib-grid" style="display: grid; grid-template-rows: minmax(3em, 15fr) minmax(3em, 85fr); grid-auto-columns: minmax(0, 1fr);">
+<div class="html-fill-item html-fill-container bslib-grid" style="display: grid; grid-template-columns: minmax(3em, 1fr);
+grid-auto-rows: minmax(0, 1fr);">
+<div class="card cell html-fill-item html-fill-container bslib-card" data-bslib-card-init="" data-require-bs-caller="card()" data-full-screen="false">
+<div class="card-body html-fill-item html-fill-container">
+<div class="code-copy-outer-scaffold html-fill-item html-fill-container"><div class="sourceCode cell-code hidden html-fill-item html-fill-container" id="cb10" data-startfrom="373" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 372;"><span id="cb10-373"><a href="#cb10-373" aria-hidden="true" tabindex="-1"></a>htl<span class="op">.</span><span class="fu">html</span><span class="vs">`</span></span>
+<span id="cb10-374"><a href="#cb10-374" aria-hidden="true" tabindex="-1"></a><span class="vs">  &lt;strong&gt;Territoire sélectionné :&lt;/strong&gt; </span><span class="sc">${</span>isGeoSelected <span class="op">?</span> selection_geo<span class="op">.</span><span class="at">GEO_LABEL</span> <span class="op">:</span> <span class="st">""</span><span class="sc">}</span><span class="vs"> (</span><span class="sc">${</span>isGeoSelected <span class="op">?</span> selection_geo<span class="op">.</span><span class="at">GEO</span> <span class="op">:</span> <span class="st">""</span><span class="sc">}</span><span class="vs">)</span></span>
+<span id="cb10-375"><a href="#cb10-375" aria-hidden="true" tabindex="-1"></a><span class="vs">`</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display html-fill-item html-fill-container">
+<div id="ojs-cell-10" data-nodetype="expression" class="html-fill-item html-fill-container">
+
+</div>
+</div>
+</div>
+<bslib-tooltip placement="auto" bsoptions="[]" data-require-bs-version="5" data-require-bs-caller="tooltip()">
+    <template>Expand</template>
+    <span class="bslib-full-screen-enter badge rounded-pill">
+        <svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 24 24" style="height:1em;width:1em;" aria-hidden="true" role="img"><path d="M20 5C20 4.4 19.6 4 19 4H13C12.4 4 12 3.6 12 3C12 2.4 12.4 2 13 2H21C21.6 2 22 2.4 22 3V11C22 11.6 21.6 12 21 12C20.4 12 20 11.6 20 11V5ZM4 19C4 19.6 4.4 20 5 20H11C11.6 20 12 20.4 12 21C12 21.6 11.6 22 11 22H3C2.4 22 2 21.6 2 21V13C2 12.4 2.4 12 3 12C3.6 12 4 12.4 4 13V19Z"></path></svg>
+    </span>
+</bslib-tooltip><script data-bslib-card-init="">bslib.Card.initializeAllCards();</script></div>
+</div>
+<div class="html-fill-item html-fill-container bslib-grid" style="display: grid; grid-template-columns: minmax(3em, 1fr);
+grid-auto-rows: minmax(0, 1fr);">
+<div class="card html-fill-item html-fill-container bslib-card" data-title="Chiffres clés du territoire" data-bslib-card-init="" data-require-bs-caller="card()" data-full-screen="false">
+<div class="card-header"><div class="card-title html-fill-item html-fill-container"><span style="display: inline">
+Chiffres clés du territoire
+</span></div></div>
+<div class="cell card-body html-fill-item html-fill-container">
+<div class="code-copy-outer-scaffold html-fill-item html-fill-container"><div class="sourceCode cell-code hidden html-fill-item html-fill-container" id="cb11" data-startfrom="384" data-source-offset="-0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 383;"><span id="cb11-384"><a href="#cb11-384" aria-hidden="true" tabindex="-1"></a>population_brut <span class="op">=</span> isGeoSelected</span>
+<span id="cb11-385"><a href="#cb11-385" aria-hidden="true" tabindex="-1"></a><span class="op">?</span> db<span class="op">.</span><span class="fu">query</span>(<span class="vs">`</span></span>
+<span id="cb11-386"><a href="#cb11-386" aria-hidden="true" tabindex="-1"></a><span class="vs">  SELECT OBS_VALUE</span></span>
+<span id="cb11-387"><a href="#cb11-387" aria-hidden="true" tabindex="-1"></a><span class="vs">  FROM read_parquet('</span><span class="sc">${</span>chemin_s3<span class="sc">}</span><span class="vs">')</span></span>
+<span id="cb11-388"><a href="#cb11-388" aria-hidden="true" tabindex="-1"></a><span class="vs">  WHERE TIME_PERIOD = '</span><span class="sc">${</span>selection_annee<span class="sc">}</span><span class="vs">'</span></span>
+<span id="cb11-389"><a href="#cb11-389" aria-hidden="true" tabindex="-1"></a><span class="vs">    AND GEO_OBJECT_LABEL = '</span><span class="sc">${</span>selection_type_geo<span class="sc">}</span><span class="vs">'</span></span>
+<span id="cb11-390"><a href="#cb11-390" aria-hidden="true" tabindex="-1"></a><span class="vs">    AND GEO = '</span><span class="sc">${</span>selection_geo<span class="op">.</span><span class="at">GEO</span><span class="sc">}</span><span class="vs">'</span></span>
+<span id="cb11-391"><a href="#cb11-391" aria-hidden="true" tabindex="-1"></a><span class="vs">    AND ID_TAB = 'POP_T0'</span></span>
+<span id="cb11-392"><a href="#cb11-392" aria-hidden="true" tabindex="-1"></a><span class="vs">    AND TAB_MEASURE_LABEL = 'Population'</span></span>
+<span id="cb11-393"><a href="#cb11-393" aria-hidden="true" tabindex="-1"></a><span class="vs">`</span>)</span>
+<span id="cb11-394"><a href="#cb11-394" aria-hidden="true" tabindex="-1"></a><span class="op">:</span> []<span class="op">;</span></span>
+<span id="cb11-395"><a href="#cb11-395" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-396"><a href="#cb11-396" aria-hidden="true" tabindex="-1"></a>population_valeur <span class="op">=</span> population_brut<span class="op">.</span><span class="at">length</span> <span class="op">&gt;</span> <span class="dv">0</span> <span class="op">?</span> population_brut[<span class="dv">0</span>]<span class="op">.</span><span class="at">OBS_VALUE</span> <span class="op">:</span> <span class="kw">null</span><span class="op">;</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display html-fill-item html-fill-container">
+<div class="html-fill-item html-fill-container">
+<div id="ojs-cell-11-1" data-nodetype="declaration" class="html-fill-item html-fill-container">
+
+</div>
+</div>
+</div>
+<div class="cell-output cell-output-display html-fill-item html-fill-container">
+<div class="html-fill-item html-fill-container">
+<div id="ojs-cell-11-2" data-nodetype="declaration" class="html-fill-item html-fill-container">
+
+</div>
+</div>
+</div>
+</div>
+<div class="cell card-body html-fill-item html-fill-container">
+<div class="code-copy-outer-scaffold html-fill-item html-fill-container"><div class="sourceCode cell-code hidden html-fill-item html-fill-container" id="cb12" data-startfrom="399" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 398;"><span id="cb12-399"><a href="#cb12-399" aria-hidden="true" tabindex="-1"></a>htl<span class="op">.</span><span class="fu">html</span><span class="vs">`</span></span>
+<span id="cb12-400"><a href="#cb12-400" aria-hidden="true" tabindex="-1"></a><span class="vs">  &lt;div style="display: flex; align-items: center; justify-content: center; height: 100%; min-height: 250px;"&gt;</span></span>
+<span id="cb12-401"><a href="#cb12-401" aria-hidden="true" tabindex="-1"></a><span class="vs">    &lt;div style="text-align: center; font-family: sans-serif;"&gt;</span></span>
+<span id="cb12-402"><a href="#cb12-402" aria-hidden="true" tabindex="-1"></a><span class="vs">      &lt;div style="font-size: 14px; color: #555; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;"&gt;</span></span>
+<span id="cb12-403"><a href="#cb12-403" aria-hidden="true" tabindex="-1"></a><span class="vs">        Nombre d'habitants en 2022 </span><span class="sc">${</span>isGeoSelected <span class="op">?</span> <span class="vs">`– </span><span class="sc">${</span>selection_geo<span class="op">.</span><span class="at">GEO_LABEL</span><span class="sc">}</span><span class="vs">`</span> <span class="op">:</span> <span class="st">""</span><span class="sc">}</span></span>
+<span id="cb12-404"><a href="#cb12-404" aria-hidden="true" tabindex="-1"></a><span class="vs">      &lt;/div&gt;</span></span>
+<span id="cb12-405"><a href="#cb12-405" aria-hidden="true" tabindex="-1"></a><span class="vs">      &lt;div style="font-size: 48px; font-weight: bold; color: #145CBF;"&gt;</span></span>
+<span id="cb12-406"><a href="#cb12-406" aria-hidden="true" tabindex="-1"></a><span class="vs">        </span><span class="sc">${</span><span class="op">!</span>isGeoSelected <span class="op">?</span> <span class="st">"—"</span> <span class="op">:</span> (population_valeur <span class="op">!==</span> <span class="kw">null</span> <span class="op">?</span> population_valeur<span class="op">.</span><span class="fu">toLocaleString</span>(<span class="st">"fr-FR"</span>) <span class="op">:</span> <span class="st">"Non disponible"</span>)<span class="sc">}</span></span>
+<span id="cb12-407"><a href="#cb12-407" aria-hidden="true" tabindex="-1"></a><span class="vs">      &lt;/div&gt;</span></span>
+<span id="cb12-408"><a href="#cb12-408" aria-hidden="true" tabindex="-1"></a><span class="vs">    &lt;/div&gt;</span></span>
+<span id="cb12-409"><a href="#cb12-409" aria-hidden="true" tabindex="-1"></a><span class="vs">  &lt;/div&gt;</span></span>
+<span id="cb12-410"><a href="#cb12-410" aria-hidden="true" tabindex="-1"></a><span class="vs">`</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display html-fill-item html-fill-container">
+<div id="ojs-cell-12" data-nodetype="expression" class="html-fill-item html-fill-container">
+
 </div>
 </div>
 </div>
@@ -447,62 +563,79 @@ grid-auto-rows: minmax(0, 1fr);">
 </div>
 </div>
 </div></div><aside id="bslib-sidebar-1" class="sidebar html-fill-container html-fill-item"><div class="html-fill-container html-fill-item">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code hidden" id="cb2" data-startfrom="184" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 183;"><span id="cb2-184"><a href="#cb2-184" aria-hidden="true" tabindex="-1"></a>viewof selection_type_geo <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">select</span>(</span>
-<span id="cb2-185"><a href="#cb2-185" aria-hidden="true" tabindex="-1"></a>  [</span>
-<span id="cb2-186"><a href="#cb2-186" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Commune"</span><span class="op">,</span> <span class="st">"Unité urbaine 2020"</span><span class="op">,</span> <span class="st">"Bassin de vie 2022"</span><span class="op">,</span> <span class="st">"Intercommunalité-Métropole"</span><span class="op">,</span> </span>
-<span id="cb2-187"><a href="#cb2-187" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Aire d’attraction des villes 2020"</span><span class="op">,</span> <span class="st">"Arrondissement"</span><span class="op">,</span> <span class="st">"Zone d’emploi 2020"</span><span class="op">,</span> </span>
-<span id="cb2-188"><a href="#cb2-188" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Département"</span><span class="op">,</span> <span class="st">"Arrondissement municipal"</span><span class="op">,</span> <span class="st">"Région"</span><span class="op">,</span> <span class="st">"France"</span><span class="op">,</span> </span>
-<span id="cb2-189"><a href="#cb2-189" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Autres"</span><span class="op">,</span> <span class="st">"Collectivité et territoire français d’outre-mer"</span></span>
-<span id="cb2-190"><a href="#cb2-190" aria-hidden="true" tabindex="-1"></a>  ]<span class="op">,</span></span>
-<span id="cb2-191"><a href="#cb2-191" aria-hidden="true" tabindex="-1"></a>  {</span>
-<span id="cb2-192"><a href="#cb2-192" aria-hidden="true" tabindex="-1"></a>    <span class="dt">label</span><span class="op">:</span> <span class="st">"Type de zone"</span><span class="op">,</span></span>
-<span id="cb2-193"><a href="#cb2-193" aria-hidden="true" tabindex="-1"></a>    <span class="dt">value</span><span class="op">:</span> <span class="st">"Commune"</span></span>
-<span id="cb2-194"><a href="#cb2-194" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb2-195"><a href="#cb2-195" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code hidden" id="cb2" data-startfrom="216" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 215;"><span id="cb2-216"><a href="#cb2-216" aria-hidden="true" tabindex="-1"></a>viewof selection_annee <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">select</span>(</span>
+<span id="cb2-217"><a href="#cb2-217" aria-hidden="true" tabindex="-1"></a>  [</span>
+<span id="cb2-218"><a href="#cb2-218" aria-hidden="true" tabindex="-1"></a>    <span class="st">"1968"</span><span class="op">,</span> <span class="st">"1975"</span><span class="op">,</span> <span class="st">"1982"</span><span class="op">,</span> <span class="st">"1990"</span><span class="op">,</span> <span class="st">"1999"</span><span class="op">,</span> <span class="st">"2006"</span><span class="op">,</span> </span>
+<span id="cb2-219"><a href="#cb2-219" aria-hidden="true" tabindex="-1"></a>    <span class="st">"2011"</span><span class="op">,</span> <span class="st">"2012"</span><span class="op">,</span> <span class="st">"2013"</span><span class="op">,</span> <span class="st">"2014"</span><span class="op">,</span> <span class="st">"2015"</span><span class="op">,</span> <span class="st">"2016"</span><span class="op">,</span> </span>
+<span id="cb2-220"><a href="#cb2-220" aria-hidden="true" tabindex="-1"></a>    <span class="st">"2017"</span><span class="op">,</span> <span class="st">"2018"</span><span class="op">,</span> <span class="st">"2019"</span><span class="op">,</span> <span class="st">"2020"</span><span class="op">,</span> <span class="st">"2021"</span><span class="op">,</span> <span class="st">"2022"</span><span class="op">,</span> </span>
+<span id="cb2-221"><a href="#cb2-221" aria-hidden="true" tabindex="-1"></a>    <span class="st">"2023"</span><span class="op">,</span> <span class="st">"2024"</span><span class="op">,</span> <span class="st">"2025"</span><span class="op">,</span> <span class="st">"2026"</span></span>
+<span id="cb2-222"><a href="#cb2-222" aria-hidden="true" tabindex="-1"></a>  ]<span class="op">,</span></span>
+<span id="cb2-223"><a href="#cb2-223" aria-hidden="true" tabindex="-1"></a>  {</span>
+<span id="cb2-224"><a href="#cb2-224" aria-hidden="true" tabindex="-1"></a>    <span class="dt">label</span><span class="op">:</span> <span class="st">"Année"</span><span class="op">,</span></span>
+<span id="cb2-225"><a href="#cb2-225" aria-hidden="true" tabindex="-1"></a>    <span class="dt">value</span><span class="op">:</span> <span class="st">"2026"</span></span>
+<span id="cb2-226"><a href="#cb2-226" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-227"><a href="#cb2-227" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display">
 <div id="ojs-cell-2" data-nodetype="declaration">
 
 </div>
 </div>
-<div class="cell hidden">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code hidden" id="cb3" data-startfrom="200" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 199;"><span id="cb3-200"><a href="#cb3-200" aria-hidden="true" tabindex="-1"></a><span class="co">// Liste des territoires disponibles mis à jour dynamiquement selon l'aire urbaine choisie</span></span>
-<span id="cb3-201"><a href="#cb3-201" aria-hidden="true" tabindex="-1"></a>geo <span class="op">=</span> db<span class="op">.</span><span class="fu">query</span>(<span class="vs">`</span></span>
-<span id="cb3-202"><a href="#cb3-202" aria-hidden="true" tabindex="-1"></a><span class="vs">  SELECT DISTINCT GEO, GEO_LABEL</span></span>
-<span id="cb3-203"><a href="#cb3-203" aria-hidden="true" tabindex="-1"></a><span class="vs">  FROM read_parquet('</span><span class="sc">${</span>chemin_s3<span class="sc">}</span><span class="vs">')</span></span>
-<span id="cb3-204"><a href="#cb3-204" aria-hidden="true" tabindex="-1"></a><span class="vs">  WHERE ID_TAB = 'EQUIP_T1' AND GEO_OBJECT_LABEL = '</span><span class="sc">${</span>selection_type_geo<span class="sc">}</span><span class="vs">'</span></span>
-<span id="cb3-205"><a href="#cb3-205" aria-hidden="true" tabindex="-1"></a><span class="vs">  ORDER BY GEO_LABEL</span></span>
-<span id="cb3-206"><a href="#cb3-206" aria-hidden="true" tabindex="-1"></a><span class="vs">`</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-display hidden">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code hidden" id="cb3" data-startfrom="231" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 230;"><span id="cb3-231"><a href="#cb3-231" aria-hidden="true" tabindex="-1"></a>viewof selection_type_geo <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">select</span>(</span>
+<span id="cb3-232"><a href="#cb3-232" aria-hidden="true" tabindex="-1"></a>  [</span>
+<span id="cb3-233"><a href="#cb3-233" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Commune"</span><span class="op">,</span> <span class="st">"Unité urbaine 2020"</span><span class="op">,</span> <span class="st">"Bassin de vie 2022"</span><span class="op">,</span> <span class="st">"Intercommunalité-Métropole"</span><span class="op">,</span> </span>
+<span id="cb3-234"><a href="#cb3-234" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Aire d’attraction des villes 2020"</span><span class="op">,</span> <span class="st">"Arrondissement"</span><span class="op">,</span> <span class="st">"Zone d’emploi 2020"</span><span class="op">,</span> </span>
+<span id="cb3-235"><a href="#cb3-235" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Département"</span><span class="op">,</span> <span class="st">"Arrondissement municipal"</span><span class="op">,</span> <span class="st">"Région"</span><span class="op">,</span> <span class="st">"France"</span><span class="op">,</span> </span>
+<span id="cb3-236"><a href="#cb3-236" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Autres"</span><span class="op">,</span> <span class="st">"Collectivité et territoire français d’outre-mer"</span></span>
+<span id="cb3-237"><a href="#cb3-237" aria-hidden="true" tabindex="-1"></a>  ]<span class="op">,</span></span>
+<span id="cb3-238"><a href="#cb3-238" aria-hidden="true" tabindex="-1"></a>  {</span>
+<span id="cb3-239"><a href="#cb3-239" aria-hidden="true" tabindex="-1"></a>    <span class="dt">label</span><span class="op">:</span> <span class="st">"Type de zone"</span><span class="op">,</span></span>
+<span id="cb3-240"><a href="#cb3-240" aria-hidden="true" tabindex="-1"></a>    <span class="dt">value</span><span class="op">:</span> <span class="st">"Commune"</span></span>
+<span id="cb3-241"><a href="#cb3-241" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-242"><a href="#cb3-242" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
 <div id="ojs-cell-3" data-nodetype="declaration">
 
 </div>
 </div>
+<div class="cell hidden">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code hidden" id="cb4" data-startfrom="247" data-source-offset="0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 246;"><span id="cb4-247"><a href="#cb4-247" aria-hidden="true" tabindex="-1"></a><span class="co">// Liste des territoires disponibles mis à jour dynamiquement selon l'aire urbaine choisie</span></span>
+<span id="cb4-248"><a href="#cb4-248" aria-hidden="true" tabindex="-1"></a>geo <span class="op">=</span> db<span class="op">.</span><span class="fu">query</span>(<span class="vs">`</span></span>
+<span id="cb4-249"><a href="#cb4-249" aria-hidden="true" tabindex="-1"></a><span class="vs">  SELECT DISTINCT GEO, GEO_LABEL</span></span>
+<span id="cb4-250"><a href="#cb4-250" aria-hidden="true" tabindex="-1"></a><span class="vs">  FROM read_parquet('</span><span class="sc">${</span>chemin_s3<span class="sc">}</span><span class="vs">')</span></span>
+<span id="cb4-251"><a href="#cb4-251" aria-hidden="true" tabindex="-1"></a><span class="vs">  WHERE ID_TAB = 'EQUIP_T1' AND GEO_OBJECT_LABEL = '</span><span class="sc">${</span>selection_type_geo<span class="sc">}</span><span class="vs">'</span></span>
+<span id="cb4-252"><a href="#cb4-252" aria-hidden="true" tabindex="-1"></a><span class="vs">  ORDER BY GEO_LABEL</span></span>
+<span id="cb4-253"><a href="#cb4-253" aria-hidden="true" tabindex="-1"></a><span class="vs">`</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display hidden">
+<div id="ojs-cell-4" data-nodetype="declaration">
+
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code hidden" id="cb4" data-startfrom="212" data-source-offset="-0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 211;"><span id="cb4-212"><a href="#cb4-212" aria-hidden="true" tabindex="-1"></a>viewof search_geo <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">search</span>(</span>
-<span id="cb4-213"><a href="#cb4-213" aria-hidden="true" tabindex="-1"></a>  geo<span class="op">,</span> {</span>
-<span id="cb4-214"><a href="#cb4-214" aria-hidden="true" tabindex="-1"></a>    <span class="dt">width</span><span class="op">:</span> <span class="st">"60%"</span><span class="op">,</span></span>
-<span id="cb4-215"><a href="#cb4-215" aria-hidden="true" tabindex="-1"></a>    <span class="dt">label</span><span class="op">:</span> <span class="st">"Territoire"</span><span class="op">,</span></span>
-<span id="cb4-216"><a href="#cb4-216" aria-hidden="true" tabindex="-1"></a>    <span class="dt">placeholder</span><span class="op">:</span> <span class="st">"Rechercher un territoire..."</span><span class="op">,</span></span>
-<span id="cb4-217"><a href="#cb4-217" aria-hidden="true" tabindex="-1"></a>  })</span>
-<span id="cb4-218"><a href="#cb4-218" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-219"><a href="#cb4-219" aria-hidden="true" tabindex="-1"></a>viewof selection_geo <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">table</span>(</span>
-<span id="cb4-220"><a href="#cb4-220" aria-hidden="true" tabindex="-1"></a>  search_geo<span class="op">,</span> {</span>
-<span id="cb4-221"><a href="#cb4-221" aria-hidden="true" tabindex="-1"></a>    <span class="dt">multiple</span><span class="op">:</span> <span class="kw">false</span><span class="op">,</span></span>
-<span id="cb4-222"><a href="#cb4-222" aria-hidden="true" tabindex="-1"></a>    <span class="dt">value</span><span class="op">:</span> search_geo<span class="op">.</span><span class="at">length</span> <span class="op">&gt;</span> <span class="dv">0</span> <span class="op">?</span> search_geo[<span class="dv">0</span>] <span class="op">:</span> <span class="kw">null</span><span class="op">,</span></span>
-<span id="cb4-223"><a href="#cb4-223" aria-hidden="true" tabindex="-1"></a>    <span class="dt">rows</span><span class="op">:</span> <span class="dv">15</span><span class="op">,</span></span>
-<span id="cb4-224"><a href="#cb4-224" aria-hidden="true" tabindex="-1"></a>    <span class="dt">columns</span><span class="op">:</span> [<span class="st">"GEO_LABEL"</span><span class="op">,</span> <span class="st">"GEO"</span>]</span>
-<span id="cb4-225"><a href="#cb4-225" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb4-226"><a href="#cb4-226" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code hidden" id="cb5" data-startfrom="259" data-source-offset="-0"><pre class="sourceCode js code-with-copy"><code class="sourceCode javascript" style="counter-reset: source-line 258;"><span id="cb5-259"><a href="#cb5-259" aria-hidden="true" tabindex="-1"></a>viewof search_geo <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">search</span>(</span>
+<span id="cb5-260"><a href="#cb5-260" aria-hidden="true" tabindex="-1"></a>  geo<span class="op">,</span> {</span>
+<span id="cb5-261"><a href="#cb5-261" aria-hidden="true" tabindex="-1"></a>    <span class="dt">width</span><span class="op">:</span> <span class="st">"60%"</span><span class="op">,</span></span>
+<span id="cb5-262"><a href="#cb5-262" aria-hidden="true" tabindex="-1"></a>    <span class="dt">label</span><span class="op">:</span> <span class="st">"Territoire"</span><span class="op">,</span></span>
+<span id="cb5-263"><a href="#cb5-263" aria-hidden="true" tabindex="-1"></a>    <span class="dt">placeholder</span><span class="op">:</span> <span class="st">"Rechercher un territoire..."</span><span class="op">,</span></span>
+<span id="cb5-264"><a href="#cb5-264" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb5-265"><a href="#cb5-265" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-266"><a href="#cb5-266" aria-hidden="true" tabindex="-1"></a>viewof selection_geo <span class="op">=</span> Inputs<span class="op">.</span><span class="fu">table</span>(</span>
+<span id="cb5-267"><a href="#cb5-267" aria-hidden="true" tabindex="-1"></a>  search_geo<span class="op">,</span> {</span>
+<span id="cb5-268"><a href="#cb5-268" aria-hidden="true" tabindex="-1"></a>    <span class="dt">multiple</span><span class="op">:</span> <span class="kw">false</span><span class="op">,</span></span>
+<span id="cb5-269"><a href="#cb5-269" aria-hidden="true" tabindex="-1"></a>    <span class="dt">value</span><span class="op">:</span> search_geo<span class="op">.</span><span class="at">length</span> <span class="op">&gt;</span> <span class="dv">0</span> <span class="op">?</span> search_geo[<span class="dv">0</span>] <span class="op">:</span> <span class="kw">null</span><span class="op">,</span></span>
+<span id="cb5-270"><a href="#cb5-270" aria-hidden="true" tabindex="-1"></a>    <span class="dt">rows</span><span class="op">:</span> <span class="dv">15</span><span class="op">,</span></span>
+<span id="cb5-271"><a href="#cb5-271" aria-hidden="true" tabindex="-1"></a>    <span class="dt">columns</span><span class="op">:</span> [<span class="st">"GEO_LABEL"</span><span class="op">,</span> <span class="st">"GEO"</span>]</span>
+<span id="cb5-272"><a href="#cb5-272" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-273"><a href="#cb5-273" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-display">
 <div>
-<div id="ojs-cell-4-1" data-nodetype="declaration">
+<div id="ojs-cell-5-1" data-nodetype="declaration">
 
 </div>
 </div>
 </div>
 <div class="cell-output cell-output-display">
 <div>
-<div id="ojs-cell-4-2" data-nodetype="declaration">
+<div id="ojs-cell-5-2" data-nodetype="declaration">
 
 </div>
 </div>
@@ -520,7 +653,7 @@ bslib.Sidebar.initCollapsibleAll()
 
 
 <script type="ojs-module-contents">
-eyJjb250ZW50cyI6W3sibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6IlxuLy8gMS4gQ3LDqWVyIG91IG91dnJpciB1bmUgY29ubmV4aW9uIER1Y2tEQiAow6lxdWl2YWxlbnQgZGJDb25uZWN0KGR1Y2tkYigpLCAuLi4pIGVuIFIpXG5kYiA9IER1Y2tEQkNsaWVudC5vZih7fSlcblxuLy8gNC4gRMOpZmluaXIgbCdhZHJlc3NlIGRlIHZvdHJlIGZpY2hpZXIgc3VyIGxlIFMzIGR1IFNTUCBDbG91ZCAow6lxdWl2YWxlbnQgY2hlbWluX3MzIGVuIFIpXG5jaGVtaW5fczMgPSAnaHR0cHM6Ly9taW5pby5sYWIuc3NwY2xvdWQuZnIvc2FyYWhiZWF1Y2FtcC9kb3NzaWVyX2NvbXBsZXQucGFycXVldCdcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMiIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6InZpZXdvZiBzZWxlY3Rpb25fdHlwZV9nZW8gPSBJbnB1dHMuc2VsZWN0KFxuICBbXG4gICAgXCJDb21tdW5lXCIsIFwiVW5pdMOpIHVyYmFpbmUgMjAyMFwiLCBcIkJhc3NpbiBkZSB2aWUgMjAyMlwiLCBcIkludGVyY29tbXVuYWxpdMOpLU3DqXRyb3BvbGVcIiwgXG4gICAgXCJBaXJlIGTigJlhdHRyYWN0aW9uIGRlcyB2aWxsZXMgMjAyMFwiLCBcIkFycm9uZGlzc2VtZW50XCIsIFwiWm9uZSBk4oCZZW1wbG9pIDIwMjBcIiwgXG4gICAgXCJEw6lwYXJ0ZW1lbnRcIiwgXCJBcnJvbmRpc3NlbWVudCBtdW5pY2lwYWxcIiwgXCJSw6lnaW9uXCIsIFwiRnJhbmNlXCIsIFxuICAgIFwiQXV0cmVzXCIsIFwiQ29sbGVjdGl2aXTDqSBldCB0ZXJyaXRvaXJlIGZyYW7Dp2FpcyBk4oCZb3V0cmUtbWVyXCJcbiAgXSxcbiAge1xuICAgIGxhYmVsOiBcIlR5cGUgZGUgem9uZVwiLFxuICAgIHZhbHVlOiBcIkNvbW11bmVcIlxuICB9XG4pXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTMiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJcbi8vIExpc3RlIGRlcyB0ZXJyaXRvaXJlcyBkaXNwb25pYmxlcyBtaXMgw6Agam91ciBkeW5hbWlxdWVtZW50IHNlbG9uIGwnYWlyZSB1cmJhaW5lIGNob2lzaWVcbmdlbyA9IGRiLnF1ZXJ5KGBcbiAgU0VMRUNUIERJU1RJTkNUIEdFTywgR0VPX0xBQkVMXG4gIEZST00gcmVhZF9wYXJxdWV0KCcke2NoZW1pbl9zM30nKVxuICBXSEVSRSBJRF9UQUIgPSAnRVFVSVBfVDEnIEFORCBHRU9fT0JKRUNUX0xBQkVMID0gJyR7c2VsZWN0aW9uX3R5cGVfZ2VvfSdcbiAgT1JERVIgQlkgR0VPX0xBQkVMXG5gKVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC00IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoidmlld29mIHNlYXJjaF9nZW8gPSBJbnB1dHMuc2VhcmNoKFxuICBnZW8sIHtcbiAgICB3aWR0aDogXCI2MCVcIixcbiAgICBsYWJlbDogXCJUZXJyaXRvaXJlXCIsXG4gICAgcGxhY2Vob2xkZXI6IFwiUmVjaGVyY2hlciB1biB0ZXJyaXRvaXJlLi4uXCIsXG4gIH0pXG5cbnZpZXdvZiBzZWxlY3Rpb25fZ2VvID0gSW5wdXRzLnRhYmxlKFxuICBzZWFyY2hfZ2VvLCB7XG4gICAgbXVsdGlwbGU6IGZhbHNlLFxuICAgIHZhbHVlOiBzZWFyY2hfZ2VvLmxlbmd0aCA+IDAgPyBzZWFyY2hfZ2VvWzBdIDogbnVsbCxcbiAgICByb3dzOiAxNSxcbiAgICBjb2x1bW5zOiBbXCJHRU9fTEFCRUxcIiwgXCJHRU9cIl1cbiAgfVxuKVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC01IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoiaXNHZW9TZWxlY3RlZCA9IChzZWxlY3Rpb25fZ2VvICE9PSBudWxsKTtcblxuaHRsLmh0bWxgXG4gIDxzdHJvbmc+VGVycml0b2lyZSBzw6lsZWN0aW9ubsOpIDo8L3N0cm9uZz4gJHtpc0dlb1NlbGVjdGVkID8gc2VsZWN0aW9uX2dlby5HRU9fTEFCRUwgOiBcIlwifSAoJHtpc0dlb1NlbGVjdGVkID8gc2VsZWN0aW9uX2dlby5HRU8gOiBcIlwifSlcbmBcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtNiIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6IlxuLy8gciA8LSBkb3NzaWVyX2NvbXBsZXQgJT4lIGZpbHRlcihHRU8gPT0gXCI0NDEwOVwiLCBJRF9UQUIgPT0gXCJFUVVJUF9UMVwiKSAlPiUgZGlzdGluY3QoVEFCX01FQVNVUkVfTEFCRUwpICU+JSBjb2xsZWN0KClcbi8vICjDqXRhcGUgZGUgY29udHLDtGxlIGVuIFIsIG5vbiBuw6ljZXNzYWlyZSBwb3VyIGwnYWZmaWNoYWdlIGZpbmFsLCBkb25jIG5vbiByZXByaXNlIGljaSlcblxuLy8gZXF1aXAgPC0gZG9zc2llcl9jb21wbGV0ICU+JVxuLy8gICBmaWx0ZXIoXG4vLyAgICAgVElNRV9QRVJJT0QgPT0gXCIyMDI0XCIsXG4vLyAgICAgR0VPX09CSkVDVF9MQUJFTCA9PSBcIkNvbW11bmVcIixcbi8vICAgICBHRU8gPT0gXCI0NDEwOVwiLFxuLy8gICAgIElEX1RBQiA9PSBcIkVRVUlQX1QxXCIsXG4vLyAgICAgVEFCX01FQVNVUkVfTEFCRUwgJWluJSBjKC4uLilcbi8vICAgKVxuZWxlYyA9IGlzR2VvU2VsZWN0ZWRcbj8gZGIucXVlcnkoYFxuICBTRUxFQ1QgVElNRV9QRVJJT0QsIFRBQl9NRUFTVVJFX0xBQkVMLCBPQlNfVkFMVUVcbiAgRlJPTSByZWFkX3BhcnF1ZXQoJyR7Y2hlbWluX3MzfScpXG4gIFdIRVJFIEdFT19PQkpFQ1RfTEFCRUwgPSAnJHtzZWxlY3Rpb25fdHlwZV9nZW99J1xuICAgIEFORCBHRU8gPSAnJHtzZWxlY3Rpb25fZ2VvLkdFT30nXG4gICAgQU5EIElEX1RBQiA9ICdSRVUnXG5gKVxuOiBbXTtcblxuXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTciLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJQbG90LnBsb3Qoe1xuICB0aXRsZTogXCJOb21icmUgZCfDqWxlY3RldXJzIGluc2NyaXRzIHN1ciBsaXN0ZSBwcmluY2lwYWxlIHBhciDDqWxlY3Rpb25cIixcbiAgbWFyZ2luQm90dG9tOiA0MCxcbiAgeDogeyBcbiAgICBsYWJlbDogXCJBbm7DqWUgZGUgbCfDqWxlY3Rpb25cIiwgXG4gICAgdGlja0Zvcm1hdDogXCJkXCIgLy8gRW1ww6pjaGUgZCdhZmZpY2hlciBsZXMgYW5uw6llcyBhdmVjIGRlcyB2aXJndWxlcyAoZXg6IDIsMDIyKVxuICB9LFxuICB5OiB7IFxuICAgIGxhYmVsOiBcIk5vbWJyZSBkJ8OpbGVjdGV1cnNcIiwgXG4gICAgZ3JpZDogdHJ1ZSBcbiAgfSxcbiAgbWFya3M6IFtcbiAgICAvLyAxLiBUcmFjZSB1bmUgbGlnbmUgYmxldWUgY29udGludWUgZW50cmUgdG91dGVzIGxlcyBhbm7DqWVzXG4gICAgUGxvdC5saW5lKGVsZWMsIHsgXG4gICAgICB4OiBcIlRJTUVfUEVSSU9EXCIsIFxuICAgICAgeTogXCJPQlNfVkFMVUVcIiwgXG4gICAgICBzdHJva2U6IFwiYmx1ZVwiLCBcbiAgICAgIHN0cm9rZVdpZHRoOiAyIFxuICAgIH0pLFxuICAgIFxuICAgIC8vIDIuIEFqb3V0ZSBsZXMgcG9pbnRzIGF2ZWMgdW5lIGluZm8tYnVsbGUgYXUgc3Vydm9sXG4gICAgUGxvdC5kb3QoZWxlYywgeyBcbiAgICAgIHg6IFwiVElNRV9QRVJJT0RcIiwgXG4gICAgICB5OiBcIk9CU19WQUxVRVwiLCBcbiAgICAgIGZpbGw6IFwiIzE3NDY5NVwiLCBcbiAgICAgIHI6IDQsXG4gICAgICAvLyBBam91dCBpbnRlcmFjdGlmIDogYWZmaWNoZSBsZXMgaW5mb3MgcXVhbmQgb24gcGFzc2UgbGEgc291cmlzIHN1ciBsZSBwb2ludFxuICAgICAgdGl0bGU6IChkKSA9PiBgJHtkLlRBQl9NRUFTVVJFX0xBQkVMfSAoJHtkLlRJTUVfUEVSSU9EfSlcXG7DiWxlY3RldXJzIDogJHtkLk9CU19WQUxVRX1gXG4gICAgfSlcbiAgXVxufSlcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtOCIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6Ii8vIDEuIE9uIHRyaWUgbGVzIGRvbm7DqWVzIHBhciBvcmRyZSBjaHJvbm9sb2dpcXVlIChkdSBwbHVzIGFuY2llbiBhdSBwbHVzIHLDqWNlbnQpXG5lbGVjX3BvdXJfdGFibGVhdSA9IHtcbiAgcmV0dXJuIGVsZWMuc2xpY2UoKS5zb3J0KChhLCBiKSA9PiBkMy5hc2NlbmRpbmcoYS5USU1FX1BFUklPRCwgYi5USU1FX1BFUklPRCkpO1xufVxuXG4vLyAyLiBBZmZpY2hhZ2UgZHUgdGFibGVhdSBpbnRlcmFjdGlmXG5JbnB1dHMudGFibGUoZWxlY19wb3VyX3RhYmxlYXUsIHtcbiAgY29sdW1uczogW1wiVElNRV9QRVJJT0RcIiwgXCJUQUJfTUVBU1VSRV9MQUJFTFwiLCBcIk9CU19WQUxVRVwiXSxcbiAgaGVhZGVyOiB7XG4gICAgVElNRV9QRVJJT0Q6IFwiQW5uw6llXCIsXG4gICAgVEFCX01FQVNVUkVfTEFCRUw6IFwiVHlwZSBkJ8OpbGVjdGlvblwiLFxuICAgIE9CU19WQUxVRTogXCJOb21icmUgZCfDqWxlY3RldXJzXCJcbiAgfVxufSlcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldFF1aWV0Iiwic291cmNlIjoic2hpbnlJbnB1dCgnc2VsZWN0aW9uX3R5cGVfZ2VvJykifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXRRdWlldCIsInNvdXJjZSI6InNoaW55SW5wdXQoJ3NlYXJjaF9nZW8nKSJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldFF1aWV0Iiwic291cmNlIjoic2hpbnlJbnB1dCgnc2VsZWN0aW9uX2dlbycpIn1dfQ==
+eyJjb250ZW50cyI6W3sibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6IlxuLy8gMS4gQ3LDqWVyIG91IG91dnJpciB1bmUgY29ubmV4aW9uIER1Y2tEQiAow6lxdWl2YWxlbnQgZGJDb25uZWN0KGR1Y2tkYigpLCAuLi4pIGVuIFIpXG5kYiA9IER1Y2tEQkNsaWVudC5vZih7fSlcblxuLy8gNC4gRMOpZmluaXIgbCdhZHJlc3NlIGRlIHZvdHJlIGZpY2hpZXIgc3VyIGxlIFMzIGR1IFNTUCBDbG91ZCAow6lxdWl2YWxlbnQgY2hlbWluX3MzIGVuIFIpXG5jaGVtaW5fczMgPSAnaHR0cHM6Ly9taW5pby5sYWIuc3NwY2xvdWQuZnIvc2FyYWhiZWF1Y2FtcC9kb3NzaWVyX2NvbXBsZXQucGFycXVldCdcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMiIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6InZpZXdvZiBzZWxlY3Rpb25fYW5uZWUgPSBJbnB1dHMuc2VsZWN0KFxuICBbXG4gICAgXCIxOTY4XCIsIFwiMTk3NVwiLCBcIjE5ODJcIiwgXCIxOTkwXCIsIFwiMTk5OVwiLCBcIjIwMDZcIiwgXG4gICAgXCIyMDExXCIsIFwiMjAxMlwiLCBcIjIwMTNcIiwgXCIyMDE0XCIsIFwiMjAxNVwiLCBcIjIwMTZcIiwgXG4gICAgXCIyMDE3XCIsIFwiMjAxOFwiLCBcIjIwMTlcIiwgXCIyMDIwXCIsIFwiMjAyMVwiLCBcIjIwMjJcIiwgXG4gICAgXCIyMDIzXCIsIFwiMjAyNFwiLCBcIjIwMjVcIiwgXCIyMDI2XCJcbiAgXSxcbiAge1xuICAgIGxhYmVsOiBcIkFubsOpZVwiLFxuICAgIHZhbHVlOiBcIjIwMjZcIlxuICB9XG4pXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTMiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJ2aWV3b2Ygc2VsZWN0aW9uX3R5cGVfZ2VvID0gSW5wdXRzLnNlbGVjdChcbiAgW1xuICAgIFwiQ29tbXVuZVwiLCBcIlVuaXTDqSB1cmJhaW5lIDIwMjBcIiwgXCJCYXNzaW4gZGUgdmllIDIwMjJcIiwgXCJJbnRlcmNvbW11bmFsaXTDqS1Nw6l0cm9wb2xlXCIsIFxuICAgIFwiQWlyZSBk4oCZYXR0cmFjdGlvbiBkZXMgdmlsbGVzIDIwMjBcIiwgXCJBcnJvbmRpc3NlbWVudFwiLCBcIlpvbmUgZOKAmWVtcGxvaSAyMDIwXCIsIFxuICAgIFwiRMOpcGFydGVtZW50XCIsIFwiQXJyb25kaXNzZW1lbnQgbXVuaWNpcGFsXCIsIFwiUsOpZ2lvblwiLCBcIkZyYW5jZVwiLCBcbiAgICBcIkF1dHJlc1wiLCBcIkNvbGxlY3Rpdml0w6kgZXQgdGVycml0b2lyZSBmcmFuw6dhaXMgZOKAmW91dHJlLW1lclwiXG4gIF0sXG4gIHtcbiAgICBsYWJlbDogXCJUeXBlIGRlIHpvbmVcIixcbiAgICB2YWx1ZTogXCJDb21tdW5lXCJcbiAgfVxuKVxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC00IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoiXG4vLyBMaXN0ZSBkZXMgdGVycml0b2lyZXMgZGlzcG9uaWJsZXMgbWlzIMOgIGpvdXIgZHluYW1pcXVlbWVudCBzZWxvbiBsJ2FpcmUgdXJiYWluZSBjaG9pc2llXG5nZW8gPSBkYi5xdWVyeShgXG4gIFNFTEVDVCBESVNUSU5DVCBHRU8sIEdFT19MQUJFTFxuICBGUk9NIHJlYWRfcGFycXVldCgnJHtjaGVtaW5fczN9JylcbiAgV0hFUkUgSURfVEFCID0gJ0VRVUlQX1QxJyBBTkQgR0VPX09CSkVDVF9MQUJFTCA9ICcke3NlbGVjdGlvbl90eXBlX2dlb30nXG4gIE9SREVSIEJZIEdFT19MQUJFTFxuYClcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtNSIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6InZpZXdvZiBzZWFyY2hfZ2VvID0gSW5wdXRzLnNlYXJjaChcbiAgZ2VvLCB7XG4gICAgd2lkdGg6IFwiNjAlXCIsXG4gICAgbGFiZWw6IFwiVGVycml0b2lyZVwiLFxuICAgIHBsYWNlaG9sZGVyOiBcIlJlY2hlcmNoZXIgdW4gdGVycml0b2lyZS4uLlwiLFxuICB9KVxuXG52aWV3b2Ygc2VsZWN0aW9uX2dlbyA9IElucHV0cy50YWJsZShcbiAgc2VhcmNoX2dlbywge1xuICAgIG11bHRpcGxlOiBmYWxzZSxcbiAgICB2YWx1ZTogc2VhcmNoX2dlby5sZW5ndGggPiAwID8gc2VhcmNoX2dlb1swXSA6IG51bGwsXG4gICAgcm93czogMTUsXG4gICAgY29sdW1uczogW1wiR0VPX0xBQkVMXCIsIFwiR0VPXCJdXG4gIH1cbilcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtNiIsImlubGluZSI6ZmFsc2UsInNvdXJjZSI6ImlzR2VvU2VsZWN0ZWQgPSAoc2VsZWN0aW9uX2dlbyAhPT0gbnVsbCk7XG5cbmh0bC5odG1sYFxuICA8c3Ryb25nPlRlcnJpdG9pcmUgc8OpbGVjdGlvbm7DqSA6PC9zdHJvbmc+ICR7aXNHZW9TZWxlY3RlZCA/IHNlbGVjdGlvbl9nZW8uR0VPX0xBQkVMIDogXCJcIn0gKCR7aXNHZW9TZWxlY3RlZCA/IHNlbGVjdGlvbl9nZW8uR0VPIDogXCJcIn0pXG5gXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTciLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJcbi8vIHIgPC0gZG9zc2llcl9jb21wbGV0ICU+JSBmaWx0ZXIoR0VPID09IFwiNDQxMDlcIiwgSURfVEFCID09IFwiRVFVSVBfVDFcIikgJT4lIGRpc3RpbmN0KFRBQl9NRUFTVVJFX0xBQkVMKSAlPiUgY29sbGVjdCgpXG4vLyAow6l0YXBlIGRlIGNvbnRyw7RsZSBlbiBSLCBub24gbsOpY2Vzc2FpcmUgcG91ciBsJ2FmZmljaGFnZSBmaW5hbCwgZG9uYyBub24gcmVwcmlzZSBpY2kpXG5cbi8vIGVxdWlwIDwtIGRvc3NpZXJfY29tcGxldCAlPiVcbi8vICAgZmlsdGVyKFxuLy8gICAgIFRJTUVfUEVSSU9EID09IFwiMjAyNFwiLFxuLy8gICAgIEdFT19PQkpFQ1RfTEFCRUwgPT0gXCJDb21tdW5lXCIsXG4vLyAgICAgR0VPID09IFwiNDQxMDlcIixcbi8vICAgICBJRF9UQUIgPT0gXCJFUVVJUF9UMVwiLFxuLy8gICAgIFRBQl9NRUFTVVJFX0xBQkVMICVpbiUgYyguLi4pXG4vLyAgIClcbmVsZWMgPSBpc0dlb1NlbGVjdGVkXG4/IGRiLnF1ZXJ5KGBcbiAgU0VMRUNUIFRJTUVfUEVSSU9ELCBUQUJfTUVBU1VSRV9MQUJFTCwgT0JTX1ZBTFVFXG4gIEZST00gcmVhZF9wYXJxdWV0KCcke2NoZW1pbl9zM30nKVxuICBXSEVSRSBHRU9fT0JKRUNUX0xBQkVMID0gJyR7c2VsZWN0aW9uX3R5cGVfZ2VvfSdcbiAgICBBTkQgR0VPID0gJyR7c2VsZWN0aW9uX2dlby5HRU99J1xuICAgIEFORCBJRF9UQUIgPSAnUkVVJ1xuYClcbjogW107XG5cblxuIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0IiwiY2VsbE5hbWUiOiJvanMtY2VsbC04IiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoiUGxvdC5wbG90KHtcbiAgdGl0bGU6IFwiTm9tYnJlIGQnw6lsZWN0ZXVycyBpbnNjcml0cyBzdXIgbGlzdGUgcHJpbmNpcGFsZSBwYXIgw6lsZWN0aW9uXCIsXG4gIG1hcmdpbkJvdHRvbTogNDAsXG4gIHg6IHsgXG4gICAgbGFiZWw6IFwiQW5uw6llIGRlIGwnw6lsZWN0aW9uXCIsIFxuICAgIHRpY2tGb3JtYXQ6IFwiZFwiIC8vIEVtcMOqY2hlIGQnYWZmaWNoZXIgbGVzIGFubsOpZXMgYXZlYyBkZXMgdmlyZ3VsZXMgKGV4OiAyLDAyMilcbiAgfSxcbiAgeTogeyBcbiAgICBsYWJlbDogXCJOb21icmUgZCfDqWxlY3RldXJzXCIsIFxuICAgIGdyaWQ6IHRydWUgXG4gIH0sXG4gIG1hcmtzOiBbXG4gICAgLy8gMS4gVHJhY2UgdW5lIGxpZ25lIGJsZXVlIGNvbnRpbnVlIGVudHJlIHRvdXRlcyBsZXMgYW5uw6llc1xuICAgIFBsb3QubGluZShlbGVjLCB7IFxuICAgICAgeDogXCJUSU1FX1BFUklPRFwiLCBcbiAgICAgIHk6IFwiT0JTX1ZBTFVFXCIsIFxuICAgICAgc3Ryb2tlOiBcImJsdWVcIiwgXG4gICAgICBzdHJva2VXaWR0aDogMiBcbiAgICB9KSxcbiAgICBcbiAgICAvLyAyLiBBam91dGUgbGVzIHBvaW50cyBhdmVjIHVuZSBpbmZvLWJ1bGxlIGF1IHN1cnZvbFxuICAgIFBsb3QuZG90KGVsZWMsIHsgXG4gICAgICB4OiBcIlRJTUVfUEVSSU9EXCIsIFxuICAgICAgeTogXCJPQlNfVkFMVUVcIiwgXG4gICAgICBmaWxsOiBcIiMxNzQ2OTVcIiwgXG4gICAgICByOiA0LFxuICAgICAgLy8gQWpvdXQgaW50ZXJhY3RpZiA6IGFmZmljaGUgbGVzIGluZm9zIHF1YW5kIG9uIHBhc3NlIGxhIHNvdXJpcyBzdXIgbGUgcG9pbnRcbiAgICAgIHRpdGxlOiAoZCkgPT4gYCR7ZC5UQUJfTUVBU1VSRV9MQUJFTH0gKCR7ZC5USU1FX1BFUklPRH0pXFxuw4lsZWN0ZXVycyA6ICR7ZC5PQlNfVkFMVUV9YFxuICAgIH0pXG4gIF1cbn0pXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTkiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiIvLyAxLiBPbiB0cmllIGxlcyBkb25uw6llcyBwYXIgb3JkcmUgY2hyb25vbG9naXF1ZSAoZHUgcGx1cyBhbmNpZW4gYXUgcGx1cyByw6ljZW50KVxuZWxlY19wb3VyX3RhYmxlYXUgPSB7XG4gIHJldHVybiBlbGVjLnNsaWNlKCkuc29ydCgoYSwgYikgPT4gZDMuYXNjZW5kaW5nKGEuVElNRV9QRVJJT0QsIGIuVElNRV9QRVJJT0QpKTtcbn1cblxuLy8gMi4gQWZmaWNoYWdlIGR1IHRhYmxlYXUgaW50ZXJhY3RpZlxuSW5wdXRzLnRhYmxlKGVsZWNfcG91cl90YWJsZWF1LCB7XG4gIGNvbHVtbnM6IFtcIlRJTUVfUEVSSU9EXCIsIFwiVEFCX01FQVNVUkVfTEFCRUxcIiwgXCJPQlNfVkFMVUVcIl0sXG4gIGhlYWRlcjoge1xuICAgIFRJTUVfUEVSSU9EOiBcIkFubsOpZVwiLFxuICAgIFRBQl9NRUFTVVJFX0xBQkVMOiBcIlR5cGUgZCfDqWxlY3Rpb25cIixcbiAgICBPQlNfVkFMVUU6IFwiTm9tYnJlIGQnw6lsZWN0ZXVyc1wiXG4gIH1cbn0pXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXQiLCJjZWxsTmFtZSI6Im9qcy1jZWxsLTEwIiwiaW5saW5lIjpmYWxzZSwic291cmNlIjoiaHRsLmh0bWxgXG4gIDxzdHJvbmc+VGVycml0b2lyZSBzw6lsZWN0aW9ubsOpIDo8L3N0cm9uZz4gJHtpc0dlb1NlbGVjdGVkID8gc2VsZWN0aW9uX2dlby5HRU9fTEFCRUwgOiBcIlwifSAoJHtpc0dlb1NlbGVjdGVkID8gc2VsZWN0aW9uX2dlby5HRU8gOiBcIlwifSlcbmBcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMTEiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJwb3B1bGF0aW9uX2JydXQgPSBpc0dlb1NlbGVjdGVkXG4/IGRiLnF1ZXJ5KGBcbiAgU0VMRUNUIE9CU19WQUxVRVxuICBGUk9NIHJlYWRfcGFycXVldCgnJHtjaGVtaW5fczN9JylcbiAgV0hFUkUgVElNRV9QRVJJT0QgPSAnJHtzZWxlY3Rpb25fYW5uZWV9J1xuICAgIEFORCBHRU9fT0JKRUNUX0xBQkVMID0gJyR7c2VsZWN0aW9uX3R5cGVfZ2VvfSdcbiAgICBBTkQgR0VPID0gJyR7c2VsZWN0aW9uX2dlby5HRU99J1xuICAgIEFORCBJRF9UQUIgPSAnUE9QX1QwJ1xuICAgIEFORCBUQUJfTUVBU1VSRV9MQUJFTCA9ICdQb3B1bGF0aW9uJ1xuYClcbjogW107XG5cbnBvcHVsYXRpb25fdmFsZXVyID0gcG9wdWxhdGlvbl9icnV0Lmxlbmd0aCA+IDAgPyBwb3B1bGF0aW9uX2JydXRbMF0uT0JTX1ZBTFVFIDogbnVsbDtcbiJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldCIsImNlbGxOYW1lIjoib2pzLWNlbGwtMTIiLCJpbmxpbmUiOmZhbHNlLCJzb3VyY2UiOiJodGwuaHRtbGBcbiAgPGRpdiBzdHlsZT1cImRpc3BsYXk6IGZsZXg7IGFsaWduLWl0ZW1zOiBjZW50ZXI7IGp1c3RpZnktY29udGVudDogY2VudGVyOyBoZWlnaHQ6IDEwMCU7IG1pbi1oZWlnaHQ6IDI1MHB4O1wiPlxuICAgIDxkaXYgc3R5bGU9XCJ0ZXh0LWFsaWduOiBjZW50ZXI7IGZvbnQtZmFtaWx5OiBzYW5zLXNlcmlmO1wiPlxuICAgICAgPGRpdiBzdHlsZT1cImZvbnQtc2l6ZTogMTRweDsgY29sb3I6ICM1NTU7IHRleHQtdHJhbnNmb3JtOiB1cHBlcmNhc2U7IGxldHRlci1zcGFjaW5nOiAwLjA1ZW07IG1hcmdpbi1ib3R0b206IDhweDtcIj5cbiAgICAgICAgTm9tYnJlIGQnaGFiaXRhbnRzIGVuIDIwMjIgJHtpc0dlb1NlbGVjdGVkID8gYOKAkyAke3NlbGVjdGlvbl9nZW8uR0VPX0xBQkVMfWAgOiBcIlwifVxuICAgICAgPC9kaXY+XG4gICAgICA8ZGl2IHN0eWxlPVwiZm9udC1zaXplOiA0OHB4OyBmb250LXdlaWdodDogYm9sZDsgY29sb3I6ICMxNDVDQkY7XCI+XG4gICAgICAgICR7IWlzR2VvU2VsZWN0ZWQgPyBcIuKAlFwiIDogKHBvcHVsYXRpb25fdmFsZXVyICE9PSBudWxsID8gcG9wdWxhdGlvbl92YWxldXIudG9Mb2NhbGVTdHJpbmcoXCJmci1GUlwiKSA6IFwiTm9uIGRpc3BvbmlibGVcIil9XG4gICAgICA8L2Rpdj5cbiAgICA8L2Rpdj5cbiAgPC9kaXY+XG5gXG4ifSx7Im1ldGhvZE5hbWUiOiJpbnRlcnByZXRRdWlldCIsInNvdXJjZSI6InNoaW55SW5wdXQoJ3NlbGVjdGlvbl9hbm5lZScpIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0UXVpZXQiLCJzb3VyY2UiOiJzaGlueUlucHV0KCdzZWxlY3Rpb25fdHlwZV9nZW8nKSJ9LHsibWV0aG9kTmFtZSI6ImludGVycHJldFF1aWV0Iiwic291cmNlIjoic2hpbnlJbnB1dCgnc2VhcmNoX2dlbycpIn0seyJtZXRob2ROYW1lIjoiaW50ZXJwcmV0UXVpZXQiLCJzb3VyY2UiOiJzaGlueUlucHV0KCdzZWxlY3Rpb25fZ2VvJykifV19
 </script>
 <script type="module">
 if (window.location.protocol === "file:") { alert("The OJS runtime does not work with file:// URLs. Please use a web server to view this document."); }
