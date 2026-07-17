@@ -1,5 +1,5 @@
 ---
-title: "Population active, emploi et chômage au sens du recensement en 2023"
+title: "Nombre d'électeurs inscrits sur liste principale par élection"
 format: 
   dashboard:
     nav-buttons: []
@@ -126,7 +126,7 @@ include-in-header:
           { label: "Naissances et décès domiciliés", href: "naissances_deces.html" },
           { label: "Nombre d'électeurs inscrits sur liste principale par élection", href: "electeurs.html" }
         ];
-
+        
         var brandContainer = document.querySelector("#quarto-dashboard-header .navbar-brand-container");
         if (brandContainer) {
           // Sur les dashboards, le titre n'est pas toujours dans un <a class="navbar-brand">
@@ -181,21 +181,6 @@ chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet
 
 # Recherche géographique {.sidebar width="30%"}
 
-```{ojs annee}
-viewof selection_annee = Inputs.select(
-  [
-    "1968", "1975", "1982", "1990", "1999", "2006", 
-    "2011", "2012", "2013", "2014", "2015", "2016", 
-    "2017", "2018", "2019", "2020", "2021", "2022", 
-    "2023", "2024", "2025", "2026"
-  ],
-  {
-    label: "Année",
-    value: "2022"
-  }
-)
-```
-
 ```{ojs type_geo}
 viewof selection_type_geo = Inputs.select(
   [
@@ -241,7 +226,7 @@ viewof selection_geo = Inputs.table(
 )
 ```
 
-# Population active de 15 à 64 ans selon le groupe socioprofessionnel actuel ou antérieur
+# Nombre d'électeurs inscrits sur liste principale par élection
 
 ## Territoire sélectionné {height="15%"}
 
@@ -255,167 +240,83 @@ htl.html`
 
 ## Résultat
 
+
 ```{ojs result_calc}
 //| output: false
 
-equip_brut = isGeoSelected
+// r <- dossier_complet %>% filter(GEO == "44109", ID_TAB == "EQUIP_T1") %>% distinct(TAB_MEASURE_LABEL) %>% collect()
+// (étape de contrôle en R, non nécessaire pour l'affichage final, donc non reprise ici)
+
+// equip <- dossier_complet %>%
+//   filter(
+//     TIME_PERIOD == "2024",
+//     GEO_OBJECT_LABEL == "Commune",
+//     GEO == "44109",
+//     ID_TAB == "EQUIP_T1",
+//     TAB_MEASURE_LABEL %in% c(...)
+//   )
+elec = isGeoSelected
 ? db.query(`
-  SELECT
-    TAB_MEASURE_LABEL,
-    CAST(REPLACE(CAST(OBS_VALUE AS VARCHAR), ',', '.') AS DOUBLE) AS OBS_VALUE
+  SELECT TIME_PERIOD, TAB_MEASURE_LABEL, OBS_VALUE
   FROM read_parquet('${chemin_s3}')
-  WHERE TIME_PERIOD = '${selection_annee}'
-    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+  WHERE GEO_OBJECT_LABEL = '${selection_type_geo}'
     AND GEO = '${selection_geo.GEO}'
-    AND ID_TAB = 'EMP_T3'
+    AND ID_TAB = 'REU'
 `)
 : [];
 
-function normalize(s) {
-  if (!s) return "";
-  return s
-    .toLowerCase()
-    .replace(/[’‘]/g, "'")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, ""); // supprime les accents
-}
 
-function classer_pop(label) {
-  if (!label) return null;
-  let txt = normalize(label);
-
-  let act = null;
-  if (txt.includes("actif occupe")) act = "Occupé";
-  else if (txt.includes("actif")) act = "Total";
-  if (!act) return null;
-
-  let csp = null;
-  if (txt.includes("agriculteurs")) csp = "Agriculteurs";
-  else if (txt.includes("artisans")) csp = "Artisans, commerçants et chefs d’entreprise";
-  else if (txt.includes("cadres et professions")) csp = "Cadres et professions intellectuelles supérieures";
-  else if (txt.includes("professions intermediaires")) csp = "Professions intermédiaires";
-  else if (txt.includes("employes")) csp = "Employés";
-  else if (txt.includes("ouvriers")) csp = "Ouvriers";
-
-  if (!csp) return null;
-
-  return { act: act, csp: csp };
-}
-
-equip_mutate = equip_brut.map(function(d) {
-  let classification = classer_pop(d.TAB_MEASURE_LABEL);
-  if (!classification) return null;
-
-  return {
-    OBS_VALUE: Number(d.OBS_VALUE), 
-    ACT: classification.act,
-    CSP: classification.csp
-  };
-}).filter(d => d !== null);
-
-csp_map = {
-  const m = new Map();
-  for (const d of equip_mutate) {
-    if (!m.has(d.CSP)) m.set(d.CSP, {});
-    const vals = m.get(d.CSP);
-    vals[d.ACT] = (vals[d.ACT] || 0) + d.OBS_VALUE;
-  }
-  return m;
-}
-
-ordre_csp = ["Agriculteurs", "Artisans, commerçants et chefs d’entreprise", "Ouvriers", "Employés", "Professions intermédiaires", "Cadres et professions intellectuelles supérieures"];
-
-equip = Array.from(csp_map, ([csp, vals]) => {
-  let total = vals["Total"] || 0;
-  let occupe = vals["Occupé"] || 0;
-  let sans_emploi = total - occupe;
-
-  return [
-    {
-      CSP: csp,
-      ACT: "Avec Emploi",
-      population_exacte: occupe,
-      part_locale: total > 0 ? occupe / total : 0,
-      pourcentage_affichage: total > 0 ? (occupe / total * 100).toFixed(1) + " %" : "0.0 %"
-    },
-    {
-      CSP: csp,
-      ACT: "Sans Emploi",
-      population_exacte: sans_emploi,
-      part_locale: total > 0 ? sans_emploi / total : 0,
-      pourcentage_affichage: total > 0 ? (sans_emploi / total * 100).toFixed(1) + " %" : "0.0 %"
-    }
-  ];
-}).flat();
-
-equip_trie = equip.sort((a, b) => ordre_csp.indexOf(a.CSP) - ordre_csp.indexOf(b.CSP));
 ```
 
 ```{ojs result_plot}
 Plot.plot({
-  title: isGeoSelected ? `Taux d'emploi par CSP – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
-  subtitle: `Année ${selection_annee}`,
-  marginBottom: 60,
-  marginLeft: 50,
-  x: { axis: null },
-  y: {
-    label: "Part au sein de la CSP",
-    tickFormat: "%",
-    grid: true,
-    domain: [0, 1]
+  title: "Nombre d'électeurs inscrits sur liste principale par élection",
+  marginBottom: 40,
+  x: { 
+    label: "Année de l'élection", 
+    tickFormat: "d" // Empêche d'afficher les années avec des virgules (ex: 2,022)
   },
-  fx: {
-    domain: ordre_csp,
-    label: "CSP",
-    tickRotate: -30
-  },
-  color: {
-    domain: ["Avec Emploi", "Sans Emploi"],
-    range: ["#174695", "#FB5A5A"],
-    legend: true
+  y: { 
+    label: "Nombre d'électeurs", 
+    grid: true 
   },
   marks: [
-    Plot.barY(equip_trie, {
-      x: "ACT",
-      y: "part_locale",
-      fill: "ACT",
-      fx: "CSP",
-      title: d => `${d.ACT} - ${d.CSP}\n${d.population_exacte} personnes (${(d.part_locale*100).toFixed(1)}%)` 
+    // 1. Trace une ligne bleue continue entre toutes les années
+    Plot.line(elec, { 
+      x: "TIME_PERIOD", 
+      y: "OBS_VALUE", 
+      stroke: "blue", 
+      strokeWidth: 2 
     }),
-    Plot.ruleY([0])
+    
+    // 2. Ajoute les points avec une info-bulle au survol
+    Plot.dot(elec, { 
+      x: "TIME_PERIOD", 
+      y: "OBS_VALUE", 
+      fill: "#174695", 
+      r: 4,
+      // Ajout interactif : affiche les infos quand on passe la souris sur le point
+      title: (d) => `${d.TAB_MEASURE_LABEL} (${d.TIME_PERIOD})\nÉlecteurs : ${d.OBS_VALUE}`
+    })
   ]
 })
 ```
 
-```{ojs result_plot_empile}
-// Histogramme empilé
-Plot.plot({
-  title: isGeoSelected ? `Répartition emploi / non-emploi par CSP – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
-  subtitle: `Année ${selection_annee}`,
-  marginBottom: 80,
-  marginLeft: 60,
-  x: {
-    domain: ordre_csp,
-    label: null,
-    tickRotate: -30
-  },
-  y: {
-    label: "Nombre de personnes",
-    grid: true
-  },
-  color: {
-    domain: ["Avec Emploi", "Sans Emploi"],
-    range: ["#174695", "#FB5A5A"],
-    legend: true
-  },
-  marks: [
-    Plot.barY(equip_trie, {
-      x: "CSP",
-      y: "population_exacte",
-      fill: "ACT",
-      title: d => `${d.ACT} - ${d.CSP}\n${d.population_exacte} personnes (${(d.part_locale*100).toFixed(1)}%)`
-    }),
-    Plot.ruleY([0])
-  ]
+```{ojs result_table}
+// 1. On trie les données par ordre chronologique (du plus ancien au plus récent)
+elec_pour_tableau = {
+  return elec.slice().sort((a, b) => d3.ascending(a.TIME_PERIOD, b.TIME_PERIOD));
+}
+
+// 2. Affichage du tableau interactif
+Inputs.table(elec_pour_tableau, {
+  columns: ["TIME_PERIOD", "TAB_MEASURE_LABEL", "OBS_VALUE"],
+  header: {
+    TIME_PERIOD: "Année",
+    TAB_MEASURE_LABEL: "Type d'élection",
+    OBS_VALUE: "Nombre d'électeurs"
+  }
 })
 ```
+
+

@@ -118,11 +118,13 @@ include-in-header:
         var themes = [
           { label: "Équipements et services à la population en 2024", href: "equipements.html" },
           { label: "Tourisme en 2026", href: "tourisme.html" },
-          { label: "Créations d'entreprises et d'établissements", href: "creation.qmd"},
-          { label: "Logement en 2023", href: "logement.qmd"},
-          { label: "Famille", href: "famille.qmd"},
-          { label: "Structure de la population", href: "population.qmd"},
-          { label: "Population active, emploi et chômage au sens du recensement en 2023", href: "emploi.qmd"}
+          { label: "Créations d'entreprises et d'établissements", href: "creation.html" },
+          { label: "Logement en 2023", href: "logement.html" },
+          { label: "Famille", href: "famille.html" },
+          { label: "Structure de la population", href: "population.html" },
+          { label: "Population active, emploi et chômage au sens du recensement en 2023", href: "emploi.html" },
+          { label: "Naissances et décès domiciliés", href: "naissances_deces.html" },
+          { label: "Nombre d'électeurs inscrits sur liste principale par élection", href: "electeurs.html" }
         ];
 
         var brandContainer = document.querySelector("#quarto-dashboard-header .navbar-brand-container");
@@ -279,7 +281,7 @@ Plot.plot({
   marginLeft: 50,
   color: {
     domain: ["Ensemble", "Entrepreneur individuel", "Société à responsabilité limitée", "Société par actions simplifiée", "Autres sociétés"],
-    range: ["#003366", "#ff4d4d", "gray", "#3399ff", "#990000"]
+    range: ["#174695", "#FB5A5A", "#949494", "#268DFF", "#C4101D"]
   },
   x: { label: null, tickFormat: "" },
   y: { label: "en nombre", grid: true },

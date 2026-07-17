@@ -1,5 +1,5 @@
 ---
-title: "Population active, emploi et chômage au sens du recensement en 2023"
+title: "Naissances et décès domiciliés"
 format: 
   dashboard:
     nav-buttons: []
@@ -172,10 +172,10 @@ include-in-header:
 ```{ojs config}
 //| output: false
 
-// 1. Créer ou ouvrir une connexion DuckDB (équivalent dbConnect(duckdb(), ...) en R)
+// 1. Créer ou ouvrir une connexion DuckDB
 db = DuckDBClient.of({})
 
-// 4. Définir l'adresse de votre fichier sur le S3 du SSP Cloud (équivalent chemin_s3 en R)
+// 4. Définir l'adresse du fichier sur le S3 du SSP Cloud
 chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'
 ```
 
@@ -191,7 +191,7 @@ viewof selection_annee = Inputs.select(
   ],
   {
     label: "Année",
-    value: "2022"
+    value: "2024"
   }
 )
 ```
@@ -214,11 +214,11 @@ viewof selection_type_geo = Inputs.select(
 ```{ojs geo}
 //| output: false
 
-// Liste des territoires disponibles mis à jour dynamiquement selon l'aire urbaine choisie
+// Liste des territoires disponibles dynamiquement
 geo = db.query(`
   SELECT DISTINCT GEO, GEO_LABEL
   FROM read_parquet('${chemin_s3}')
-  WHERE ID_TAB = 'EQUIP_T1' AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+  WHERE ID_TAB = 'RFD_G1' AND GEO_OBJECT_LABEL = '${selection_type_geo}'
   ORDER BY GEO_LABEL
 `)
 ```
@@ -241,16 +241,13 @@ viewof selection_geo = Inputs.table(
 )
 ```
 
-# Population active de 15 à 64 ans selon le groupe socioprofessionnel actuel ou antérieur
+# Naissances et décès
 
 ## Territoire sélectionné {height="15%"}
 
 ```{ojs geo3}
 isGeoSelected = (selection_geo !== null);
-
-htl.html`
-  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
-`
+htl.html`<strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})`
 ```
 
 ## Résultat
@@ -258,164 +255,89 @@ htl.html`
 ```{ojs result_calc}
 //| output: false
 
-equip_brut = isGeoSelected
+// Équivalent de : filter(GEO_OBJECT_LABEL == "Commune", GEO == ..., ID_TAB == "RFD_G1", TAB_MEASURE_LABEL %in% c(...))
+// avec cast de OBS_VALUE (virgule décimale -> point) comme pour les autres tables de ce parquet
+solde_brut = isGeoSelected
 ? db.query(`
   SELECT
     TAB_MEASURE_LABEL,
+    TIME_PERIOD,
     CAST(REPLACE(CAST(OBS_VALUE AS VARCHAR), ',', '.') AS DOUBLE) AS OBS_VALUE
   FROM read_parquet('${chemin_s3}')
-  WHERE TIME_PERIOD = '${selection_annee}'
-    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+  WHERE GEO_OBJECT_LABEL = '${selection_type_geo}'
     AND GEO = '${selection_geo.GEO}'
-    AND ID_TAB = 'EMP_T3'
+    AND ID_TAB = 'RFD_G1'
+    AND TAB_MEASURE_LABEL IN ('Nombre de naissances vivantes', 'Nombre de décès')
+  ORDER BY TIME_PERIOD
 `)
 : [];
 
-function normalize(s) {
-  if (!s) return "";
-  return s
-    .toLowerCase()
-    .replace(/[’‘]/g, "'")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, ""); // supprime les accents
-}
+// Équivalent de : group_by(TAB_MEASURE_LABEL, TIME_PERIOD) %>% summarise(total_groupe = sum(OBS_VALUE, na.rm = TRUE))
+solde_groupes = d3.rollups(
+  solde_brut,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.TAB_MEASURE_LABEL; },
+  function(d) { return d.TIME_PERIOD; }
+);
 
-function classer_pop(label) {
-  if (!label) return null;
-  let txt = normalize(label);
+solde_summarise = solde_groupes.flatMap(function(g) {
+  let label = g[0];
+  return g[1].map(function(g2) {
+    return { TAB_MEASURE_LABEL: label, TIME_PERIOD: g2[0], total_groupe: g2[1] };
+  });
+});
 
-  let act = null;
-  if (txt.includes("actif occupe")) act = "Occupé";
-  else if (txt.includes("actif")) act = "Total";
-  if (!act) return null;
+// Équivalent de : mutate(total = sum(total_groupe), part_groupe = (total_groupe / total) * 100)
+total_solde = d3.sum(solde_summarise, function(d) { return d.total_groupe; });
 
-  let csp = null;
-  if (txt.includes("agriculteurs")) csp = "Agriculteurs";
-  else if (txt.includes("artisans")) csp = "Artisans, commerçants et chefs d’entreprise";
-  else if (txt.includes("cadres et professions")) csp = "Cadres et professions intellectuelles supérieures";
-  else if (txt.includes("professions intermediaires")) csp = "Professions intermédiaires";
-  else if (txt.includes("employes")) csp = "Employés";
-  else if (txt.includes("ouvriers")) csp = "Ouvriers";
-
-  if (!csp) return null;
-
-  return { act: act, csp: csp };
-}
-
-equip_mutate = equip_brut.map(function(d) {
-  let classification = classer_pop(d.TAB_MEASURE_LABEL);
-  if (!classification) return null;
-
+solde = solde_summarise.map(function(d) {
   return {
-    OBS_VALUE: Number(d.OBS_VALUE), 
-    ACT: classification.act,
-    CSP: classification.csp
+    TAB_MEASURE_LABEL: d.TAB_MEASURE_LABEL,
+    TIME_PERIOD: d.TIME_PERIOD,
+    total_groupe: d.total_groupe,
+    total: total_solde,
+    part_groupe: total_solde > 0 ? (d.total_groupe / total_solde) * 100 : 0
   };
-}).filter(d => d !== null);
-
-csp_map = {
-  const m = new Map();
-  for (const d of equip_mutate) {
-    if (!m.has(d.CSP)) m.set(d.CSP, {});
-    const vals = m.get(d.CSP);
-    vals[d.ACT] = (vals[d.ACT] || 0) + d.OBS_VALUE;
-  }
-  return m;
-}
-
-ordre_csp = ["Agriculteurs", "Artisans, commerçants et chefs d’entreprise", "Ouvriers", "Employés", "Professions intermédiaires", "Cadres et professions intellectuelles supérieures"];
-
-equip = Array.from(csp_map, ([csp, vals]) => {
-  let total = vals["Total"] || 0;
-  let occupe = vals["Occupé"] || 0;
-  let sans_emploi = total - occupe;
-
-  return [
-    {
-      CSP: csp,
-      ACT: "Avec Emploi",
-      population_exacte: occupe,
-      part_locale: total > 0 ? occupe / total : 0,
-      pourcentage_affichage: total > 0 ? (occupe / total * 100).toFixed(1) + " %" : "0.0 %"
-    },
-    {
-      CSP: csp,
-      ACT: "Sans Emploi",
-      population_exacte: sans_emploi,
-      part_locale: total > 0 ? sans_emploi / total : 0,
-      pourcentage_affichage: total > 0 ? (sans_emploi / total * 100).toFixed(1) + " %" : "0.0 %"
-    }
-  ];
-}).flat();
-
-equip_trie = equip.sort((a, b) => ordre_csp.indexOf(a.CSP) - ordre_csp.indexOf(b.CSP));
+}).sort((a, b) => d3.ascending(+a.TIME_PERIOD, +b.TIME_PERIOD));
 ```
 
 ```{ojs result_plot}
+// Équivalent du ggplot: geom_line + scale_color_manual + theme_minimal
 Plot.plot({
-  title: isGeoSelected ? `Taux d'emploi par CSP – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
-  subtitle: `Année ${selection_annee}`,
-  marginBottom: 60,
+  title: isGeoSelected ? `Naissances et décès domiciliés – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  marginBottom: 40,
   marginLeft: 50,
-  x: { axis: null },
-  y: {
-    label: "Part au sein de la CSP",
-    tickFormat: "%",
-    grid: true,
-    domain: [0, 1]
-  },
-  fx: {
-    domain: ordre_csp,
-    label: "CSP",
-    tickRotate: -30
-  },
   color: {
-    domain: ["Avec Emploi", "Sans Emploi"],
+    domain: ["Nombre de naissances vivantes", "Nombre de décès"],
     range: ["#174695", "#FB5A5A"],
     legend: true
   },
+  x: { 
+    label: null, 
+    tickFormat: "d",
+    grid: false
+  },
+  y: { 
+    label: "en nombre", 
+    grid: true 
+  },
   marks: [
-    Plot.barY(equip_trie, {
-      x: "ACT",
-      y: "part_locale",
-      fill: "ACT",
-      fx: "CSP",
-      title: d => `${d.ACT} - ${d.CSP}\n${d.population_exacte} personnes (${(d.part_locale*100).toFixed(1)}%)` 
-    }),
-    Plot.ruleY([0])
+    Plot.lineY(solde, { x: d => +d.TIME_PERIOD, y: "total_groupe", stroke: "TAB_MEASURE_LABEL", strokeWidth: 2 }),
+    Plot.dot(solde, { x: d => +d.TIME_PERIOD, y: "total_groupe", fill: "TAB_MEASURE_LABEL" })
   ]
 })
 ```
 
-```{ojs result_plot_empile}
-// Histogramme empilé
-Plot.plot({
-  title: isGeoSelected ? `Répartition emploi / non-emploi par CSP – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
-  subtitle: `Année ${selection_annee}`,
-  marginBottom: 80,
-  marginLeft: 60,
-  x: {
-    domain: ordre_csp,
-    label: null,
-    tickRotate: -30
-  },
-  y: {
-    label: "Nombre de personnes",
-    grid: true
-  },
-  color: {
-    domain: ["Avec Emploi", "Sans Emploi"],
-    range: ["#174695", "#FB5A5A"],
-    legend: true
-  },
-  marks: [
-    Plot.barY(equip_trie, {
-      x: "CSP",
-      y: "population_exacte",
-      fill: "ACT",
-      title: d => `${d.ACT} - ${d.CSP}\n${d.population_exacte} personnes (${(d.part_locale*100).toFixed(1)}%)`
-    }),
-    Plot.ruleY([0])
-  ]
+## Données brutes
+
+```{ojs result_table}
+Inputs.table(solde, {
+  columns: ["TIME_PERIOD", "TAB_MEASURE_LABEL", "total_groupe", "part_groupe"],
+  header: {
+    TIME_PERIOD: "Année",
+    TAB_MEASURE_LABEL: "Indicateur",
+    total_groupe: "Nombre",
+    part_groupe: "Part (%)"
+  }
 })
 ```
