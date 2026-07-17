@@ -256,7 +256,6 @@ htl.html`
 ```{ojs result_calc}
 //| output: false
 
-// 1. On récupère les données de population pour la zone (en filtrant globalement sur le mot 'Population')
 equip_brut = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
@@ -268,7 +267,6 @@ equip_brut = isGeoSelected
 `)
 : [];
 
-// 2. On classe avec des mots-clés robustes (Sexe + Tranche d'âge)
 function classer_pop(label) {
   if (!label) return null;
   let txt = label.toLowerCase();
@@ -279,7 +277,6 @@ function classer_pop(label) {
   else if (txt.includes("femme")) sexe = "Femme";
   if (!sexe) return null; // Si on ne trouve ni homme ni femme, on ignore
   
-  // Identifier la tranche d'âge
   let tranche = null;
   if (txt.includes("moins de 15 ans")) tranche = "Moins de 15 ans";
   else if (txt.includes("15 à 24 ans")) tranche = "15-24 ans";
@@ -294,7 +291,6 @@ function classer_pop(label) {
   return { sexe: sexe, tranche: tranche };
 }
 
-// 3. Filtrage et nettoyage
 equip_mutate = equip_brut.map(function(d) {
   let classification = classer_pop(d.TAB_MEASURE_LABEL);
   if (!classification) return null;
@@ -306,7 +302,6 @@ equip_mutate = equip_brut.map(function(d) {
   };
 }).filter(d => d !== null);
 
-// 4. Agrégation des résultats (Somme croisée Sexe x Tranche d'âge)
 equip_groupes = d3.flatRollup(
   equip_mutate,
   v => d3.sum(v, d => d.OBS_VALUE),
@@ -318,7 +313,6 @@ equip_groupes = d3.flatRollup(
   population_exacte: valeur
 }));
 
-// 5. Calcul des parts locales (pourcentage de la tranche d'âge au sein du sexe)
 total_hommes = d3.sum(equip_groupes.filter(d => d.SEXE === "Homme"), d => d.population_exacte);
 total_femmes = d3.sum(equip_groupes.filter(d => d.SEXE === "Femme"), d => d.population_exacte);
 
@@ -336,13 +330,13 @@ equip = equip_groupes.map(function(d) {
   };
 });
 
-// Ordre pour l'affichage
+// Ordre 
 ordre_ages = ["Moins de 15 ans", "15-24 ans", "25-39 ans", "40-54 ans", "55-64 ans", "65-79 ans", "80 ans et plus"];
 equip_trie = equip.sort((a, b) => ordre_ages.indexOf(a.TRANCHE_AGE) - ordre_ages.indexOf(b.TRANCHE_AGE));
 ```
 
 ```{ojs result_plot}
-// Graphique en barres groupées (équivalent geom_col(position = "dodge"))
+// Histogramme double
 Plot.plot({
   title: isGeoSelected ? `Population par sexe et âge regroupé – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
   subtitle: `Année ${selection_annee}`,
@@ -372,7 +366,7 @@ Plot.plot({
       y: "part_locale", 
       fill: "SEXE", 
       fx: "TRANCHE_AGE",
-      title: d => `${d.SEXE} - ${d.TRANCHE_AGE}\n${d.population_exacte} personnes (${(d.part_locale*100).toFixed(1)}%)` // Info-bulle au survol
+      title: d => `${d.SEXE} - ${d.TRANCHE_AGE}\n${d.population_exacte} personnes (${(d.part_locale*100).toFixed(1)}%)`
     }),
     Plot.ruleY([0])
   ]
@@ -382,8 +376,6 @@ Plot.plot({
 ```{ojs result_pyramide_calc}
 //| output: false
 
-// On prépare les données de la pyramide : une valeur "signée"
-// négative pour les hommes (barres vers la gauche), positive pour les femmes (barres vers la droite)
 equip_pyramide = equip_trie.map(function(d) {
   return {
     SEXE: d.SEXE,
@@ -393,15 +385,12 @@ equip_pyramide = equip_trie.map(function(d) {
   };
 });
 
-// Pour un axe symétrique et lisible, on prend le max absolu des effectifs
 max_effectif = d3.max(equip_pyramide, d => Math.abs(d.valeur_signee));
 
-// Ordre inversé pour que "Moins de 15 ans" apparaisse en bas et "80 ans et plus" en haut (pyramide classique)
 ordre_ages_pyramide = ordre_ages.slice().reverse();
 ```
 
 ```{ojs result_pyramide_plot}
-// Pyramide des âges : hommes à gauche (valeurs négatives), femmes à droite (valeurs positives)
 Plot.plot({
   title: isGeoSelected ? `Pyramide des âges – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
   subtitle: `Année ${selection_annee}`,
@@ -410,7 +399,6 @@ Plot.plot({
   height: 400,
   x: {
     label: "Effectif",
-    // On force un domaine symétrique et on affiche des valeurs absolues sur l'axe
     domain: [-max_effectif * 1.05, max_effectif * 1.05],
     tickFormat: d => Math.abs(d).toLocaleString("fr-FR"),
     grid: true
@@ -453,7 +441,6 @@ htl.html`
 ```{ojs result_calc}
 //| output: false
 
-// 1. On récupère TOUTES les données de POP_T4 pour la zone
 equip_brut1 = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
@@ -465,18 +452,15 @@ equip_brut1 = isGeoSelected
 `)
 : [];
 
-// 2. On classe avec des mots-clés robustes
 function classer_residence(label) {
   if (!label) return null;
   let txt = label.toLowerCase();
   
-  // On s'assure qu'on regarde bien la population de "1 an ou plus"
   if (!txt.includes("1 an ou plus")) return null;
 
   if (txt.includes("dans le même logement")) return "Dans le même logement";
   if (txt.includes("autre logement dans la même commune")) return "Dans un autre logement de la même commune";
   
-  // Tout le reste correspond à une autre commune (département, région, DOM, etc.)
   if (txt.includes("autre commune") || 
       txt.includes("hors de la région") || 
       txt.includes("autre département") || 
@@ -487,7 +471,6 @@ function classer_residence(label) {
   return null;
 }
 
-// 3. Filtrage et nettoyage
 equip_mutate1 = equip_brut1.map(function(d) {
   return {
     OBS_VALUE: d.OBS_VALUE,
@@ -495,7 +478,6 @@ equip_mutate1 = equip_brut1.map(function(d) {
   };
 }).filter(d => d.Lieu_de_résidence !== null);
 
-// 4. Agrégation des résultats
 equip_groupes1 = d3.rollups(
   equip_mutate1,
   function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
@@ -517,7 +499,6 @@ equip1 = equip_summarise1.map(function(d) {
   };
 });
 
-// 5. On force l'ordre pour avoir des couleurs cohérentes (comme dans R)
 ordre_niveaux = [
   "Dans le même logement", 
   "Dans un autre logement de la même commune", 
@@ -527,7 +508,6 @@ equip_trie1 = equip1.sort((a, b) => ordre_niveaux.indexOf(a.Lieu_de_résidence) 
 ```
 
 ```{ojs result_plot}
-// Construction du camembert D3 sur-mesure
 camembert = {
   if (!isGeoSelected || total1 === 0) return htl.html`<div>Sélectionnez un territoire ou aucune donnée disponible pour cette année.</div>`;
   
@@ -537,14 +517,12 @@ camembert = {
 
   const arc = d3.arc().innerRadius(0).outerRadius(radius);
   
-  // On inverse le sens de rotation (direction = -1 dans ggplot)
   const pie = d3.pie()
     .value(d => d.total_groupe)
     .sort(null)
     .startAngle(2 * Math.PI)
     .endAngle(0);
 
-  // Palette "Blues" avec 3 teintes
   const color = d3.scaleOrdinal()
     .domain(ordre_niveaux)
     .range(["#08519c", "#6baed6", "#bdd7e7"]); // Du plus foncé au plus clair
@@ -556,7 +534,6 @@ camembert = {
   const gPie = svg.append("g")
     .attr("transform", `translate(${width / 3}, ${height / 2})`);
 
-  // Tranches du camembert
   gPie.selectAll("path")
     .data(pie(equip_trie1))
     .join("path")
@@ -567,7 +544,6 @@ camembert = {
     .append("title")
     .text(d => `${d.data.Lieu_de_résidence}: ${d.data.total_groupe}`);
 
-  // Étiquettes de pourcentages au centre des tranches
   gPie.selectAll("text")
     .data(pie(equip_trie1))
     .join("text")
@@ -580,11 +556,9 @@ camembert = {
     // Affiche uniquement si c'est assez grand pour être lisible
     .text(d => d.data.part_groupe >= 3 ? `${d.data.part_groupe.toFixed(1)}%` : "");
 
-  // Légende positionnée à droite
   const legend = svg.append("g")
     .attr("transform", `translate(${width * 0.60}, ${height / 2 - 50})`);
     
-  // Titre de la légende
   legend.append("text")
     .attr("x", 0)
     .attr("y", -10)

@@ -256,7 +256,6 @@ htl.html`
 ```{ojs result_calc}
 //| output: false
 
-// 1. On récupère TOUTES les données de FAM_T3 (zéro risque de plantage SQL)
 equip_brut1 = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
@@ -268,7 +267,6 @@ equip_brut1 = isGeoSelected
 `)
 : [];
 
-// 2. On classe avec des mots-clés robustes
 function classer_familles(label) {
   if (!label) return null;
   let txt = label.toLowerCase();
@@ -281,7 +279,6 @@ function classer_familles(label) {
   return null; // Ignore le reste
 }
 
-// 3. Filtrage et nettoyage
 equip_mutate1 = equip_brut1.map(function(d) {
   return {
     OBS_VALUE: d.OBS_VALUE,
@@ -289,7 +286,6 @@ equip_mutate1 = equip_brut1.map(function(d) {
   };
 }).filter(d => d.Situation_f !== null);
 
-// 4. Agrégation des résultats
 equip_groupes1 = d3.rollups(
   equip_mutate1,
   function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
@@ -313,7 +309,7 @@ equip1 = equip_summarise1.map(function(d) {
 ```
 
 ```{ojs result_plot}
-// Construction du camembert D3 sur-mesure (Reproduction fidèle de votre ggplot)
+// Construction du camembert 
 camembert1 = {
   if (!isGeoSelected || total1 === 0) return htl.html`<div>Sélectionnez un territoire ou aucune donnée disponible pour cette année.</div>`;
   
@@ -324,7 +320,6 @@ camembert1 = {
   const arc = d3.arc().innerRadius(0).outerRadius(radius);
   const pie = d3.pie().value(d => d.total_groupe).sort(null);
 
-  // Palette de couleurs "Blues" de ggplot
   const color = d3.scaleOrdinal()
     .domain([
       "Couple avec enfant(s)", 
@@ -338,7 +333,6 @@ camembert1 = {
     .attr("viewBox", [0, 0, width, height])
     .style("font-family", "sans-serif");
 
-  // Centre du camembert positionné à gauche
   const gPie = svg.append("g")
     .attr("transform", `translate(${width / 3}, ${height / 2})`);
 
@@ -392,14 +386,13 @@ htl.html`
 ```
 
 ```{ojs result_table}
-// 1. Tri manuellement et ajout de la ligne TOTAL
+// Tri et ajout de la ligne TOTAL
 equip_pour_tableau1 = {
   let data1 = equip1.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
   data1.push({ Situation_f: "TOTAL", total_groupe: total });
   return data1;
 }
 
-// Affichage du tableau
 Inputs.table(equip_pour_tableau1, {
   columns: ["Situation_f", "total_groupe"],
   header: {
@@ -424,7 +417,6 @@ htl.html`
 ```{ojs result_calc}
 //| output: false
 
-// 1. On récupère TOUTES les données de FAM_T4 pour la zone (zéro risque SQL)
 equip_brut = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
@@ -436,7 +428,6 @@ equip_brut = isGeoSelected
 `)
 : [];
 
-// 2. On classe avec des mots-clés robustes
 function classer_enfants(label) {
   if (!label) return null;
   let txt = label.toLowerCase();
@@ -450,7 +441,6 @@ function classer_enfants(label) {
   return null; // Ignore le reste
 }
 
-// 3. Filtrage et nettoyage
 equip_mutate = equip_brut.map(function(d) {
   return {
     OBS_VALUE: d.OBS_VALUE,
@@ -458,7 +448,6 @@ equip_mutate = equip_brut.map(function(d) {
   };
 }).filter(d => d.enfants !== null);
 
-// 4. Agrégation des résultats
 equip_groupes = d3.rollups(
   equip_mutate,
   function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
@@ -480,18 +469,17 @@ equip = equip_summarise.map(function(d) {
   };
 });
 
-// 5. On force l'ordre logique (comme les 'levels' du factor en R)
 ordre_niveaux = ["Aucun enfant", "1 enfant", "2 enfants", "3 enfants", "4 enfants ou plus"];
 equip_trie = equip.sort((a, b) => ordre_niveaux.indexOf(a.enfants) - ordre_niveaux.indexOf(b.enfants));
 ```
 
 ```{ojs result_palette}
-// Palette de couleurs partagée (camembert + treemap)
+// Palette de couleurs partagée
 color_enfants = d3.scaleOrdinal()
   .domain(ordre_niveaux)
   .range(["#eff3ff", "#bdd7e7", "#6baed6", "#3182bd", "#08519c"])
   
-// Construction du camembert D3 sur-mesure
+// Construction du camembert
 camembert = {
   if (!isGeoSelected || total === 0) return htl.html`<div>Sélectionnez un territoire ou aucune donnée disponible pour cette année.</div>`;
   
@@ -572,7 +560,7 @@ htl.html`
 ```
 
 ```{ojs result_treemap}
-// Construction du treemap D3, sur les mêmes données (equip_trie) et la même palette (color_enfants)
+// Construction du treemap 
 treemap_chart = {
   if (!isGeoSelected || total === 0) return htl.html`<div>Sélectionnez un territoire ou aucune donnée disponible pour cette année.</div>`;
 
@@ -581,7 +569,7 @@ treemap_chart = {
 
   const color = color_enfants;
 
-  // Hiérarchie : une racine fictive "root" avec les 5 catégories comme feuilles
+  // Hiérarchie 
   const root = d3.hierarchy({ children: equip_trie })
     .sum(d => d.total_groupe)
     .sort((a, b) => b.value - a.value);
@@ -611,7 +599,7 @@ treemap_chart = {
     .append("title")
     .text(d => `${d.data.enfants}: ${d.data.total_groupe} (${d.data.part_groupe.toFixed(1)}%)`);
 
-  // Étiquettes : nom de la catégorie + pourcentage, uniquement si la case est assez grande
+  // Étiquettes 
   leaf.append("text")
     .attr("x", 6)
     .attr("y", 18)

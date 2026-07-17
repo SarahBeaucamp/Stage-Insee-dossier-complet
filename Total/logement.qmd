@@ -256,7 +256,6 @@ htl.html`
 ```{ojs result_calc}
 //| output: false
 
-// 1. Récupération des données de LOG_T3 pour la zone et l'année sélectionnées
 taille_log_brut = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
@@ -268,7 +267,6 @@ taille_log_brut = isGeoSelected
 `)
 : [];
 
-// 2. Dictionnaire pour reproduire le 'case_when' (catégorisation des pièces)
 correspondance_pieces = new Map([
   ["Logements – Résidences principales x 1 pièce", "1 pièce"],
   ["Logements – Résidences principales x 2 pièces", "2 pièces"],
@@ -282,7 +280,6 @@ function classer_pieces(label) {
   return correspondance_pieces.has(label) ? correspondance_pieces.get(label) : null;
 }
 
-// 3. Application du dictionnaire et filtrage
 taille_log_mutate = taille_log_brut.map(function(d) {
   return {
     OBS_VALUE: d.OBS_VALUE,
@@ -290,7 +287,6 @@ taille_log_mutate = taille_log_brut.map(function(d) {
   };
 }).filter(d => d.pieces !== null);
 
-// 4. Agrégation des résultats (group_by + summarise)
 taille_log_groupes = d3.rollups(
   taille_log_mutate,
   function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
@@ -312,7 +308,6 @@ taille_log_final = taille_log_summarise.map(function(d) {
   };
 });
 
-// 5. Ordre défini dans le code R (Ordre_pièces)
 ordre_pieces = [
   "1 pièce",
   "2 pièces",
@@ -321,12 +316,12 @@ ordre_pieces = [
   "5 pièces ou plus"
 ];
 
-// Tri des données pour correspondre à l'ordre imposé (factor levels en R)
+//Tri des modalités
 taille_log_trie = taille_log_final.sort((a, b) => ordre_pieces.indexOf(a.pieces) - ordre_pieces.indexOf(b.pieces));
 ```
 
 ```{ojs result_plot}
-// Diagramme en barres verticales colorées avec la palette Blues
+// Histogramme coloré
 Plot.plot({
   title: isGeoSelected ? `Résidences principales selon le nombre de pièces en ${selection_annee}` : "Sélectionnez un territoire",
   subtitle: "Source : Recensement Insee",
@@ -337,7 +332,7 @@ Plot.plot({
     legend: false
   },
   x: { 
-    domain: ordre_pieces, // Conserve l'ordre logique
+    domain: ordre_pieces, 
     label: null 
   },
   y: { 
@@ -351,7 +346,6 @@ Plot.plot({
       fill: "pieces", 
       title: d => `${d.pieces}\n${d.total_groupe} logements (${d.part_groupe.toFixed(1)}%)`
     }),
-    // Ajout des étiquettes de pourcentage au-dessus des barres
     Plot.text(taille_log_trie, {
       x: "pieces",
       y: "total_groupe",
@@ -365,7 +359,7 @@ Plot.plot({
 ```
 
 ```{ojs result_table}
-// Ajout de la ligne TOTAL pour le tableau et formatage
+// Ajout de la ligne TOTAL
 taille_log_pour_tableau = {
   let data2 = taille_log_trie.map(d => ({
     pieces: d.pieces,
@@ -376,7 +370,6 @@ taille_log_pour_tableau = {
   return data2;
 }
 
-// Affichage sous forme de tableau interactif
 Inputs.table(taille_log_pour_tableau, {
   columns: ["pieces", "total_groupe", "part_groupe_fmt"],
   header: {
@@ -403,7 +396,6 @@ htl.html`
 ```{ojs result_calc}
 //| output: false
 
-// 1. Récupération des données de LOG_T4bis pour la zone et l'année sélectionnées
 taille_occup_brut = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
@@ -415,7 +407,6 @@ taille_occup_brut = isGeoSelected
 `)
 : [];
 
-// 2. Dictionnaire pour reproduire le 'case_when'
 correspondance_occup = new Map([
   ["Logements – Occupation dans la norme", "Occupation dans la norme"],
   ["Logements – Suroccupation modérée", "Suroccupation modérée"],
@@ -430,7 +421,6 @@ function classer_occup(label) {
   return correspondance_occup.has(label) ? correspondance_occup.get(label) : null;
 }
 
-// 3. Application du dictionnaire et filtrage
 taille_occup_mutate = taille_occup_brut.map(function(d) {
   return {
     OBS_VALUE: d.OBS_VALUE,
@@ -438,7 +428,6 @@ taille_occup_mutate = taille_occup_brut.map(function(d) {
   };
 }).filter(d => d.occupation !== null);
 
-// 4. Agrégation des résultats (group_by + summarise)
 taille_occup_groupes = d3.rollups(
   taille_occup_mutate,
   function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
@@ -460,7 +449,6 @@ taille_occup_final = taille_occup_summarise.map(function(d) {
   };
 });
 
-// 5. Ordre défini dans le code R (Ordre_occup)
 ordre_occup = [
   "Sous-occupation très accentuée",
   "Sous-occupation accentuée",
@@ -470,22 +458,22 @@ ordre_occup = [
   "Suroccupation accentuée"
 ];
 
-// Tri des données pour correspondre à l'ordre imposé (factor levels en R)
+// Tri 
 taille_occup_trie = taille_occup_final.sort((a, b) => ordre_occup.indexOf(a.occupation) - ordre_occup.indexOf(b.occupation));
 ```
 
 ```{ojs result_plot}
-// Diagramme en barres horizontales (équivalent de coord_flip)
+// Histogramme
 Plot.plot({
   title: isGeoSelected ? `Indice de peuplement des résidences principales en ${selection_annee}` : "Sélectionnez un territoire",
-  marginLeft: 230, // Espace généreux pour les libellés de l'axe Y
+  marginLeft: 230, 
   marginRight: 40,
   x: { 
     label: "Part (%)", 
     grid: true 
   },
   y: { 
-    domain: ordre_occup, // Conserve l'ordre logique défini
+    domain: ordre_occup, 
     label: null 
   },
   marks: [
@@ -501,7 +489,6 @@ Plot.plot({
 ```
 
 ```{ojs result_table}
-// Ajout de la ligne TOTAL pour le tableau et formatage
 taille_occup_pour_tableau = {
   let data3 = taille_occup_trie.map(d => ({
     occupation: d.occupation,
@@ -512,7 +499,6 @@ taille_occup_pour_tableau = {
   return data3;
 }
 
-// Affichage sous forme de tableau interactif
 Inputs.table(taille_occup_pour_tableau, {
   columns: ["occupation", "total_groupe", "part_groupe_fmt"],
   header: {
@@ -540,7 +526,6 @@ htl.html`
 ```{ojs result_calc}
 //| output: false
 
-// 1. Récupération des données de LOG_T5 pour la zone et l'année sélectionnées
 date_resi_brut = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
@@ -552,7 +537,6 @@ date_resi_brut = isGeoSelected
 `)
 : [];
 
-// 2. Dictionnaire pour reproduire le 'case_when' (avec la gestion du "AAAA")
 correspondance_date = new Map([
   ["Logements – Résidences principales x Avant 1919", "Avant 1919"],
   ["Logements – Résidences principales x De 1919 à 1945", "De 1919 à 1945"],
@@ -567,7 +551,6 @@ function classer_date(label) {
   return correspondance_date.has(label) ? correspondance_date.get(label) : null;
 }
 
-// 3. Application du dictionnaire et filtrage
 date_resi_mutate = date_resi_brut.map(function(d) {
   return {
     OBS_VALUE: d.OBS_VALUE,
@@ -575,7 +558,6 @@ date_resi_mutate = date_resi_brut.map(function(d) {
   };
 }).filter(d => d.date !== null);
 
-// 4. Agrégation des résultats (group_by + summarise)
 date_resi_groupes = d3.rollups(
   date_resi_mutate,
   function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
@@ -597,7 +579,6 @@ date_resi_final = date_resi_summarise.map(function(d) {
   };
 });
 
-// 5. Ordre défini dans le code R (Ordre_date)
 ordre_date = [
   "Avant 1919",
   "De 1919 à 1945",
@@ -607,22 +588,22 @@ ordre_date = [
   "De 2006 à 2020"
 ];
 
-// Tri des données pour correspondre à l'ordre imposé (factor levels en R)
+// Tri des données
 date_resi_trie = date_resi_final.sort((a, b) => ordre_date.indexOf(a.date) - ordre_date.indexOf(b.date));
 ```
 
 ```{ojs result_plot}
-// Diagramme en barres horizontales (équivalent de coord_flip)
+// Histogramme
 Plot.plot({
   title: isGeoSelected ? `Résidences principales selon la période d'achèvement en ${selection_annee}` : "Sélectionnez un territoire",
-  marginLeft: 130, // Espace pour les libellés de l'axe Y
+  marginLeft: 130, 
   marginRight: 40,
   x: { 
     label: "Part (%)", 
     grid: true 
   },
   y: { 
-    domain: ordre_date, // Conserve l'ordre chronologique défini
+    domain: ordre_date, 
     label: null 
   },
   marks: [
@@ -638,7 +619,6 @@ Plot.plot({
 ```
 
 ```{ojs result_table}
-// Ajout de la ligne TOTAL pour le tableau et formatage
 date_resi_pour_tableau = {
   let data = date_resi_trie.map(d => ({
     date: d.date,
@@ -649,7 +629,6 @@ date_resi_pour_tableau = {
   return data;
 }
 
-// Affichage sous forme de tableau interactif
 Inputs.table(date_resi_pour_tableau, {
   columns: ["date", "total_groupe", "part_groupe_fmt"],
   header: {

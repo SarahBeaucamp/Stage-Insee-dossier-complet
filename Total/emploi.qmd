@@ -256,12 +256,6 @@ htl.html`
 ```{ojs result_calc}
 //| output: false
 
-// 1. On récupère les données de population pour la zone (en filtrant sur ID_TAB = 'EMP_T3')
-// On passe par VARCHAR + REPLACE virgule->point avant le cast en DOUBLE :
-// si OBS_VALUE est stocké en texte avec une virgule décimale (format FR, ex "1234,5"),
-// un CAST direct en DOUBLE peut échouer silencieusement et renvoyer NULL pour toutes
-// les lignes. Cette version gère les deux cas (virgule ou point) sans casser les valeurs
-// déjà numériques.
 equip_brut = isGeoSelected
 ? db.query(`
   SELECT
@@ -275,9 +269,6 @@ equip_brut = isGeoSelected
 `)
 : [];
 
-// --- Fonction de normalisation : enlève accents, harmonise apostrophes, met en minuscule ---
-// Sert à rendre le matching des libellés robuste aux petites variations de texte
-// (accents, apostrophes typographiques vs droites, casse...).
 function normalize(s) {
   if (!s) return "";
   return s
@@ -287,23 +278,15 @@ function normalize(s) {
     .replace(/[\u0300-\u036f]/g, ""); // supprime les accents
 }
 
-// 2. Classification corrigée et robuste.
-// Important : dans TAB_MEASURE_LABEL, il n'y a pas de catégorie "sans emploi" isolée.
-// - "Actif x CSP"          = TOTAL des actifs de cette CSP (occupés + non-occupés)
-// - "Actif occupé x CSP"   = uniquement les actifs OCCUPÉS de cette CSP
-// Le nombre de personnes "sans emploi" se déduit donc par soustraction : Total - Occupé.
 function classer_pop(label) {
   if (!label) return null;
   let txt = normalize(label);
 
-  // Identifier le statut (Total vs Occupé)
-  // On teste "actif occupe" avant "actif" seul pour ne pas les confondre.
   let act = null;
   if (txt.includes("actif occupe")) act = "Occupé";
   else if (txt.includes("actif")) act = "Total";
   if (!act) return null;
 
-  // Identifier la CSP
   let csp = null;
   if (txt.includes("agriculteurs")) csp = "Agriculteurs";
   else if (txt.includes("artisans")) csp = "Artisans, commerçants et chefs d’entreprise";
@@ -317,24 +300,17 @@ function classer_pop(label) {
   return { act: act, csp: csp };
 }
 
-// 3. Filtrage et nettoyage
 equip_mutate = equip_brut.map(function(d) {
   let classification = classer_pop(d.TAB_MEASURE_LABEL);
   if (!classification) return null;
 
   return {
-    OBS_VALUE: Number(d.OBS_VALUE), // sécurité : force un Number même si DuckDB renvoie un BigInt
+    OBS_VALUE: Number(d.OBS_VALUE), 
     ACT: classification.act,
     CSP: classification.csp
   };
 }).filter(d => d !== null);
 
-// 4. Agrégation : somme des valeurs par CSP x (Total / Occupé)
-// NOTE : on n'utilise volontairement PAS d3.flatRollup ici, car cette fonction
-// (ajoutée récemment à d3-array) peut être absente ou indisponible selon la version
-// de d3 embarquée par le moteur OJS de Quarto, ce qui ferait planter la cellule
-// silencieusement et laisserait tous les graphes vides sans erreur visible.
-// On fait donc l'agrégation "à la main" avec une Map, ce qui ne dépend que du JS de base.
 csp_map = {
   const m = new Map();
   for (const d of equip_mutate) {
@@ -345,12 +321,8 @@ csp_map = {
   return m;
 }
 
-// Ordre pour l'affichage
 ordre_csp = ["Agriculteurs", "Artisans, commerçants et chefs d’entreprise", "Ouvriers", "Employés", "Professions intermédiaires", "Cadres et professions intellectuelles supérieures"];
 
-// 6. Calcul des parts locales : part d'occupés / sans emploi AU SEIN de chaque CSP
-// (Avec Emploi + Sans Emploi = 100% pour chaque CSP)
-// On garde aussi population_exacte pour l'histogramme empilé en effectifs.
 equip = Array.from(csp_map, ([csp, vals]) => {
   let total = vals["Total"] || 0;
   let occupe = vals["Occupé"] || 0;
@@ -378,13 +350,11 @@ equip_trie = equip.sort((a, b) => ordre_csp.indexOf(a.CSP) - ordre_csp.indexOf(b
 ```
 
 ```{ojs result_plot}
-// Graphique en barres groupées (dodge) : une paire de barres par CSP, en pourcentage
 Plot.plot({
   title: isGeoSelected ? `Taux d'emploi par CSP – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
   subtitle: `Année ${selection_annee}`,
   marginBottom: 60,
   marginLeft: 50,
-  // L'axe X principal est masqué, car les labels sont gérés par le fx (facets)
   x: { axis: null },
   y: {
     label: "Part au sein de la CSP",
@@ -392,7 +362,6 @@ Plot.plot({
     grid: true,
     domain: [0, 1]
   },
-  // Facet X : permet de grouper les barres par CSP
   fx: {
     domain: ordre_csp,
     label: "CSP",
@@ -409,7 +378,7 @@ Plot.plot({
       y: "part_locale",
       fill: "ACT",
       fx: "CSP",
-      title: d => `${d.ACT} - ${d.CSP}\n${d.population_exacte} personnes (${(d.part_locale*100).toFixed(1)}%)` // Info-bulle au survol
+      title: d => `${d.ACT} - ${d.CSP}\n${d.population_exacte} personnes (${(d.part_locale*100).toFixed(1)}%)` 
     }),
     Plot.ruleY([0])
   ]
@@ -417,9 +386,7 @@ Plot.plot({
 ```
 
 ```{ojs result_plot_empile}
-// Histogramme empilé : une colonne par CSP, "Avec Emploi" + "Sans Emploi" empilés.
-// La hauteur totale de chaque colonne correspond au nombre RÉEL de personnes de la CSP
-// (population_exacte), et non plus à un pourcentage normalisé à 100%.
+// Histogramme empilé
 Plot.plot({
   title: isGeoSelected ? `Répartition emploi / non-emploi par CSP – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
   subtitle: `Année ${selection_annee}`,
