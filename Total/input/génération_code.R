@@ -2,7 +2,7 @@
 # Stocké en CSV
 # TODO à lancer à chaque mise à jour du CI?
 
-url_dossier_complet <- 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'
+url_dossier_complet <- "https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet"
 con <- DBI::dbConnect(duckdb::duckdb(), ":memory:")
 
 # Liste des territoires, avec un ordre d'affichage privilégié
@@ -28,6 +28,5 @@ tableaux <- DBI::dbGetQuery(con, glue::glue(
 ))
 
 # TODO mieux gérer le chemin d'écriture
-data.table::fwrite(geo, "Stage-Insee-dossier-complet/input/geo.csv")
-data.table::fwrite(tableaux, "Stage-Insee-dossier-complet/input/tableaux.csv")
-
+data.table::fwrite(geo, "Total/input/geo.csv")
+data.table::fwrite(tableaux, "Total/input/tableaux.csv")
