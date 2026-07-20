@@ -28,5 +28,5 @@ tableaux <- DBI::dbGetQuery(con, glue::glue(
 ))
 
 # TODO mieux gérer le chemin d'écriture
-data.table::fwrite(geo, "Input/geo.csv")
-data.table::fwrite(tableaux, "Input/tableaux.csv")
+data.table::fwrite(geo, "Total/input/geo.csv")
+data.table::fwrite(tableaux, "Total/input/tableaux.csv")
