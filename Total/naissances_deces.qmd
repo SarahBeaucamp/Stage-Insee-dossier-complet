@@ -156,7 +156,8 @@ include-in-header:
           { label: "Structure de la population", href: "population.html" },
           { label: "Population active, emploi et chômage au sens du recensement en 2023", href: "emploi.html" },
           { label: "Naissances et décès domiciliés", href: "naissances_deces.html" },
-          { label: "Nombre d'électeurs inscrits sur liste principale par élection", href: "electeurs.html" }
+          { label: "Nombre d'électeurs inscrits sur liste principale par élection", href: "electeurs.html" },
+          { label: "Chiffres clés", href: "chiffres.html" }
         ];
         
         var brandContainer = document.querySelector("#quarto-dashboard-header .navbar-brand-container");
@@ -373,49 +374,3 @@ Inputs.table(solde, {
 })
 ```
 
-# Chiffres clés
-
-## Territoire sélectionné {height="15%"}
-
-```{ojs geo3_cc}
-htl.html`
-  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
-`
-```
-
-## Résultat
-
-::: {.card title="Chiffres clés du territoire"}
-
-```{ojs population}
-population_brut = isGeoSelected
-? db.query(`
-  SELECT OBS_VALUE
-  FROM read_parquet('${chemin_s3}')
-  WHERE TIME_PERIOD = '${selection_annee}'
-    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
-    AND GEO = '${selection_geo.GEO}'
-    AND ID_TAB = 'POP_T0'
-    AND TAB_MEASURE_LABEL = 'Population'
-`)
-: [];
-
-population_valeur = population_brut.length > 0 ? population_brut[0].OBS_VALUE : null;
-```
-
-```{ojs representation}
-htl.html`
-  <div style="display: flex; align-items: center; justify-content: center; height: 100%; min-height: 250px;">
-    <div style="text-align: center; font-family: sans-serif;">
-      <div style="font-size: 14px; color: #555; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">
-        Nombre d'habitants en 2022 ${isGeoSelected ? `– ${selection_geo.GEO_LABEL}` : ""} 
-      </div>
-      <div style="font-size: 48px; font-weight: bold; color: #145CBF;">
-        ${!isGeoSelected ? "—" : (population_valeur !== null ? population_valeur.toLocaleString("fr-FR") : "Non disponible")}
-      </div>
-    </div>
-  </div>
-`
-```
-
-:::

@@ -1,5 +1,5 @@
 ---
-title: "Nombre d'électeurs inscrits sur liste principale par élection"
+title: "Chiffres clés"
 format: 
   dashboard:
     nav-buttons: []
@@ -205,29 +205,15 @@ include-in-header:
 ```{ojs config}
 //| output: false
 
-// 1. Créer ou ouvrir une connexion DuckDB (équivalent dbConnect(duckdb(), ...) en R)
+// 1. Créer ou ouvrir une connexion DuckDB
 db = DuckDBClient.of({})
 
-// 4. Définir l'adresse de votre fichier sur le S3 du SSP Cloud (équivalent chemin_s3 en R)
+// 4. Définir l'adresse du fichier sur le S3 du SSP Cloud
 chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'
 ```
 
 # Recherche géographique {.sidebar width="30%"}
 
-```{ojs annee}
-viewof selection_annee = Inputs.select(
-  [
-    "1968", "1975", "1982", "1990", "1999", "2006", 
-    "2011", "2012", "2013", "2014", "2015", "2016", 
-    "2017", "2018", "2019", "2020", "2021", "2022", 
-    "2023", "2024", "2025", "2026"
-  ],
-  {
-    label: "Année",
-    value: "2026"
-  }
-)
-```
 
 ```{ojs type_geo}
 viewof selection_type_geo = Inputs.select(
@@ -273,95 +259,118 @@ viewof selection_geo = Inputs.table(
 )
 ```
 
-# Nombre d'électeurs inscrits sur liste principale par élection
+# Chiffres clés du territoire
 
 ## Territoire sélectionné {height="15%"}
 
 ```{ojs geo3}
 isGeoSelected = (selection_geo !== null);
-
-htl.html`
-  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
-`
+htl.html`<strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})`
 ```
 
 ## Résultat
 
+::: {.card title="Nombre d'habitants en 2022"}
 
-```{ojs result_calc}
-//| output: false
-
-// r <- dossier_complet %>% filter(GEO == "44109", ID_TAB == "EQUIP_T1") %>% distinct(TAB_MEASURE_LABEL) %>% collect()
-// (étape de contrôle en R, non nécessaire pour l'affichage final, donc non reprise ici)
-
-// equip <- dossier_complet %>%
-//   filter(
-//     TIME_PERIOD == "2024",
-//     GEO_OBJECT_LABEL == "Commune",
-//     GEO == "44109",
-//     ID_TAB == "EQUIP_T1",
-//     TAB_MEASURE_LABEL %in% c(...)
-//   )
-elec = isGeoSelected
+```{ojs population}
+population_brut1 = isGeoSelected
 ? db.query(`
-  SELECT TIME_PERIOD, TAB_MEASURE_LABEL, OBS_VALUE
+  SELECT OBS_VALUE
   FROM read_parquet('${chemin_s3}')
-  WHERE GEO_OBJECT_LABEL = '${selection_type_geo}'
+  WHERE TIME_PERIOD = '2022'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
     AND GEO = '${selection_geo.GEO}'
-    AND ID_TAB = 'REU'
+    AND ID_TAB = 'POP_T0'
+    AND TAB_MEASURE_LABEL = 'Population'
 `)
 : [];
 
-
+population_valeur1 = population_brut1.length > 0 ? population_brut1[0].OBS_VALUE : null;
 ```
 
-```{ojs result_plot}
-Plot.plot({
-  title: "Nombre d'électeurs inscrits sur liste principale par élection",
-  marginBottom: 40,
-  x: { 
-    label: "Année de l'élection", 
-    tickFormat: "d" // Empêche d'afficher les années avec des virgules (ex: 2,022)
-  },
-  y: { 
-    label: "Nombre d'électeurs", 
-    grid: true 
-  },
-  marks: [
-    // 1. Trace une ligne bleue continue entre toutes les années
-    Plot.line(elec, { 
-      x: "TIME_PERIOD", 
-      y: "OBS_VALUE", 
-      stroke: "blue", 
-      strokeWidth: 2 
-    }),
-    
-    // 2. Ajoute les points avec une info-bulle au survol
-    Plot.dot(elec, { 
-      x: "TIME_PERIOD", 
-      y: "OBS_VALUE", 
-      fill: "#174695", 
-      r: 4,
-      // Ajout interactif : affiche les infos quand on passe la souris sur le point
-      title: (d) => `${d.TAB_MEASURE_LABEL} (${d.TIME_PERIOD})\nÉlecteurs : ${d.OBS_VALUE}`
-    })
-  ]
-})
+```{ojs representation}
+htl.html`
+  <div style="display: flex; align-items: center; justify-content: center; height: 100%; min-height: 250px;">
+    <div style="text-align: center; font-family: sans-serif;">
+      <div style="font-size: 14px; color: #555; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">
+        Nombre d'habitants${isGeoSelected ? `– ${selection_geo.GEO_LABEL}` : ""} 
+      </div>
+      <div style="font-size: 48px; font-weight: bold; color: #145CBF;">
+        ${!isGeoSelected ? "—" : (population_valeur1 !== null ? population_valeur1.toLocaleString("fr-FR") : "Non disponible")}
+      </div>
+    </div>
+  </div>
+`
 ```
 
-```{ojs result_table}
-// 1. On trie les données par ordre chronologique (du plus ancien au plus récent)
-elec_pour_tableau = {
-  return elec.slice().sort((a, b) => d3.ascending(a.TIME_PERIOD, b.TIME_PERIOD));
-}
+:::
 
-// 2. Affichage du tableau interactif
-Inputs.table(elec_pour_tableau, {
-  columns: ["TIME_PERIOD", "TAB_MEASURE_LABEL", "OBS_VALUE"],
-  header: {
-    TIME_PERIOD: "Année",
-    TAB_MEASURE_LABEL: "Type d'élection",
-    OBS_VALUE: "Nombre d'électeurs"
-  }
-})
+::: {.card title="Nombre d'habitants en 2016"}
+
+```{ojs population}
+population_brut = isGeoSelected
+? db.query(`
+  SELECT OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '2016'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'POP_T0'
+    AND TAB_MEASURE_LABEL = 'Population'
+`)
+: [];
+
+population_valeur = population_brut.length > 0 ? population_brut[0].OBS_VALUE : null;
 ```
+
+```{ojs representation}
+htl.html`
+  <div style="display: flex; align-items: center; justify-content: center; height: 100%; min-height: 250px;">
+    <div style="text-align: center; font-family: sans-serif;">
+      <div style="font-size: 14px; color: #555; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">
+        Nombre d'habitants${isGeoSelected ? `– ${selection_geo.GEO_LABEL}` : ""} 
+      </div>
+      <div style="font-size: 48px; font-weight: bold; color: #145CBF;">
+        ${!isGeoSelected ? "—" : (population_valeur !== null ? population_valeur.toLocaleString("fr-FR") : "Non disponible")}
+      </div>
+    </div>
+  </div>
+`
+```
+
+:::
+
+::: {.card title="Salaire moyen"}
+
+```{ojs population}
+salaire_brut = isGeoSelected
+? db.query(`
+  SELECT OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '2023'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'SAL_G1'
+    AND TAB_MEASURE_LABEL = 'Salaire net EQTP mensuel moyen'
+`)
+: [];
+
+salaire_valeur = salaire_brut.length > 0 ? salaire_brut[0].OBS_VALUE : null;
+```
+
+```{ojs representation}
+htl.html`
+  <div style="display: flex; align-items: center; justify-content: center; height: 100%; min-height: 250px;">
+    <div style="text-align: center; font-family: sans-serif;">
+      <div style="font-size: 14px; color: #555; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">
+        Salaire moyen en 2023 ${isGeoSelected ? `– ${selection_geo.GEO_LABEL}` : ""} 
+      </div>
+      <div style="font-size: 48px; font-weight: bold; color: #145CBF;">
+        ${!isGeoSelected ? "—" : (salaire_valeur !== null ? salaire_valeur.toLocaleString("fr-FR") : "Non disponible")}
+      </div>
+    </div>
+  </div>
+`
+```
+
+:::

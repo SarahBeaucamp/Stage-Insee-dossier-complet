@@ -156,7 +156,8 @@ include-in-header:
           { label: "Structure de la population", href: "population.html" },
           { label: "Population active, emploi et chômage au sens du recensement en 2023", href: "emploi.html" },
           { label: "Naissances et décès domiciliés", href: "naissances_deces.html" },
-          { label: "Nombre d'électeurs inscrits sur liste principale par élection", href: "electeurs.html" }
+          { label: "Nombre d'électeurs inscrits sur liste principale par élection", href: "electeurs.html" },
+          { label: "Chiffres clés", href: "chiffres.html" }
         ];
         
         var brandContainer = document.querySelector("#quarto-dashboard-header .navbar-brand-container");
@@ -244,20 +245,19 @@ viewof selection_type_geo = Inputs.select(
 ```
 
 ```{ojs geo}
-//| output: false
+// Liste des territoires disponibles :
+// la recherche de tous les territoires du parquet étant un peu longue
+// on la précalcule dans un fichier CSV stocké (cf. preparer_conf_geo.R)
+// Plutôt que faire une requête sur le .parquet à chaque fois (très long)
+// geo = db.query(`
+//   SELECT DISTINCT GEO, GEO_LABEL
+//   FROM read_parquet('${chemin_s3}')
+//   WHERE ID_TAB = 'RFD_G1' AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+//   ORDER BY GEO_LABEL
+// `)
 
-// Liste des territoires disponibles mis à jour dynamiquement selon l'aire urbaine choisie
-geo = db.query(`
-  SELECT DISTINCT GEO, GEO_LABEL
-  FROM read_parquet('${chemin_s3}')
-  WHERE ID_TAB = 'EQUIP_T1' AND GEO_OBJECT_LABEL = '${selection_type_geo}'
-  ORDER BY GEO_LABEL
-`)
-```
-
-```{ojs geo2}
 viewof search_geo = Inputs.search(
-  geo, {
+  await FileAttachment("input/geo.csv").csv(), {
     width: "60%",
     label: "Territoire",
     placeholder: "Rechercher un territoire...",
@@ -645,49 +645,3 @@ Inputs.table(equip_pour_tableau1, {
 })
 ```
 
-# Chiffres clés
-
-## Territoire sélectionné {height="15%"}
-
-```{ojs geo3_cc}
-htl.html`
-  <strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})
-`
-```
-
-## Résultat
-
-::: {.card title="Chiffres clés du territoire"}
-
-```{ojs population}
-population_brut = isGeoSelected
-? db.query(`
-  SELECT OBS_VALUE
-  FROM read_parquet('${chemin_s3}')
-  WHERE TIME_PERIOD = '${selection_annee}'
-    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
-    AND GEO = '${selection_geo.GEO}'
-    AND ID_TAB = 'POP_T0'
-    AND TAB_MEASURE_LABEL = 'Population'
-`)
-: [];
-
-population_valeur = population_brut.length > 0 ? population_brut[0].OBS_VALUE : null;
-```
-
-```{ojs representation}
-htl.html`
-  <div style="display: flex; align-items: center; justify-content: center; height: 100%; min-height: 250px;">
-    <div style="text-align: center; font-family: sans-serif;">
-      <div style="font-size: 14px; color: #555; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">
-        Nombre d'habitants en 2022 ${isGeoSelected ? `– ${selection_geo.GEO_LABEL}` : ""} (${selection_annee})
-      </div>
-      <div style="font-size: 48px; font-weight: bold; color: #145CBF;">
-        ${!isGeoSelected ? "—" : (population_valeur !== null ? population_valeur.toLocaleString("fr-FR") : "Non disponible")}
-      </div>
-    </div>
-  </div>
-`
-```
-
-:::
