@@ -157,7 +157,8 @@ include-in-header:
           { label: "Population active, emploi et chômage au sens du recensement en 2023", href: "emploi.html" },
           { label: "Naissances et décès domiciliés", href: "naissances_deces.html" },
           { label: "Nombre d'électeurs inscrits sur liste principale par élection", href: "electeurs.html" },
-          { label: "Chiffres clés", href: "chiffres.html" }
+          { label: "Chiffres clés", href: "chiffres.html" },
+          { label: "Chiffres clés version 2", href: "chiffres_v2.html" }
         ];
         
         var brandContainer = document.querySelector("#quarto-dashboard-header .navbar-brand-container");
@@ -214,7 +215,6 @@ chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet
 
 # Recherche géographique {.sidebar width="30%"}
 
-
 ```{ojs type_geo}
 viewof selection_type_geo = Inputs.select(
   [
@@ -231,17 +231,6 @@ viewof selection_type_geo = Inputs.select(
 ```
 
 ```{ojs geo}
-// Liste des territoires disponibles :
-// la recherche de tous les territoires du parquet étant un peu longue
-// on la précalcule dans un fichier CSV stocké (cf. preparer_conf_geo.R)
-// Plutôt que faire une requête sur le .parquet à chaque fois (très long)
-// geo = db.query(`
-//   SELECT DISTINCT GEO, GEO_LABEL
-//   FROM read_parquet('${chemin_s3}')
-//   WHERE ID_TAB = 'RFD_G1' AND GEO_OBJECT_LABEL = '${selection_type_geo}'
-//   ORDER BY GEO_LABEL
-// `)
-
 viewof search_geo = Inputs.search(
   await FileAttachment("input/geo.csv").csv(), {
     width: "60%",
@@ -261,18 +250,22 @@ viewof selection_geo = Inputs.table(
 
 # Chiffres clés du territoire
 
-## Territoire sélectionné {height="15%"}
+## {height="12%"}
 
 ```{ojs geo3}
 isGeoSelected = (selection_geo !== null);
 htl.html`<strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})`
 ```
 
-## Résultat
+## {height="88%"}
 
-::: {.card title="Nombre d'habitants en 2022"}
+### {width="60%"}
 
-```{ojs population}
+#### {height="28%" layout-ncol=2}
+
+::: {.card title="Population en 2022"}
+
+```{ojs population1}
 population_brut1 = isGeoSelected
 ? db.query(`
   SELECT OBS_VALUE
@@ -290,37 +283,28 @@ population_valeur1 = population_brut1.length > 0 ? population_brut1[0].OBS_VALUE
 
 ```{ojs croissance}
 htl.html`
-  <div style="display: flex; align-items: center; justify-content: center; height: 100%; min-height: 250px;">
-    <div style="text-align: center; font-family: sans-serif;">
-      
-      <!-- Titre de la carte -->
-      <div style="font-size: 14px; color: #555; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">
-        Nombre d'habitants${isGeoSelected ? ` – ${selection_geo.GEO_LABEL}` : ""} 
-      </div>
-      
-      <!-- Valeur principale (Nombre d'habitants) -->
-      <div style="font-size: 48px; font-weight: bold; color: #145CBF;">
-        ${!isGeoSelected ? "—" : (population_valeur1 !== null ? population_valeur1.toLocaleString("fr-FR") : "Non disponible")}
-      </div>
-      
-      <!-- Calcul de l'évolution en pourcentage -->
-      <div style="font-size: 20px; color: #666; margin-top: 10px;">
-        ${!isGeoSelected || population_valeur1 === null || population_valeur === null 
-          ? "" 
-          : `${(((population_valeur1 / population_valeur) - 1) * 100).toFixed(1)} % d'augmentation`}        
-      </div>
-
+  <div style="position: absolute; top: 60px; left: 20px; font-family: sans-serif; text-align: left;">
+    
+    <!-- Valeur principale (Nombre d'habitants en 2022) -->
+    <div style="font-size: 28px; font-weight: bold; color: #174695; line-height: 1;">
+      ${!isGeoSelected ? "—" : (population_valeur1 !== null ? population_valeur1.toLocaleString("fr-FR") : "Non disponible")} habitants
     </div>
+    
+    <!-- Calcul de l'évolution en pourcentage -->
+    <div style="font-size: 15px; color: #FB5A5A; margin-top: 5px;">
+     soit ${!isGeoSelected || population_valeur1 === null || population_valeur === null 
+        ? "" 
+        : `${(((population_valeur1 / population_valeur) - 1) * 100).toFixed(1)} % d'augmentation`}        
+    </div>
+
   </div>
 `
 ```
-
-
 :::
 
-::: {.card title="Nombre d'habitants en 2016"}
+::: {.card title="Population en 2016"}
 
-```{ojs population}
+```{ojs population2}
 population_brut = isGeoSelected
 ? db.query(`
   SELECT OBS_VALUE
@@ -336,25 +320,21 @@ population_brut = isGeoSelected
 population_valeur = population_brut.length > 0 ? population_brut[0].OBS_VALUE : null;
 ```
 
-```{ojs representation}
+```{ojs representation2}
 htl.html`
-  <div style="display: flex; align-items: center; justify-content: center; height: 100%; min-height: 250px;">
-    <div style="text-align: center; font-family: sans-serif;">
-      <div style="font-size: 14px; color: #555; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">
-        Nombre d'habitants${isGeoSelected ? `– ${selection_geo.GEO_LABEL}` : ""} 
-      </div>
-      <div style="font-size: 48px; font-weight: bold; color: #145CBF;">
-        ${!isGeoSelected ? "—" : (population_valeur !== null ? population_valeur.toLocaleString("fr-FR") : "Non disponible")}
-      </div>
+  <div style="position: absolute; top: 61px; left: 20px; font-family: sans-serif;">
+    <div style="font-size: 28px; font-weight: bold; color: #174695; line-height: 1;">
+      ${!isGeoSelected ? "—" : (population_valeur !== null ? population_valeur.toLocaleString("fr-FR") : "Non disponible")} habitants
     </div>
   </div>
 `
 ```
 :::
 
-::: {.card title="Salaire moyen en 2023"}
+#### {height="28%" layout-ncol=2}
+::: {.card title="Salaire mensuel moyen"}
 
-```{ojs population}
+```{ojs population3}
 salaire_brut = isGeoSelected
 ? db.query(`
   SELECT OBS_VALUE
@@ -370,26 +350,123 @@ salaire_brut = isGeoSelected
 salaire_valeur = salaire_brut.length > 0 ? salaire_brut[0].OBS_VALUE : null;
 ```
 
-```{ojs representation}
+```{ojs representation3}
 htl.html`
-  <div style="display: flex; align-items: center; justify-content: center; height: 100%; min-height: 250px;">
-    <div style="text-align: center; font-family: sans-serif;">
-      <div style="font-size: 14px; color: #555; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">
-        Salaire moyen en 2023 ${isGeoSelected ? `– ${selection_geo.GEO_LABEL}` : ""} 
-      </div>
-      <div style="font-size: 48px; font-weight: bold; color: #145CBF;">
-        ${!isGeoSelected ? "—" : (salaire_valeur !== null ? salaire_valeur.toLocaleString("fr-FR") : "Non disponible")}
-      </div>
+  <div style="position: absolute; top: 61px; left: 20px; font-family: sans-serif;">
+    <div style="font-size: 28px; font-weight: bold; color: #174695; line-height: 1;">
+      ${!isGeoSelected ? "—" : (salaire_valeur !== null ? salaire_valeur.toLocaleString("fr-FR") : "Non disponible")} €
     </div>
   </div>
 `
 ```
-
 :::
+
+::: {.card title="Nombre d'entreprises créées"}
+
+```{ojs population4}
+creation_brut = isGeoSelected
+? db.query(`
+  SELECT OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '2025'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'DEN_G1'
+    AND TAB_MEASURE_LABEL = 'Nombre de nouvelles unités légales enregistrées'
+`)
+: [];
+
+creation_valeur = creation_brut.length > 0 ? creation_brut[0].OBS_VALUE : null;
+```
+
+```{ojs representation4}
+htl.html`
+  <div style="position: absolute; top: 61px; left: 20px; font-family: sans-serif;">
+    <div style="font-size: 28px; font-weight: bold; color: #174695; line-height: 1;">
+      ${!isGeoSelected ? "—" : (creation_valeur !== null ? creation_valeur.toLocaleString("fr-FR") : "Non disponible")}
+    </div>
+  </div>
+`
+```
+:::
+
+#### {height="44%"}
+
+::: {.card title="Etablissements scolaires"}
+
+```{ojs result_calc_ecoles}
+//| output: false
+
+equip_brut3 = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE TIME_PERIOD = '2024'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'EQUIP_T3'
+`)
+: [];
+
+
+function classer_equipements3(label) {
+  if (!label) return null;
+  let txt = label.toLowerCase();
+
+  //if (txt.includes("bibliothèque")) return "Bibliothèque";
+  if (txt.includes("collège")) return "Collège";
+  if (txt.includes("maternelle") || txt.includes("primaire") || txt.includes("élémentaire")) return "École";
+  if (txt.includes("général") || txt.includes("technologique") || txt.includes("professionnel") || txt.includes("agricole")) return "Lycée";
+  
+  return null; 
+}
+
+equip_mutate3 = equip_brut3.map(function(d) {
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    équipements: classer_equipements3(d.TAB_MEASURE_LABEL)
+  };
+}).filter(d => d.équipements !== null);
+
+equip_groupes3 = d3.rollups(
+  equip_mutate3,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.équipements; }
+);
+
+equip_summarise3 = equip_groupes3.map(function(g) {
+  return { équipements: g[0], total_groupe: g[1] };
+});
+
+total3 = d3.sum(equip_summarise3, function(d) { return d.total_groupe; });
+
+equip3 = equip_summarise3.map(function(d) {
+  return {
+    équipements: d.équipements,
+    total_groupe: d.total_groupe,
+    total3: total3,
+    part_groupe: total3 > 0 ? (d.total_groupe / total3) * 100 : 0
+  };
+});
+
+```
+
+```{ojs result_table}
+Inputs.table(equip3, {
+  columns: ["équipements", "total_groupe"],
+  header: {
+    équipements: "Établissements scolaires",
+    total_groupe: "Nombre"
+  }
+})
+```
+:::
+
+### {width="40%"}
 
 ::: {.card title="Pyramide des âges"}
 
-```{ojs result_calc}
+```{ojs result_calc_pyramide}
 //| output: false
 
 equip_brut = isGeoSelected
@@ -490,8 +567,7 @@ ordre_ages_pyramide = ordre_ages.slice().reverse();
 
 ```{ojs result_pyramide_plot}
 Plot.plot({
-  title: isGeoSelected ? `Pyramide des âges – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
-  subtitle: `Année 2022`,
+  title: '',
   marginLeft: 60,
   marginRight: 20,
   height: 400,
@@ -503,7 +579,7 @@ Plot.plot({
   },
   y: {
     domain: ordre_ages_pyramide,
-    label: "Tranche d'âge"
+    label: ""
   },
   color: {
     domain: ["Homme", "Femme"],
@@ -521,115 +597,4 @@ Plot.plot({
   ]
 })
 ```
-
-:::
-
-::: {.card title="Nombre d'entreprises créées en 2025"}
-
-```{ojs population}
-creation_brut = isGeoSelected
-? db.query(`
-  SELECT OBS_VALUE
-  FROM read_parquet('${chemin_s3}')
-  WHERE TIME_PERIOD = '2025'
-    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
-    AND GEO = '${selection_geo.GEO}'
-    AND ID_TAB = 'DEN_G1'
-    AND TAB_MEASURE_LABEL = 'Nombre de nouvelles unités légales enregistrées'
-`)
-: [];
-
-creation_valeur = creation_brut.length > 0 ? creation_brut[0].OBS_VALUE : null;
-```
-
-```{ojs representation}
-htl.html`
-  <div style="display: flex; align-items: center; justify-content: center; height: 100%; min-height: 250px;">
-    <div style="text-align: center; font-family: sans-serif;">
-      <div style="font-size: 14px; color: #555; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px;">
-        Salaire moyen en 2023 ${isGeoSelected ? `– ${selection_geo.GEO_LABEL}` : ""} 
-      </div>
-      <div style="font-size: 48px; font-weight: bold; color: #145CBF;">
-        ${!isGeoSelected ? "—" : (creation_valeur !== null ? creation_valeur.toLocaleString("fr-FR") : "Non disponible")}
-      </div>
-    </div>
-  </div>
-`
-```
-
-:::
-
-::: {.card title="Etablissements scolaires en 2024"}
-
-```{ojs result_calc}
-//| output: false
-
-equip_brut3 = isGeoSelected
-? db.query(`
-  SELECT TAB_MEASURE_LABEL, OBS_VALUE
-  FROM read_parquet('${chemin_s3}')
-  WHERE TIME_PERIOD = '2024'
-    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
-    AND GEO = '${selection_geo.GEO}'
-    AND ID_TAB = 'EQUIP_T3'
-`)
-: [];
-
-
-function classer_equipements3(label) {
-  if (!label) return null;
-  let txt = label.toLowerCase();
-
-  if (txt.includes("bibliothèque")) return "Bibliothèque";
-  if (txt.includes("collège")) return "Collège";
-  if (txt.includes("maternelle") || txt.includes("primaire") || txt.includes("élémentaire")) return "École";
-  if (txt.includes("général") || txt.includes("technologique") || txt.includes("professionnel") || txt.includes("agricole")) return "Lycée";
-  
-  return null; 
-}
-
-equip_mutate3 = equip_brut3.map(function(d) {
-  return {
-    OBS_VALUE: d.OBS_VALUE,
-    équipements: classer_equipements3(d.TAB_MEASURE_LABEL)
-  };
-}).filter(d => d.équipements !== null);
-
-equip_groupes3 = d3.rollups(
-  equip_mutate3,
-  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
-  function(d) { return d.équipements; }
-);
-
-equip_summarise3 = equip_groupes3.map(function(g) {
-  return { équipements: g[0], total_groupe: g[1] };
-});
-
-total3 = d3.sum(equip_summarise3, function(d) { return d.total_groupe; });
-
-equip3 = equip_summarise3.map(function(d) {
-  return {
-    équipements: d.équipements,
-    total_groupe: d.total_groupe,
-    total3: total3,
-    part_groupe: total3 > 0 ? (d.total_groupe / total3) * 100 : 0
-  };
-});
-```
-
-```{ojs result_table}
-equip_pour_tableau3 = {
-  let data = equip3.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
-  return data;
-}
-
-Inputs.table(equip_pour_tableau3, {
-  columns: ["équipements", "total_groupe"],
-  header: {
-    équipements: "Établissements scolaires ou culturels",
-    total_groupe: "Nombre"
-  }
-})
-```
-
 :::
