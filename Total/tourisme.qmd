@@ -357,39 +357,92 @@ equip_trie1 = equip1.sort((a, b) => ordre_etoiles.indexOf(a.etoiles) - ordre_eto
 ```
 
 ```{ojs result_plot}
-Plot.plot({
-  title: isGeoSelected ? `Capacité des hôtels au 1er janvier ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
-  marginBottom: 50,
-  x: { 
-    domain: ordre_etoiles,
-    label: null 
-  },
-  y: { 
-    label: "Nombre de places", 
-    grid: true 
-  },
-  marks: [
-    Plot.barY(equip_trie1, { x: "etoiles", y: "total_groupe", fill: "#174695" }),
-    Plot.ruleY([0])
-  ]
-})
+mon_graphique_final = {
+  // 1. On génère le graphique 
+  const p = Plot.plot({
+    title: `Capacité des hôtels au 1er janvier`,
+    marginBottom: 50,
+    x: { domain: ordre_etoiles, label: null },
+    y: { label: "Nombre de places", grid: true },
+    marks: [
+      Plot.barY(equip_trie1, { x: "etoiles", y: "total_groupe", fill: "#174695" }),
+      Plot.ruleY([0])
+    ]
+  });
+
+  // 2. On crée le bouton de téléchargement
+  const btn = html`<button style="position: absolute; top: 10px; right: 10px; background: white; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555; z-index: 100;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "white";
+  
+  // Au clic on cache temporairement le bouton
+  btn.onclick = async () => {
+    btn.style.display = "none"; 
+    
+    const html2pdf = await require("html2pdf.js");
+    await html2pdf().set({
+      margin: 15,
+      filename: `Graphique_Hotels_${selection_geo?.GEO_LABEL || 'Territoire'}.pdf`,
+      html2canvas: { scale: 2 }
+    }).from(p).save(); // On exporte le graphique
+    
+    btn.style.display = "block"; // On réaffiche le bouton
+  };
+
+  // 3. On attache le bouton à l'intérieur du graphique
+  p.style.position = "relative"; // Indispensable pour que le bouton se positionne par rapport au cadre du graphe
+  p.appendChild(btn);
+
+  // 4. On renvoie le graphique 
+  return p;
+}
 ```
 
 ```{ojs result_table}
+// 1. Tableau
 equip_pour_tableau1 = {
   let data = equip_trie1.slice(); 
   data.push({ etoiles: "TOTAL", total_groupe: total1 });
   return data;
 }
 
-Inputs.table(equip_pour_tableau1, {
+// 2. On stocke le tableau dans une variable
+mon_tableau = Inputs.table(equip_pour_tableau1, {
   columns: ["etoiles", "total_groupe"],
   header: {
     etoiles: "Catégorie",
     total_groupe: "Capacité (nombre de places)"
   }
-})
+});
+
+// 3. Bouton pour le tableau
+btn_pdf_tableau = {
+  const btn = html`<button style="background: transparent; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "transparent";
+  
+  btn.onclick = async () => {
+    const html2pdf = await require("html2pdf.js");
+    html2pdf().set({
+      margin: 15,
+      filename: `Tableau_Hotels_${selection_geo?.GEO_LABEL || 'Territoire'}.pdf`,
+      html2canvas: { scale: 2 }
+    }).from(mon_tableau).save();
+  };
+  return btn;
+}
+
+// 4. Affichage
+html`
+<div style="text-align: right; margin-bottom: 5px;">
+  ${btn_pdf_tableau}
+</div>
+<div>${mon_tableau}</div>
+`
 ```
+
 
 # Campings
 
@@ -474,22 +527,41 @@ equip_trie2 = equip2.sort((a, b) => classement_etoiles.indexOf(a.etoiles) - clas
 ```
 
 ```{ojs result_plot}
-Plot.plot({
-  title: isGeoSelected ? `Capacité des hôtels au 1er janvier ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
-  marginBottom: 50,
-  x: { 
-    domain: classement_etoiles,
-    label: null 
-  },
-  y: { 
-    label: "Nombre de places", 
-    grid: true 
-  },
-  marks: [
-    Plot.barY(equip_trie2, { x: "etoiles", y: "total_groupe", fill: "#174695" }),
-    Plot.ruleY([0])
-  ]
-})
+mon_graphique_final2 = {
+  const p = Plot.plot({
+    title: `Capacité des campings au 1er janvier`,
+    marginBottom: 50,
+    x: { domain: classement_etoiles, label: null },
+    y: { label: "Nombre de places", grid: true },
+    marks: [
+      Plot.barY(equip_trie2, { x: "etoiles", y: "total_groupe", fill: "#174695" }),
+      Plot.ruleY([0])
+    ]
+  });
+
+  const btn = html`<button style="position: absolute; top: 10px; right: 10px; background: white; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555; z-index: 100;">📥 PDF</button>`;
+
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "white";
+  
+  btn.onclick = async () => {
+    btn.style.display = "none";
+    
+    const html2pdf = await require("html2pdf.js");
+    await html2pdf().set({
+      margin: 15,
+      filename: `Graphique_Hotels_2_${selection_geo?.GEO_LABEL || 'Territoire'}.pdf`,
+      html2canvas: { scale: 2 }
+    }).from(p).save();
+    
+    btn.style.display = "block";
+  };
+
+  p.style.position = "relative";
+  p.appendChild(btn);
+
+  return p;
+}
 ```
 
 ```{ojs result_table}
@@ -499,13 +571,37 @@ equip_pour_tableau2 = {
   return data;
 }
 
-Inputs.table(equip_pour_tableau2, {
+mon_tableau2 = Inputs.table(equip_pour_tableau2, {
   columns: ["etoiles", "total_groupe"],
   header: {
     etoiles: "Catégorie",
     total_groupe: "Capacité (nombre de places)"
   }
-})
+});
+
+btn_pdf_tableau2 = {
+  const btn = html`<button style="background: transparent; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "transparent";
+  
+  btn.onclick = async () => {
+    const html2pdf = await require("html2pdf.js");
+    html2pdf().set({
+      margin: 15,
+      filename: `Tableau_Hotels_2_${selection_geo?.GEO_LABEL || 'Territoire'}.pdf`,
+      html2canvas: { scale: 2 }
+    }).from(mon_tableau2).save(); 
+  };
+  return btn;
+}
+
+html`
+<div style="text-align: right; margin-bottom: 5px;">
+  ${btn_pdf_tableau2}
+</div>
+<div>${mon_tableau2}</div>
+`
 ```
 
 # Autres hébergements collectifs
@@ -567,17 +663,42 @@ total3 = d3.sum(equip_synthese3, function(d) { return d.total_groupe; });
 ```
 
 ```{ojs result_plot}
-Plot.plot({
-  title: isGeoSelected ? `Nombre d'autres hébergements collectifs au 1er janvier ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
-  marginBottom: 50,
-  marginLeft: 200,
-  x: { label: "Nombre de lits", grid: true },
-  y: { label: null },
-  marks: [
-    Plot.barX(equip_synthese3, { y: "categorie", x: "total_groupe", fill: "#174695" }),
-    Plot.ruleX([0])
-  ]
-})
+mon_graphique_final3 = {
+  const p = Plot.plot({
+    title: `Nombre d'autres hébergements collectifs au 1er janvier`,
+    marginBottom: 50,
+    marginLeft: 200,
+    x: { label: "Nombre de lits", grid: true },
+    y: { label: null },
+    marks: [
+      Plot.barX(equip_synthese3, { y: "categorie", x: "total_groupe", fill: "#174695" }),
+      Plot.ruleX([0])
+    ]
+  });
+
+  const btn = html`<button style="position: absolute; top: 10px; right: 10px; background: white; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555; z-index: 100;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "white";
+  
+  btn.onclick = async () => {
+    btn.style.display = "none";
+    
+    const html2pdf = await require("html2pdf.js");
+    await html2pdf().set({
+      margin: 15,
+      filename: `Graphique_Autres_Hebergements_${selection_geo?.GEO_LABEL || 'Territoire'}.pdf`,
+      html2canvas: { scale: 2 }
+    }).from(p).save();
+    
+    btn.style.display = "block";
+  };
+
+  p.style.position = "relative";
+  p.appendChild(btn);
+
+  return p;
+}
 ```
 
 ```{ojs result_table}
@@ -587,12 +708,37 @@ equip_pour_tableau3 = {
   return data;
 }
 
-Inputs.table(equip_pour_tableau3, {
+mon_tableau3 = Inputs.table(equip_pour_tableau3, {
   columns: ["categorie", "total_groupe"],
   header: {
     categorie: "Type d'hébergement",
     total_groupe: "Nombre de lits"
   }
-})
+});
+
+btn_pdf_tableau3 = {
+  const btn = html`<button style="background: transparent; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "transparent";
+  
+  btn.onclick = async () => {
+    const html2pdf = await require("html2pdf.js");
+    html2pdf().set({
+      margin: 15,
+      filename: `Tableau_Autres_Hebergements_${selection_geo?.GEO_LABEL || 'Territoire'}.pdf`,
+      html2canvas: { scale: 2 }
+    }).from(mon_tableau3).save();
+  };
+  return btn;
+}
+
+
+html`
+<div style="text-align: right; margin-bottom: 5px;">
+  ${btn_pdf_tableau3}
+</div>
+<div>${mon_tableau3}</div>
+`
 ```
 
