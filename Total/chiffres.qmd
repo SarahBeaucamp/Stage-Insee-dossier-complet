@@ -158,7 +158,6 @@ include-in-header:
           { label: "Naissances et décès domiciliés", href: "naissances_deces.html" },
           { label: "Nombre d'électeurs inscrits sur liste principale par élection", href: "electeurs.html" },
           { label: "Chiffres clés", href: "chiffres.html" },
-          { label: "Chiffres clés version 2", href: "chiffres_v2.html" }
         ];
         
         var brandContainer = document.querySelector("#quarto-dashboard-header .navbar-brand-container");
