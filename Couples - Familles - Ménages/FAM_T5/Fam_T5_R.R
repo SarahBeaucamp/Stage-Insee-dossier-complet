@@ -3,6 +3,7 @@
 library(DBI)
 library(duckdb)
 library(dplyr)
+library(ggplot2)
 
 # 1. Créer ou ouvrir une base DuckDB locale (elle sera stockée dans un fichier 'base.duckdb')
 con <- dbConnect(duckdb(), dbdir = "base.duckdb")
@@ -37,7 +38,7 @@ Ordre_nb <- c(
 )
 
 r <- dossier_complet %>%
-  filter(GEO == "44109", ID_TAB == "FAM_T4") %>%
+  filter(GEO == "44109", ID_TAB == 'DEN_G1') %>%
   distinct(TAB_MEASURE_LABEL) %>%
   collect()
 
