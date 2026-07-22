@@ -74,3 +74,11 @@ r <- base_filtree %>%
   mutate(NOM_DANS_BASE_LARGE = make.names(TAB_MEASURE_LABEL))
 
 View(r)
+
+# Résumé statistique de 4 variables de création d'entreprises
+base_sans_na %>%
+  # On isole toutes les colonnes de créations d'unités légales
+  select(starts_with("Nombre.de.nouvelles.unités.légales.enregistrées")) %>%
+  # On ne garde que les 4 premières pour que ce soit lisible
+  select(1:4) %>%
+  summary()

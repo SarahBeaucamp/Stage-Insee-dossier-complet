@@ -74,54 +74,51 @@ noms_colonnes <- names(base_large)
 print(noms_colonnes)
 
 
-# Etape 3 : Création des taux 
-
+# Etape 3 : Création des taux
 library(dplyr)
+library(tidyr)
 
 base_prete_rf <- base_large %>%
   mutate(
-    # --- 1. CRÉATION DU NOUVEAU Y : L'ÉCART GLOBAL HOMMES-FEMMES ---
+    # --- 1. CRÉATION DU Y ET AJUSTEMENTS D'ÉCHELLE ---
+    Taux.de.pauvreté..en....au.seuil.de.60...de.la.médiane.du.niveau.de.vie = .data[["Taux.de.pauvreté..en....au.seuil.de.60...de.la.médiane.du.niveau.de.vie"]] / 100,
     
-    # Calcul du taux des femmes = (Femmes en emploi + Femmes au chômage) / Population Femmes
     POP_FEMME = (.data[["Population...De.15.à.24.ans..x.Femme"]] + .data[["Population...De.25.à.39.ans.x.Femme"]] + .data[["Population...De.40.à.54.ans.x.Femme"]] + .data[["Population...De.55.à.64.ans.x.Femme"]]),
-    
     TAUX_F = (.data[["Population...De.15.à.64.ans.x.Actif.occupé.x.Femme"]] + .data[["Population...De.15.à.64.ans.x.Chômeur.x.Femme"]]) / POP_FEMME,
     
-    # Calcul du taux des hommes = (Hommes en emploi + Hommes au chômage) / Population Hommes
     POP_HOMME = (.data[["Population...De.15.à.24.ans..x.Homme"]] + .data[["Population...De.25.à.39.ans.x.Homme"]] + .data[["Population...De.40.à.54.ans.x.Homme"]] + .data[["Population...De.55.à.64.ans.x.Homme"]]),
-    
     TAUX_H = (.data[["Population...De.15.à.64.ans.x.Actif.occupé.x.Homme"]] + .data[["Population...De.15.à.64.ans.x.Chômeur.x.Homme"]]) / POP_HOMME,
     
-    # Ta véritable variable cible à prédire
     Y_GAP_ACT_GLOBAL = TAUX_H - TAUX_F,
     
-    # --- 2. MACRO-DÉNOMINATEUR : LOGEMENTS ---
+    # --- 2. LOGEMENTS ---
     across(
-      .cols = matches("logement|r.sidence", ignore.case = TRUE) & 
-        !matches("Logements", ignore.case = TRUE),
+      .cols = starts_with("Logements...") | starts_with("Nombre.de.pièces..."),
       .fns = ~ .x / .data[["Logements"]]
     ),
     
-    # --- 3. MACRO-DÉNOMINATEUR : FAMILLES & MÉNAGES ---
+    # --- 3. MÉNAGES ---
     across(
-      .cols = matches("famille|m.nage", ignore.case = TRUE) & 
-        !matches("Logements|revenu", ignore.case = TRUE),
-      .fns = ~ .x / .data[["Logements"]]
+      .cols = starts_with("Population.des.ménages...") & !matches("^Population.des.ménages$"),
+      .fns = ~ .x / .data[["Population.des.ménages"]]
     ),
     
-    # --- 4. MACRO-DÉNOMINATEUR : EMPLOI & FORMATION ---
-    POP_ACT = (.data[["Population...De.15.à.64.ans.x.Actif.occupé"]] + .data[["Population...De.15.à.64.ans.x.Chômeur"]]),
-    
+    # --- 4. EMPLOIS ---
     across(
-      .cols = matches("emploi|ch.mage|actif|dipl.me|formation", ignore.case = TRUE) & 
-        !matches("salaire|revenu|POP_ACT", ignore.case = TRUE),
-      .fns = ~ .x / POP_ACT
+      .cols = starts_with("Nombre.d.emplois...") & !matches("^Nombre.d.emplois$"),
+      .fns = ~ .x / .data[["Nombre.d.emplois"]]
     ),
     
-    # --- 5. MACRO-DÉNOMINATEUR : POPULATION TOTALE ---
+    # --- 5. POPULATION ACTIVE ---
     across(
-      .cols = matches(".quipement|tourisme|population", ignore.case = TRUE) & 
-        !matches("salaire|revenu|densit.|Population", ignore.case = TRUE),
+      .cols = starts_with("Population...Actif.") & !matches("^Population...Actif$"),
+      .fns = ~ .x / .data[["Population...Actif"]]
+    ),
+    
+    # --- 6. POPULATION TOTALE (Correction du "s" à Nombre.de.place) ---
+    across(
+      .cols = (starts_with("Population...") | starts_with("Établissements...") | starts_with("Nombre.de.place") | starts_with("Nombre.d.équipements...") | starts_with("Nombre.de.nouvelles") | starts_with("Nombre.de.personnes.seules...") | starts_with("Nombre.de.famille")) & 
+        !matches("^Population$|^Population.des.ménages$|^Population...Actif$|^Population...Actif."),
       .fns = ~ .x / .data[["Population"]]
     )
   ) %>%
@@ -129,37 +126,52 @@ base_prete_rf <- base_large %>%
   # --- SÉCURITÉ MATHÉMATIQUE ---
   mutate(across(everything(), ~ ifelse(is.infinite(.) | is.nan(.), 0, .))) %>%
   
-  # --- PURGE DES VARIABLES INTERMÉDIAIRES ---
-  # On supprime les taux isolés pour que le modèle ne triche pas et se concentre sur l'écart
-  select(-TAUX_F, -TAUX_H, -POP_HOMME, -POP_FEMME, -POP_ACT)
+  # --- LA GRANDE PURGE ---
+  select(
+    -TAUX_F, -TAUX_H, -POP_FEMME, -POP_HOMME, 
+    -Population, -Logements, -Population.des.ménages, -Population...Actif, -Nombre.d.emplois
+  )
 
-# Vérification finale de ta cible
-summary(base_prete_rf$Y_GAP_ACT_GLOBAL)
-
+# --- LE FILTRE FINAL ---
 base_finale <- base_prete_rf %>%
-  # On supprime toutes les lignes où notre cible est NA
   filter(!is.na(Y_GAP_ACT_GLOBAL)) %>%
-  
-  # On retire aussi les variables géographiques pour la modélisation
   select(-GEO, -GEO_LABEL)
 
-# Vérification finale (le compteur de NAs sur ton Y devrait disparaître)
-summary(base_finale$Y_GAP_ACT_GLOBAL)
+# --- DIAGNOSTIC DES VALEURS MANQUANTES (NAs) ---
+compte_na <- colSums(is.na(base_finale))
+valeurs_manquantes <- compte_na[compte_na > 0]
+print("--- BILAN DES NAs RESTANTS ---")
+print(valeurs_manquantes)
 
-head(base_finale)
-
-# Détection de variables mal converties 
-
+# --- DÉTECTION DE VARIABLES MAL CONVERTIES ---
 colonnes_suspectes <- base_finale %>%
-  # On ne regarde que les colonnes numériques
   select(where(is.numeric)) %>%
-  # On isole celles dont la valeur maximale dépasse 1.5 (on laisse une petite marge d'erreur)
-  select(where(~ max(., na.rm = TRUE) > 1.5)) %>%
+  select(where(~ max(., na.rm = TRUE) > 1)) %>%
   names()
 
-# On retire de cette liste les exceptions qu'on a VOLONTAIREMENT gardées en absolu
 colonnes_suspectes <- colonnes_suspectes[!grepl("revenu|salaire|densit.", colonnes_suspectes, ignore.case = TRUE)]
 
-# Affichage du résultat
 print(paste("Nombre de variables suspectes détectées :", length(colonnes_suspectes)))
 print(colonnes_suspectes)
+
+# --- LE BOUCHAGE DES TROUS (Remplacement des NAs par 0) ---
+base_sans_na <- base_finale %>%
+  mutate(across(everything(), ~ replace_na(., 0)))
+
+total_nas_restants <- sum(is.na(base_sans_na))
+print(paste("Nombre total de NAs restants dans la base :", total_nas_restants))
+
+head(base_sans_na)
+
+# Résumé statistique de 4 variables de création d'entreprises
+base_sans_na %>%
+  # On isole toutes les colonnes de créations d'unités légales
+  select(starts_with("Nombre.de.nouvelles.unités.légales.enregistrées")) %>%
+  # On ne garde que les 4 premières pour que ce soit lisible
+  select(1:4) %>%
+  summary()
+
+# Affichage du résumé statistique exclusif des 27 variables
+base_sans_na %>%
+  select(all_of(colonnes_suspectes)) %>%
+  summary()
