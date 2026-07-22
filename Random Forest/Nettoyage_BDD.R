@@ -175,3 +175,57 @@ base_sans_na %>%
 base_sans_na %>%
   select(all_of(colonnes_suspectes)) %>%
   summary()
+
+
+# ____________DEBUT RANDOM FOREST ________________
+
+# Echantillonnage
+install.packages("rsample")
+library(rsample)
+
+# --- 1. SÉPARATION DE L'ÉCHANTILLON TEST (20%) ---
+set.seed(42)
+split_principal <- initial_split(base_sans_na, prop = 0.80)
+base_train_val  <- training(split_principal) # 80% pour train + val
+base_test       <- testing(split_principal)  # 20% pour le test final
+
+# --- 2. SÉPARATION DU RESTE EN APPRENTISSAGE ET VALIDATION ---
+# Sur les 80% restants, on met 75% pour train (soit 60% du total) et 25% pour val (soit 20% du total)
+set.seed(42)
+split_interne <- initial_split(base_train_val, prop = 0.75)
+base_train    <- training(split_interne) # 60% du total
+base_val      <- testing(split_interne)  # 20% du total
+
+# Vérification des tailles pour s'assurer que tout est correct
+print(paste("Taille Train :", nrow(base_train)))
+print(paste("Taille Validation :", nrow(base_val)))
+print(paste("Taille Test :", nrow(base_test)))
+
+
+install.packages("ranger")
+library(ranger)
+
+# --- 1. ENTRAÎNEMENT DU MODÈLE DE BASE SUR `base_train` ---
+print("Entraînement de la forêt aléatoire de base...")
+
+modele_base <- ranger(
+  formula = Y_GAP_ACT_GLOBAL ~ ., 
+  data = base_train,
+  num.trees = 500,               # 500 arbres par défaut
+  importance = 'impurity'        # Pour pouvoir analyser l'importance des variables plus tard
+)
+
+# --- 2. ÉVALUATION SUR L'ÉCHANTILLON DE VALIDATION (`base_val`) ---
+# On prédit les valeurs pour l'échantillon de validation
+predictions_val <- predict(modele_base, data = base_val)
+
+# On calcule l'erreur quadratique moyenne (MSE) sur la validation
+# (En lien avec la perte quadratique de ton cours de régression)
+mse_val <- mean((base_val$Y_GAP_ACT_GLOBAL - predictions_val$predictions)^2)
+rmse_val <- sqrt(mse_val)
+
+print(paste("MSE sur l'échantillon de validation :", round(mse_val, 5)))
+print(paste("RMSE sur l'échantillon de validation :", round(rmse_val, 5)))
+
+# Affichage du résumé du modèle
+print(modele_base)
