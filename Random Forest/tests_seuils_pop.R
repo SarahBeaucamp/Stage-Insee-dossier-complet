@@ -74,222 +74,6 @@ noms_colonnes <- names(base_large)
 print(noms_colonnes)
 
 
-# Etape 3 : Création des taux
-library(dplyr)
-library(tidyr)
-
-base_prete_rf <- base_large %>%
-  mutate(
-    # --- 1. CRÉATION DU Y ET AJUSTEMENTS D'ÉCHELLE ---
-    Taux.de.pauvreté..en....au.seuil.de.60...de.la.médiane.du.niveau.de.vie = .data[["Taux.de.pauvreté..en....au.seuil.de.60...de.la.médiane.du.niveau.de.vie"]] / 100,
-    
-    POP_FEMME = (.data[["Population...De.15.à.24.ans..x.Femme"]] + .data[["Population...De.25.à.39.ans.x.Femme"]] + .data[["Population...De.40.à.54.ans.x.Femme"]] + .data[["Population...De.55.à.64.ans.x.Femme"]]),
-    TAUX_F = (.data[["Population...De.15.à.64.ans.x.Actif.occupé.x.Femme"]] + .data[["Population...De.15.à.64.ans.x.Chômeur.x.Femme"]]) / POP_FEMME,
-    
-    POP_HOMME = (.data[["Population...De.15.à.24.ans..x.Homme"]] + .data[["Population...De.25.à.39.ans.x.Homme"]] + .data[["Population...De.40.à.54.ans.x.Homme"]] + .data[["Population...De.55.à.64.ans.x.Homme"]]),
-    TAUX_H = (.data[["Population...De.15.à.64.ans.x.Actif.occupé.x.Homme"]] + .data[["Population...De.15.à.64.ans.x.Chômeur.x.Homme"]]) / POP_HOMME,
-    
-    Y_GAP_ACT_GLOBAL = TAUX_H - TAUX_F,
-    
-    # --- 2. LOGEMENTS ---
-    across(
-      .cols = starts_with("Logements...") | starts_with("Nombre.de.pièces..."),
-      .fns = ~ .x / .data[["Logements"]]
-    ),
-    
-    # --- 3. MÉNAGES ---
-    across(
-      .cols = starts_with("Population.des.ménages...") & !matches("^Population.des.ménages$"),
-      .fns = ~ .x / .data[["Population.des.ménages"]]
-    ),
-    
-    # --- 4. EMPLOIS ---
-    across(
-      .cols = starts_with("Nombre.d.emplois...") & !matches("^Nombre.d.emplois$"),
-      .fns = ~ .x / .data[["Nombre.d.emplois"]]
-    ),
-    
-    # --- 5. POPULATION ACTIVE ---
-    across(
-      .cols = starts_with("Population...Actif.") & !matches("^Population...Actif$"),
-      .fns = ~ .x / .data[["Population...Actif"]]
-    ),
-    
-    # --- 6. POPULATION TOTALE (Correction du "s" à Nombre.de.place) ---
-    across(
-      .cols = (starts_with("Population...") | starts_with("Établissements...") | starts_with("Nombre.de.place") | starts_with("Nombre.d.équipements...") | starts_with("Nombre.de.nouvelles") | starts_with("Nombre.de.personnes.seules...") | starts_with("Nombre.de.famille")) & 
-        !matches("^Population$|^Population.des.ménages$|^Population...Actif$|^Population...Actif."),
-      .fns = ~ .x / .data[["Population"]]
-    )
-  ) %>%
-  
-  # --- SÉCURITÉ MATHÉMATIQUE ---
-  mutate(across(everything(), ~ ifelse(is.infinite(.) | is.nan(.), 0, .))) %>%
-  
-  # --- LA GRANDE PURGE ---
-  select(
-    -TAUX_F, -TAUX_H, -POP_FEMME, -POP_HOMME, 
-    -Population, -Logements, -Population.des.ménages, -Population...Actif, -Nombre.d.emplois,
-    
-    # 1. Le piège de la soustraction (Statuts liés à l'activité)
-    -contains("Actif", ignore.case = TRUE),
-    -contains("Chômeur", ignore.case = TRUE),
-    -contains("inactif", ignore.case = TRUE),
-    -contains("foyer", ignore.case = TRUE),
-    -contains("Retraité", ignore.case = TRUE),
-    -contains("Élève", ignore.case = TRUE),
-    
-    # 2. Le piège des dénominateurs (Uniquement la démographie par sexe)
-    # L'utilisation de matches() avec "^Population" protège tes variables de Salaires !
-    -matches("^Population.*Femme", ignore.case = TRUE),
-    -matches("^Population.*Homme", ignore.case = TRUE)
-  )
-
-# --- LE FILTRE FINAL ---
-base_finale <- base_prete_rf %>%
-  filter(!is.na(Y_GAP_ACT_GLOBAL)) %>%
-  select(-GEO, -GEO_LABEL)
-
-# --- DIAGNOSTIC DES VALEURS MANQUANTES (NAs) ---
-compte_na <- colSums(is.na(base_finale))
-valeurs_manquantes <- compte_na[compte_na > 0]
-print("--- BILAN DES NAs RESTANTS ---")
-print(valeurs_manquantes)
-
-# --- DÉTECTION DE VARIABLES MAL CONVERTIES ---
-colonnes_suspectes <- base_finale %>%
-  select(where(is.numeric)) %>%
-  select(where(~ max(., na.rm = TRUE) > 1)) %>%
-  names()
-
-colonnes_suspectes <- colonnes_suspectes[!grepl("revenu|salaire|densit.", colonnes_suspectes, ignore.case = TRUE)]
-
-print(paste("Nombre de variables suspectes détectées :", length(colonnes_suspectes)))
-print(colonnes_suspectes)
-
-# --- LE BOUCHAGE DES TROUS (Remplacement des NAs par 0) ---
-base_sans_na <- base_finale %>%
-  mutate(across(everything(), ~ replace_na(., 0)))
-
-total_nas_restants <- sum(is.na(base_sans_na))
-print(paste("Nombre total de NAs restants dans la base :", total_nas_restants))
-
-head(base_sans_na)
-
-# Résumé statistique de 4 variables de création d'entreprises
-base_sans_na %>%
-  # On isole toutes les colonnes de créations d'unités légales
-  select(starts_with("Nombre.de.nouvelles.unités.légales.enregistrées")) %>%
-  # On ne garde que les 4 premières pour que ce soit lisible
-  select(1:4) %>%
-  summary()
-
-# Affichage du résumé statistique exclusif des 27 variables
-base_sans_na %>%
-  select(all_of(colonnes_suspectes)) %>%
-  summary()
-
-
-# ____________DEBUT RANDOM FOREST ________________
-
-# Echantillonnage
-install.packages("rsample")
-library(rsample)
-
-# --- 1. SÉPARATION DE L'ÉCHANTILLON TEST (20%) ---
-set.seed(42)
-split_principal <- initial_split(base_sans_na, prop = 0.80)
-base_train_val  <- training(split_principal) # 80% pour train + val
-base_test       <- testing(split_principal)  # 20% pour le test final
-
-# --- 2. SÉPARATION DU RESTE EN APPRENTISSAGE ET VALIDATION ---
-# Sur les 80% restants, on met 75% pour train (soit 60% du total) et 25% pour val (soit 20% du total)
-set.seed(42)
-split_interne <- initial_split(base_train_val, prop = 0.75)
-base_train    <- training(split_interne) # 60% du total
-base_val      <- testing(split_interne)  # 20% du total
-
-# Vérification des tailles pour s'assurer que tout est correct
-print(paste("Taille Train :", nrow(base_train)))
-print(paste("Taille Validation :", nrow(base_val)))
-print(paste("Taille Test :", nrow(base_test)))
-
-#_______________ RANDOM FOREST SIMPLE _____________________
-
-install.packages("ranger")
-library(ranger)
-
-# --- 1. ENTRAÎNEMENT DU MODÈLE DE BASE SUR `base_train` ---
-print("Entraînement de la forêt aléatoire de base...")
-
-modele_base <- ranger(
-  formula = Y_GAP_ACT_GLOBAL ~ ., 
-  data = base_train,
-  num.trees = 500,               # 500 arbres par défaut
-  importance = 'impurity'        # Pour pouvoir analyser l'importance des variables plus tard
-)
-
-# --- 2. ÉVALUATION SUR L'ÉCHANTILLON DE VALIDATION (`base_val`) ---
-# On prédit les valeurs pour l'échantillon de validation
-predictions_val <- predict(modele_base, data = base_val)
-
-# On calcule l'erreur quadratique moyenne (MSE) sur la validation
-# (En lien avec la perte quadratique de ton cours de régression)
-mse_val <- mean((base_val$Y_GAP_ACT_GLOBAL - predictions_val$predictions)^2)
-rmse_val <- sqrt(mse_val)
-
-print(paste("MSE sur l'échantillon de validation :", round(mse_val, 5)))
-print(paste("RMSE sur l'échantillon de validation :", round(rmse_val, 5)))
-
-# Affichage du résumé du modèle
-print(modele_base)
-
-#___________________ BASELINE NAÏVE ____________________
-
-print("--- Modèle Naïf (Prédiction de la moyenne) ---")
-
-# 1. Le modèle naïf apprend bêtement la moyenne sur l'échantillon d'apprentissage
-moyenne_train <- mean(base_train$Y_GAP_ACT_GLOBAL, na.rm = TRUE)
-
-# 2. Il prédit cette même moyenne pour toutes les communes de validation
-predictions_naives <- rep(moyenne_train, nrow(base_val))
-
-# 3. Calcul de l'erreur (MSE et RMSE) de ce modèle basique
-mse_naif <- mean((base_val$Y_GAP_ACT_GLOBAL - predictions_naives)^2)
-rmse_naif <- sqrt(mse_naif)
-
-print(paste("Moyenne prédite :", round(moyenne_train, 5)))
-print(paste("MSE naïf sur validation :", round(mse_naif, 5)))
-print(paste("RMSE naïf sur validation :", round(rmse_naif, 5)))
-
-# __________________ Importance par réduction d'impureté _____________________
-
-library(ggplot2)
-
-# --- 1. EXTRACTION DE L'IMPORTANCE DES VARIABLES ---
-# On récupère les scores d'importance stockés dans le modèle
-importance_donnees <- data.frame(
-  Variable = names(modele_base$variable.importance),
-  Importance = modele_base$variable.importance
-)
-
-# --- 2. SÉLECTION DU TOP 15 ---
-importance_top15 <- importance_donnees %>%
-  arrange(desc(Importance)) %>%
-  head(15)
-
-# --- 3. CRÉATION DU GRAPHIQUE ---
-ggplot(importance_top15, aes(x = reorder(Variable, Importance), y = Importance)) +
-  geom_col(fill = "#2c3e50") +
-  coord_flip() + # On tourne le graphique pour pouvoir lire les noms des variables
-  theme_minimal() +
-  labs(
-    title = "Top 15 des variables expliquant l'écart d'activité Hommes/Femmes",
-    subtitle = "Modèle : Forêt Aléatoire de base (Critère : Impureté)",
-    x = "",
-    y = "Score d'importance"
-  ) +
-  theme(axis.text.y = element_text(size = 9)) # Ajustement de la taille du texte
 
 #_______________Seuil sur les petites communes___________________
 
@@ -366,6 +150,53 @@ base_finale <- base_prete_rf %>%
   filter(!is.na(Y_GAP_ACT_GLOBAL)) %>%
   select(-GEO, -GEO_LABEL)
 
+# --- DIAGNOSTIC DES VALEURS MANQUANTES (NAs) ---
+compte_na <- colSums(is.na(base_finale))
+valeurs_manquantes <- compte_na[compte_na > 0]
+print("--- BILAN DES NAs RESTANTS ---")
+print(valeurs_manquantes)
+
+# --- DÉTECTION DE VARIABLES MAL CONVERTIES ---
+colonnes_suspectes <- base_finale %>%
+  select(where(is.numeric)) %>%
+  select(where(~ max(., na.rm = TRUE) > 1)) %>%
+  names()
+
+colonnes_suspectes <- colonnes_suspectes[!grepl("revenu|salaire|densit.", colonnes_suspectes, ignore.case = TRUE)]
+
+print(paste("Nombre de variables suspectes détectées :", length(colonnes_suspectes)))
+print(colonnes_suspectes)
+
+# --- LE BOUCHAGE DES TROUS (Remplacement des NAs par 0) ---
+base_sans_na <- base_finale %>%
+  mutate(across(everything(), ~ replace_na(., 0)))
+
+total_nas_restants <- sum(is.na(base_sans_na))
+print(paste("Nombre total de NAs restants dans la base :", total_nas_restants))
+
+
+# Echantillonnage
+library(rsample)
+
+# --- 1. SÉPARATION DE L'ÉCHANTILLON TEST (20%) ---
+set.seed(42)
+split_principal <- initial_split(base_sans_na, prop = 0.80)
+base_train_val  <- training(split_principal) # 80% pour train + val
+base_test       <- testing(split_principal)  # 20% pour le test final
+
+# --- 2. SÉPARATION DU RESTE EN APPRENTISSAGE ET VALIDATION ---
+# Sur les 80% restants, on met 75% pour train (soit 60% du total) et 25% pour val (soit 20% du total)
+set.seed(42)
+split_interne <- initial_split(base_train_val, prop = 0.75)
+base_train    <- training(split_interne) # 60% du total
+base_val      <- testing(split_interne)  # 20% du total
+
+# Vérification des tailles pour s'assurer que tout est correct
+print(paste("Taille Train :", nrow(base_train)))
+print(paste("Taille Validation :", nrow(base_val)))
+print(paste("Taille Test :", nrow(base_test)))
+
+
 # ==============================================================================
 # LES FORÊTS ALÉATOIRES AVEC LES DIFFÉRENTS SEUILS DE POPULATION
 # ==============================================================================
@@ -430,3 +261,143 @@ for (seuil in seuils) {
 
 print("--- RÉSULTATS DE L'OPTIMISATION DU SEUIL ---")
 print(resultats_seuils)
+
+# ==============================================================================
+# RECHERCHE FINE DU SEUIL OPTIMAL (Entre 250 et 500 habitants)
+# ==============================================================================
+
+library(rsample)
+library(ranger)
+library(dplyr)
+library(tidyr)
+
+# La fonction seq() permet de créer des sauts de 50
+seuils_fins <- seq(250, 500, by = 50)
+
+# Un tableau vide pour stocker nos résultats, avec la colonne R2_Estime en plus !
+resultats_seuils_fins <- data.frame(
+  Seuil = integer(), 
+  Taille_Train = integer(), 
+  RMSE_Val = numeric(), 
+  RMSE_Naif = numeric(),
+  R2_Estime_Pct = numeric()
+)
+
+print("Début du test fin des seuils de population...")
+
+for (seuil in seuils_fins) {
+  
+  # 1. Filtrage sur la population
+  base_test_seuil <- base_sans_na %>%
+    filter(Population >= seuil) %>%
+    select(-Population) 
+  
+  # 2. Découpage Train / Validation
+  set.seed(42)
+  split_principal <- initial_split(base_test_seuil, prop = 0.80)
+  base_train_val  <- training(split_principal)
+  
+  set.seed(42)
+  split_interne <- initial_split(base_train_val, prop = 0.75)
+  base_train_seuil <- training(split_interne)
+  base_val_seuil   <- testing(split_interne)
+  
+  # 3. Entraînement de la Forêt Aléatoire
+  modele_test <- ranger(
+    formula = Y_GAP_ACT_GLOBAL ~ ., 
+    data = base_train_seuil,
+    num.trees = 500
+  )
+  
+  # 4. Évaluations RMSE
+  preds <- predict(modele_test, data = base_val_seuil)$predictions
+  rmse_modele <- sqrt(mean((base_val_seuil$Y_GAP_ACT_GLOBAL - preds)^2))
+  
+  moy_train <- mean(base_train_seuil$Y_GAP_ACT_GLOBAL, na.rm = TRUE)
+  rmse_naif <- sqrt(mean((base_val_seuil$Y_GAP_ACT_GLOBAL - moy_train)^2))
+  
+  # 5. Calcul mathématique du R2 (en pourcentage)
+  r2_calcule <- (1 - (rmse_modele^2 / rmse_naif^2)) * 100
+  
+  # 6. Sauvegarde des résultats
+  resultats_seuils_fins <- rbind(resultats_seuils_fins, data.frame(
+    Seuil = seuil, 
+    Taille_Train = nrow(base_train_seuil), 
+    RMSE_Val = rmse_modele, 
+    RMSE_Naif = rmse_naif,
+    R2_Estime_Pct = round(r2_calcule, 2) # Arrondi à 2 décimales
+  ))
+}
+
+print("--- RÉSULTATS DE L'OPTIMISATION FINE ---")
+print(resultats_seuils_fins)
+
+# ==============================================================================
+# RECHERCHE FINE DU SEUIL OPTIMAL (Entre 400 et 450 habitants)
+# ==============================================================================
+
+library(rsample)
+library(ranger)
+library(dplyr)
+library(tidyr)
+
+# La fonction seq() permet de créer des sauts de 50
+seuils_fins <- seq(400, 450, by = 10)
+
+# Un tableau vide pour stocker nos résultats, avec la colonne R2_Estime en plus !
+resultats_seuils_fins <- data.frame(
+  Seuil = integer(), 
+  Taille_Train = integer(), 
+  RMSE_Val = numeric(), 
+  RMSE_Naif = numeric(),
+  R2_Estime_Pct = numeric()
+)
+
+print("Début du test fin des seuils de population...")
+
+for (seuil in seuils_fins) {
+  
+  # 1. Filtrage sur la population
+  base_test_seuil <- base_sans_na %>%
+    filter(Population >= seuil) %>%
+    select(-Population) 
+  
+  # 2. Découpage Train / Validation
+  set.seed(42)
+  split_principal <- initial_split(base_test_seuil, prop = 0.80)
+  base_train_val  <- training(split_principal)
+  
+  set.seed(42)
+  split_interne <- initial_split(base_train_val, prop = 0.75)
+  base_train_seuil <- training(split_interne)
+  base_val_seuil   <- testing(split_interne)
+  
+  # 3. Entraînement de la Forêt Aléatoire
+  modele_test <- ranger(
+    formula = Y_GAP_ACT_GLOBAL ~ ., 
+    data = base_train_seuil,
+    num.trees = 500
+  )
+  
+  # 4. Évaluations RMSE
+  preds <- predict(modele_test, data = base_val_seuil)$predictions
+  rmse_modele <- sqrt(mean((base_val_seuil$Y_GAP_ACT_GLOBAL - preds)^2))
+  
+  moy_train <- mean(base_train_seuil$Y_GAP_ACT_GLOBAL, na.rm = TRUE)
+  rmse_naif <- sqrt(mean((base_val_seuil$Y_GAP_ACT_GLOBAL - moy_train)^2))
+  
+  # 5. Calcul mathématique du R2 (en pourcentage)
+  r2_calcule <- (1 - (rmse_modele^2 / rmse_naif^2)) * 100
+  
+  # 6. Sauvegarde des résultats
+  resultats_seuils_fins <- rbind(resultats_seuils_fins, data.frame(
+    Seuil = seuil, 
+    Taille_Train = nrow(base_train_seuil), 
+    RMSE_Val = rmse_modele, 
+    RMSE_Naif = rmse_naif,
+    R2_Estime_Pct = round(r2_calcule, 2) # Arrondi à 2 décimales
+  ))
+}
+
+print("--- RÉSULTATS DE L'OPTIMISATION FINE ---")
+print(resultats_seuils_fins)
