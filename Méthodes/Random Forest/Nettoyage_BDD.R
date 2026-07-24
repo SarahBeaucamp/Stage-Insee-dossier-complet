@@ -216,7 +216,7 @@ print(paste("Taille Test :", nrow(base_test)))
 
 #_______________ RANDOM FOREST SIMPLE _____________________
 
-install.packages("ranger")
+#install.packages("ranger")
 library(ranger)
 
 # --- 1. ENTRAÎNEMENT DU MODÈLE DE BASE SUR `base_train` ---

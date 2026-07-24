@@ -189,6 +189,25 @@ if(rmse_A < rmse_B) {
 }
 
 # ==============================================================================
+# PARTIE 5B (CORRIGÉE) : LES VALEURS SHAP
+# ==============================================================================
+
+library(shapviz)
+library(ggplot2)
+
+print("--- CALCUL DES VALEURS SHAP ---")
+
+# Correction : on spécifie à la fois X_data et X_pred pour éviter l'erreur d'argument
+valeurs_shap <- shapviz(modele_xgb, X_data = X_test, X_pred = X_test)
+
+print("-> Génération du graphique SHAP (Beeswarm) dans l'onglet 'Plots'...")
+
+# Affichage du graphique d'impact
+sv_importance(valeurs_shap, kind = "beeswarm", max_display = 15) +
+  ggtitle("Impact SHAP des 15 variables principales sur l'écart d'activité") +
+  theme_minimal()
+
+# ==============================================================================
 # ÉTAPE 6 : APPLICATION DÉFINITIVE SUR LA BASE COMPLÈTE (Choisir A ou B)
 # ==============================================================================
 
