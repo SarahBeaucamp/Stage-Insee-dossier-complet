@@ -3,11 +3,21 @@
 # ==============================================================================
 
 # Installation des packages nécessaires (décommente si besoin)
-install.packages(c("DoubleML", "mlr3", "mlr3learners"))
-library(DoubleML)
+install.packages("DoubleML")
+install.packages("VIM")
+install.packages("mlr3")
+install.packages("mlr3learners")
+# install.packages("mlr3")         # Commenté car déjà installé
+# install.packages("mlr3learners") # Commenté car déjà installé
+
+# 1. On charge D'ABORD les dépendances profondes
 library(mlr3)
 library(mlr3learners)
 library(xgboost)
+library(VIM)
+
+# 2. On charge ENSUITE l'algorithme causal
+library(DoubleML)
 
 print("--- 1. PRÉPARATION DES DONNÉES POUR LE DOUBLE ML ---")
 

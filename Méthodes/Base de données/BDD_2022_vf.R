@@ -102,6 +102,7 @@ base_prete_rf <- base_large %>%
     -contains("Élève", ignore.case = TRUE),
     -matches("^Population.*Femme", ignore.case = TRUE),
     -matches("^Population.*Homme", ignore.case = TRUE)
+   # -matches("^Population.*ans\\.?$", ignore.case = TRUE)
   )
 
 print("Étape 3 terminée : Purge et calculs effectués.")
