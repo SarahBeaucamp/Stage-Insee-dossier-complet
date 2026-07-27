@@ -38,10 +38,11 @@ dossier_complet <- tbl(con, paste0("read_parquet('", chemin_s3, "')"))
 base_filtree <- dossier_complet %>%
   filter(
     GEO_OBJECT_LABEL == "Commune",
-    str_detect(ID_TAB, "^FAM|^EMP|^EQUIP|^TOU") | 
+    str_detect(ID_TAB, "^EMP|^EQUIP|^TOU") | 
       ID_TAB %in% c("POP_T5", "POP_T6", "REV_T1", "SAL_G1", "SAL_G3", 
                     "SAL_T1", "SAL_G4", "DEN_T1", "DEN_T3", "DEN_T4", "RES_T3", 
-                    "RES_T5", "POP_T3", "POP_T0", "LOG_T7", "FOR_T1", "FOR_T2")
+                    "RES_T5", "POP_T3", "POP_T0", "LOG_T7", "FOR_T1", "FOR_T2",
+                    "FAM_T1", "FAM_T2", "FAM_T3", "FAM_T4", "FAM_G1", "FAM_G2", "FAM_G4")
   ) %>%
   select(GEO, GEO_LABEL, ID_TAB, TAB_MEASURE_LABEL, OBS_VALUE) %>%
   collect()
@@ -110,7 +111,7 @@ print("Étape 3 terminée : Purge et calculs effectués.")
 # ------------------------------------------------------------------------------
 
 base_pre_filtre <- base_prete_rf %>%
-  filter(Population >= 430) %>%              
+  filter(Population >= 500) %>%              
   filter(!is.na(Y_GAP_ACT_GLOBAL)) %>%
   select(-GEO, -GEO_LABEL, -Population)      
 

@@ -1,5 +1,5 @@
 # ==============================================================================
-# ÉTAPE 1 : JUSTIFICATION STATISTIQUE DU SEUIL DE POPULATION (430 HABITANTS)
+# ÉTAPE 1 : JUSTIFICATION STATISTIQUE DU SEUIL DE POPULATION (500 HABITANTS)
 # ==============================================================================
 
 # Chargement des librairies nécessaires
