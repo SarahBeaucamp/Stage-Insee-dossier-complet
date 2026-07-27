@@ -69,3 +69,22 @@ r2_xgb <- (1 - (rmse_xgb^2 / rmse_naif^2)) * 100
 
 print(paste("-> RMSE du XGBoost (Erreur absolue) :", round(rmse_xgb, 5)))
 print(paste("-> R2 du XGBoost (Score final)      :", round(r2_xgb, 2), "%"))
+
+# ==============================================================================
+# PARTIE 5B (CORRIGÉE) : LES VALEURS SHAP
+# ==============================================================================
+install.packages("shapviz")
+library(shapviz)
+library(ggplot2)
+
+print("--- CALCUL DES VALEURS SHAP ---")
+
+# Correction : on spécifie à la fois X_data et X_pred pour éviter l'erreur d'argument
+valeurs_shap <- shapviz(modele_xgb, X_data = X_test, X_pred = X_test)
+
+print("-> Génération du graphique SHAP (Beeswarm) dans l'onglet 'Plots'...")
+
+# Affichage du graphique d'impact
+sv_importance(valeurs_shap, kind = "beeswarm", max_display = 15) +
+  ggtitle("Impact SHAP des 15 variables principales sur l'écart d'activité") +
+  theme_minimal()

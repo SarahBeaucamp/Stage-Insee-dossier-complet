@@ -12,8 +12,6 @@ library(stringr)
 library(tidyr)
 install.packages("missForest")
 library(missForest) # Pour l'Option A
-install.packages("VIM")
-library(VIM)        # Pour l'Option B
 install.packages("Metrics")
 library(Metrics)    # Pour le calcul de la RMSE
 
@@ -40,10 +38,10 @@ dossier_complet <- tbl(con, paste0("read_parquet('", chemin_s3, "')"))
 base_filtree <- dossier_complet %>%
   filter(
     GEO_OBJECT_LABEL == "Commune",
-    str_detect(ID_TAB, "^FAM|^FOR|^EMP|^LOG") | 
-      ID_TAB %in% c("POP_T8", "POP_T9", "REV_T1", "SAL_G1", "SAL_G3", 
-                    "SAL_T1", "SAL_G4", "TOU_T1", "TOU_T2", "TOU_T3", 
-                    "EQUIP_T1", "EQUIP_T2", "EQUIP_T3", "DEN_T1", "POP_T3", "POP_T0")
+    str_detect(ID_TAB, "^FAM|^EMP|^EQUIP|^TOU") | 
+      ID_TAB %in% c("POP_T5", "POP_T6", "REV_T1", "SAL_G1", "SAL_G3", 
+                    "SAL_T1", "SAL_G4", "DEN_T1", "DEN_T3", "DEN_T4", "RES_T3", 
+                    "RES_T5", "POP_T3", "POP_T0", "LOG_T7", "FOR_T1", "FOR_T2")
   ) %>%
   select(GEO, GEO_LABEL, ID_TAB, TAB_MEASURE_LABEL, OBS_VALUE) %>%
   collect()
@@ -132,68 +130,6 @@ compte_na <- colSums(is.na(base_finale))
 print("--- BILAN DES NAs APRÈS MISE À ZÉRO DES ÉQUIPEMENTS ---")
 print(compte_na[compte_na > 0])
 
-
-# ------------------------------------------------------------------------------
-# ÉTAPE 5 : LE CRASH-TEST D'IMPUTATION (BENCHMARK) SUR LES SALAIRES
-# ------------------------------------------------------------------------------
-print("--- DÉBUT DU BENCHMARK D'IMPUTATION ---")
-
-# 1. Isoler une sous-base parfaite et FORCER LE FORMAT NUMÉRIQUE (Correction du bug)
-base_parfaite <- base_finale %>% 
-  drop_na() %>%
-  mutate(across(everything(), as.numeric)) %>% # On force tout en chiffres
-  as.data.frame()                              # On retire le format "tibble" pour missForest
-
-# 2. Échantillon de 2000 communes pour la rapidité du test
-set.seed(42)
-base_test_imputation <- base_parfaite[sample(nrow(base_parfaite), min(2000, nrow(base_parfaite))), ]
-
-# 3. Choix de la variable cible pour le test
-colonne_cible <- names(sort(compte_na, decreasing = TRUE))[1]
-print(paste("La variable testée sera :", colonne_cible))
-
-vraies_valeurs <- base_test_imputation[[colonne_cible]]
-
-# 4. Création des Faux NAs (15% de données détruites)
-set.seed(42)
-index_na <- sample(1:nrow(base_test_imputation), size = 0.15 * nrow(base_test_imputation))
-base_truquee <- base_test_imputation
-base_truquee[[colonne_cible]][index_na] <- NA
-
-print(paste("Nombre de faux NAs générés pour le test :", length(index_na)))
-
-# --- OPTION A : MISSFOREST ---
-print("-> Lancement de missForest (Option A)... (Patiente quelques minutes)")
-imputation_A <- missForest(base_truquee, ntree = 50, maxiter = 5)
-base_A <- imputation_A$ximp
-valeurs_predites_A <- base_A[[colonne_cible]][index_na]
-
-# --- OPTION B : K-NN ---
-print("-> Lancement de k-NN (Option B)...")
-base_B <- kNN(base_truquee, variable = colonne_cible, k = 5, imp_var = FALSE)
-valeurs_predites_B <- base_B[[colonne_cible]][index_na]
-
-# --- RÉSULTATS DU BENCHMARK ---
-vraies_valeurs_na <- vraies_valeurs[index_na]
-rmse_A <- rmse(vraies_valeurs_na, valeurs_predites_A)
-rmse_B <- rmse(vraies_valeurs_na, valeurs_predites_B)
-
-print("--- RÉSULTATS DU MATCH D'IMPUTATION ---")
-print(paste("RMSE Option A (missForest) :", round(rmse_A, 5)))
-print(paste("RMSE Option B (k-NN)       :", round(rmse_B, 5)))
-
-if(rmse_A < rmse_B) {
-  print("LE GAGNANT EST : L'Option A (missForest) ! Tu peux appliquer cette méthode pour ton Lasso.")
-} else {
-  print("LE GAGNANT EST : L'Option B (k-NN) ! Tu peux appliquer cette méthode pour ton Lasso.")
-}
-
-# ==============================================================================
-# ÉTAPE 6 : APPLICATION DÉFINITIVE SUR LA BASE COMPLÈTE (Choisir A ou B)
-# ==============================================================================
-
-# DÉCOMMENTE (Enlève le #) DEVANT LES LIGNES DU BLOC GAGNANT POUR L'EXÉCUTER
-
 # ==============================================================================
 # ÉTAPE 6A : IMPUTATION DÉFINITIVE AVEC MISSFOREST
 # ==============================================================================
@@ -211,10 +147,3 @@ imputation_finale <- missForest(base_finale_propre, ntree = 50, maxiter = 5)
 base_sans_na <- imputation_finale$ximp
 
 print(paste("Nombre total de NAs restants :", sum(is.na(base_sans_na))))
-
-# ------------------------------------------------------------------------------
-# 6.B SI K-NN A GAGNÉ (Exécution plus rapide)
-# ------------------------------------------------------------------------------
-# print("--- APPLICATION DE K-NN SUR LA BASE COMPLÈTE ---")
-# base_sans_na_propre <- kNN(base_finale, k = 5, imp_var = FALSE)
-# print(paste("NAs restants après k-NN :", sum(is.na(base_sans_na_propre))))

@@ -1,5 +1,5 @@
 # Préparation de la base de données avant de pouvoir procéder à la random forest
-
+install.packages("rsample")
 library(DBI)
 library(duckdb)
 library(dplyr)
