@@ -3,7 +3,8 @@
 # ==============================================================================
 
 # Installation du package si nécessaire
-# install.packages("xgboost")
+install.packages("xgboost")
+install.packages("rsample")
 library(xgboost)
 library(rsample)
 library(dplyr)
