@@ -616,7 +616,10 @@ if(length(index_commune) > 0) {
   
   nom_commune <- referentiel_communes_2023$GEO_LABEL[index_commune]
   print(paste("--- ANALYSE CIBLÉE POUR :", nom_commune, "(", code_insee_cible, ") ---"))
-  
+
+  # A0. EXTRACTION DE LA VALEUR RÉELLE DE Y POUR 2023
+  valeur_reelle_Y <- base_2023_sans_na$Y_GAP_ACT_GLOBAL[index_commune]  
+    
   # A. Extraction et alignement strict de la ligne de la commune
   colonnes_entrainement <- colnames(X_train_xgb)
   X_ciblé <- X_2023_xgb[index_commune, colonnes_entrainement, drop = FALSE]
@@ -624,7 +627,12 @@ if(length(index_commune) > 0) {
   # B. PRÉDICTION SIMPLE
   prediction_commune <- predict(modele_xgb, newdata = as.matrix(X_ciblé))
   print(paste("=> L'écart d'activité prédit par XGBoost pour", nom_commune, "est de :", round(prediction_commune, 4)))
-  
+
+  # D. AFFICHAGE COMPARATIF DIRECT DANS LA CONSOLE
+  print(paste("=> Valeur RÉELLE observée en 2023 :", round(valeur_reelle_Y, 4)))
+  print(paste("=> Valeur PRÉDITE par le modèle     :", round(prediction_commune, 4)))
+  print(paste("=> Écart (Erreur de prédiction)      :", round(prediction_commune - valeur_reelle_Y, 4)))  
+    
   # C. CALCUL DES SHAP VALUES (Uniquement pour cette commune)
   # On prend un petit échantillon de référence (50 lignes de X_train) : c'est très léger pour la RAM
   set.seed(42)
@@ -653,3 +661,44 @@ if(length(index_commune) > 0) {
 } else {
   print("❌ La commune n'a pas été trouvée dans le référentiel. Vérifie le code INSEE.")
 }
+
+# ==============================================================================
+# DÉCOMPOSITION D'OAXACA-BLINDER (GROUPES COMPARATIFS CORRIGÉS)
+# ==============================================================================
+
+library(oaxaca)
+library(dplyr)
+
+print("--- 1. CRÉATION DES GROUPES POUR OAXACA ---")
+
+# On définit un critère de comparaison pertinent pour ton mémoire.
+# Par exemple : Comparer Nantes et les grandes communes (> 100 000 habitants, si tu as la population) 
+# OU simplement faire un groupe arbitraire (ex: 1 si code INSEE commence par un département spécifique ou une condition).
+# Ici, pour l'exemple, on recrée proprement la variable de groupe dans base_oaxaca :
+base_oaxaca <- base_oaxaca %>%
+  mutate(
+    # Exemple de séparation : Groupe 1 = Nantes (ou un ensemble de grandes villes), Groupe 2 = Le reste
+    # (Tu peux adapter la condition selon ce que tu veux comparer)
+    groupe_oaxaca = ifelse(GEO == "44109", 1, 0) 
+  )
+
+print(paste("Effectif Groupe 1 :", sum(base_oaxaca$groupe_oaxaca == 1)))
+print(paste("Effectif Groupe 2 :", sum(base_oaxaca$groupe_oaxaca == 0)))
+
+print("--- 2. LANCEMENT DU MODÈLE OAXACA ---")
+
+# Note : Si tu veux comparer deux groupes de taille substantielle (ex: Région A vs Région B), 
+# remplace "groupe_oaxaca" par ta variable binaire contenant de vrais effectifs des deux côtés.
+modele_oaxaca <- oaxaca(
+  formula = Y_GAP_ACT_GLOBAL ~ Taux.de.pauvreté..en....au.seuil.de.60...de.la.médiane.du.niveau.de.vie + 
+    `Population...15.ans.ou.plus.x.Célibataire` + 
+    `Nombre.de.famille` | groupe_oaxaca, 
+  data = base_oaxaca,
+  R = NULL 
+)
+
+print("--- 3. RÉSULTATS DE LA DÉCOMPOSITION ---")
+print(summary(modele_oaxaca))
+
+# Affichage du graphique de décomposition
+plot(modele_oaxaca)
