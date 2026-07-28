@@ -38,7 +38,7 @@ base_filtree_2023 <- dossier_complet_2023 %>%
       ID_TAB %in% c("POP_T7", "POP_T8", "REV_T1", "SAL_G1", "SAL_G3", 
                     "SAL_T1", "SAL_G4", "DEN_T1", "DEN_T3", "DEN_T4", "RES_T3", 
                     "RES_T5", "POP_T4", "POP_T1", "LOG_T10", "FOR_T1", "FOR_T2", "FOR_T3",
-                    "FAM_T1", "FAM_T2", "FAM_T3", "FAM_T4", "FAM_G1", "FAM_G2", "FAM_G4")
+                    "FAM_T1", "FAM_T2", "FAM_T3", "FAM_T4", "FAM_T5", "FAM_G1", "FAM_G2", "FAM_G4", "POP_T9")
   ) %>%
   select(GEO, GEO_LABEL, ID_TAB, TAB_MEASURE_LABEL, OBS_VALUE) %>%
   collect()
@@ -62,11 +62,99 @@ base_large_2023 <- base_filtree_2023 %>%
   # ==============================================================================
 # 0. ALIGNEMENT MANUEL SUR LES NOMS BRUTS (POUR LES 75 VARIABLES MODIFIÉES)
 # ==============================================================================
-rename(
-  # Toujours la syntaxe : "Nom brut 2022" = "Nom brut 2023"
-  "Population - 15 ans ou plus x Ouvriers x Femme" = "Population - Femme * 15 ans ou plus * Ouvriers",
-  "Nombre de famille - Famille comprenant un couple avec enfant résident" = "Nombre de famille - Famille avec enfant(s)" 
-  # ^ À adapter avec tes vrais noms bruts. Ajoute tes autres variables ici, sans oublier les virgules !
+  rename(
+  
+  # --- POPULATION, ÂGE ET CSP ---
+  "Population - De 15 à 24 ans x Agriculteurs" = "Population – De 15 à 24 ans * Agriculteurs",
+  "Population - De 25 à 54 ans x Agriculteurs" = "Population – De 25 à 54 ans * Agriculteurs",
+  "Population - 55 ans ou plus x Agriculteurs" = "Population – 55 ans ou plus * Agriculteurs",
+  
+  "Population - De 15 à 24 ans x Artisans, commerçants et chefs d'entreprise" = "Population – De 15 à 24 ans * Artisans, commerçants et chefs d’entreprise",
+  "Population - De 25 à 54 ans x Artisans, commerçants et chefs d'entreprise" = "Population – De 25 à 54 ans * Artisans, commerçants et chefs d’entreprise",
+  "Population - 55 ans ou plus x Artisans, commerçants et chefs d'entreprise" = "Population – 55 ans ou plus * Artisans, commerçants et chefs d’entreprise",
+  
+  "Population - De 15 à 24 ans x Cadres et professions intellectuelles supérieures" = "Population – De 15 à 24 ans * Cadres et professions intellectuelles supérieures",
+  "Population - De 25 à 54 ans x Cadres et professions intellectuelles supérieures" = "Population – De 25 à 54 ans * Cadres et professions intellectuelles supérieures",
+  "Population - 55 ans ou plus x Cadres et professions intellectuelles supérieures" = "Population – 55 ans ou plus * Cadres et professions intellectuelles supérieures",
+  
+  "Population - De 15 à 24 ans x Professions intermédiaires" = "Population – De 15 à 24 ans * Professions intermédiaires",
+  "Population - De 25 à 54 ans x Professions intermédiaires" = "Population – De 25 à 54 ans * Professions intermédiaires",
+  "Population - 55 ans ou plus x Professions intermédiaires" = "Population – 55 ans ou plus * Professions intermédiaires",
+  
+  "Population - De 15 à 24 ans x Employés" = "Population – De 15 à 24 ans * Employés",
+  "Population - De 25 à 54 ans x Employés" = "Population – De 25 à 54 ans * Employés",
+  "Population - 55 ans ou plus x Employés" = "Population – 55 ans ou plus * Employés",
+  
+  "Population - De 15 à 24 ans x Ouvriers" = "Population – De 15 à 24 ans * Ouvriers",
+  "Population - De 25 à 54 ans x Ouvriers" = "Population – De 25 à 54 ans * Ouvriers",
+  "Population - 55 ans ou plus x Ouvriers" = "Population – 55 ans ou plus * Ouvriers",  
+  # --- ÉTAT CIVIL ---
+  "Population - 15 ans ou plus x Célibataire" = "Population – Célibataire",
+  "Population - 15 ans ou plus x Marié" = "Population – Marié",
+  "Population - 15 ans ou plus x Pacsé" = "Population – Pacsé",
+  "Population - 15 ans ou plus x Divorcé" = "Population – Divorcé",
+  "Population - 15 ans ou plus x Veuf" = "Population – Veuf",
+  "Population - 15 ans ou plus x En concubinage, union libre" = "Population – En concubinage, union libre", 
+  
+  # --- DIPLÔMES ---
+  "Population - Aucun diplôme" = "Population – Aucun diplôme ou certificat d'études primaires",
+  "Population - Aucun diplôme ou BEPC, brevet des collèges, DNB" = "Population – BEPC, brevet élémentaire, brevet des collèges, DNB",
+  "Population - CEP (certificat d'études primaires)" = "Population – CAP, BEP ou diplôme de niveau équivalent",
+  "Population - Diplôme universitaire 2e ou 3e cycle" = "Population – Baccalauréat universitaire ou équivalent : Licence, licence pro, maîtrise, diplôme équivalent de niveau bac+3 ou bac+4",
+  
+  # --- LOGEMENTS ET STRUCTURE FAMILIALE ---
+  "Logements - Résidences principales" = "Logements – Résidences principales",
+  "Logements - Homme seul" = "Population des ménages – Homme seul",
+  "Logements - Femme seule" = "Population des ménages – Femme seule",
+  "Logements - Ménage à une personne" = "Population des ménages – Ménage à une personne",
+  "Logements - Ménage sans famille à plusieurs personnes" = "Population des ménages – Ménage sans famille à plusieurs personnes",
+  "Logements - Ménage comprenant une famille" = "Population des ménages – Ménage comprenant une famille",
+  "Logements - Famille principale monoparentale" = "Population des ménages – Famille principale monoparentale",
+  "Logements - Famille principale couple sans enfants" = "Population des ménages – Famille principale couple sans enfants",
+  "Logements - Famille principale couple avec enfants" = "Population des ménages – Famille principale couple avec enfants",
+  
+  # --- NOMBRE DE FAMILLES (ENFANTS) ---
+  "Nombre de famille - Aucun enfant de moins de 24 ans" = "Nombre de famille – Aucun enfant de moins de 24 ans",
+  "Nombre de famille - 1 enfant de moins de 24 ans" = "Nombre de famille – 1 enfant de moins de 24 ans",
+  "Nombre de famille - 2 enfants de moins de 24 ans" = "Nombre de famille – 2 enfants de moins de 24 ans",
+  "Nombre de famille - 3 enfants de moins de 24 ans" = "Nombre de famille – 3 enfants de moins de 24 ans",
+  "Nombre de famille - 4 enfants ou plus de moins de 24 ans" = "Nombre de famille – 4 enfants ou plus de moins de 24 ans",
+  
+  # --- PERSONNES SEULES PAR ÂGE ---
+  "Nombre de personnes seules - De 15 à 24 ans" = "Population des ménages – De 15 à 24 ans",
+  "Nombre de personnes seules - De 25 à 39 ans" = "Population des ménages – De 25 à 39 ans",
+  "Nombre de personnes seules - De 40 à 54 ans" = "Population des ménages – De 40 à 54 ans",
+  "Nombre de personnes seules - De 55 à 64 ans" = "Population des ménages – De 55 à 64 ans",
+  "Nombre de personnes seules - De 65 à 79 ans" = "Population des ménages – De 65 à 79 ans",
+  "Nombre de personnes seules - 80 ans ou plus" = "Population des ménages – 80 ans ou plus",
+  
+  "Nombre de personnes seules - 1 personne x De 15 à 24 ans" = "Nombre de personnes seules – De 15 à 24 ans * 1 personne",
+  "Nombre de personnes seules - 1 personne x De 25 à 39 ans" = "Nombre de personnes seules – De 25 à 39 ans * 1 personne",
+  "Nombre de personnes seules - 1 personne x De 40 à 54 ans" = "Nombre de personnes seules – De 40 à 54 ans * 1 personne",
+  "Nombre de personnes seules - 1 personne x De 55 à 64 ans" = "Nombre de personnes seules – De 55 à 64 ans * 1 personne",
+  "Nombre de personnes seules - 1 personne x De 65 à 79 ans" = "Nombre de personnes seules – De 65 à 79 ans * 1 personne",
+  "Nombre de personnes seules - 1 personne x 80 ans ou plus" = "Nombre de personnes seules – 80 ans ou plus * 1 personne",
+  
+  # --- EMPLOIS ET SECTEURS ---
+  "Nombre d'emplois - Salariés x Femme" = "Nombre d’emplois – Femme * Salariés",
+  "Nombre d'emplois - Non Salariés x Femme" = "Nombre d’emplois – Femme * Non Salariés",
+  "Nombre d'emplois - Salariés x Temps partiel" = "Nombre d’emplois – Temps partiel * Salariés",
+  "Nombre d'emplois - Non Salariés x Temps partiel" = "Nombre d’emplois – Temps partiel * Non Salariés",
+  
+  "Nombre d'emplois - Salariés x Femme x Agriculture, sylviculture et pêche" = "Nombre d’emplois – Femme * Salariés * Agriculture, sylviculture et pêche",
+  "Nombre d'emplois - Non Salariés x Femme x Agriculture, sylviculture et pêche" = "Nombre d’emplois – Femme * Non Salariés * Agriculture, sylviculture et pêche",
+  
+  "Nombre d'emplois - Salariés x Femme x Construction" = "Nombre d’emplois – Femme * Salariés * Construction",
+  "Nombre d'emplois - Non Salariés x Femme x Construction" = "Nombre d’emplois – Femme * Non Salariés * Construction",
+  
+  "Nombre d'emplois - Salariés x Femme x Industrie manufacturière, industries extractives et autres" = "Nombre d’emplois – Femme * Salariés * Industrie manufacturière, industries extractives et autres",
+  "Nombre d'emplois - Non Salariés x Femme x Industrie manufacturière, industries extractives et autres" = "Nombre d’emplois – Femme * Non Salariés * Industrie manufacturière, industries extractives et autres",
+  
+  "Nombre d'emplois - Salariés x Femme x Services principalement marchands" = "Nombre d’emplois – Femme * Salariés * Services principalement marchands",
+  "Nombre d'emplois - Non Salariés x Femme x Services principalement marchands" = "Nombre d’emplois – Femme * Non Salariés * Services principalement marchands",
+  
+  "Nombre d'emplois - Salariés x Femme x Administration publique, enseignement, santé humaine et action sociale" = "Nombre d’emplois – Femme * Salariés * Administration publique, enseignement, santé humaine et action sociale",
+  "Nombre d'emplois - Non Salariés x Femme x Administration publique, enseignement, santé humaine et action sociale" = "Nombre d’emplois – Femme * Non Salariés * Administration publique, enseignement, santé humaine et action sociale"
 )
 
 # 1. On applique le formatage R classique sur 2023
@@ -186,6 +274,24 @@ base_finale_2023 <- base_pre_filtre_2023 %>%
 compte_na_2023 <- colSums(is.na(base_finale_2023))
 print("--- BILAN DES NAs APRÈS MISE À ZÉRO DES ÉQUIPEMENTS ---")
 print(compte_na_2023[compte_na_2023 > 0])
+
+# ==============================================================================
+# ÉTAPE 4B : ALIGNEMENT DES COLONNES DU MODÈLE (RETRAIT DES VARIABLES DISPARUES)
+# ==============================================================================
+
+# 1. On identifie les colonnes communes entre l'entraînement (2022) et la prédiction (2023)
+colonnes_communes <- intersect(names(base_sans_na), names(base_finale_2023))
+
+# 2. On regarde ce qui va être retiré pour ton information
+variables_supprimees_du_modele <- setdiff(names(base_sans_na), colonnes_communes)
+print(paste("Nombre de variables retirées du modèle car disparues en 2023 :", length(variables_supprimees_du_modele)))
+print(variables_supprimees_du_modele)
+
+# 3. On filtre définitivement les deux bases pour qu'elles aient EXACTEMENT les mêmes colonnes
+base_sans_na <- base_sans_na %>% select(all_of(colonnes_communes))
+base_finale_2023 <- base_finale_2023 %>% select(all_of(colonnes_communes))
+
+# (Ton Étape 5 de test de sécurité commence juste en dessous...)
 
 # ==============================================================================
 # ÉTAPE 5 : TEST DE SÉCURITÉ - VÉRIFICATION DES VARIABLES AVANT L'IMPUTATION
@@ -332,3 +438,41 @@ rmse_2023 <- rmse(base_2023_sans_na$Y_GAP_ACT_GLOBAL, predictions_2023)
 
 print(paste("Performance R2 sur 2023 :", round(r2_2023, 4)))
 print(paste("Erreur RMSE sur 2023 :", round(rmse_2023, 4)))
+
+
+# ==============================================================================
+# PARTIE 11 : PRÉDICTION SUR 2023 AVEC LE MODÈLE LASSO (INFERENCE)
+# ==============================================================================
+
+print("--- 1. NORMALISATION ET PRÉPARATION DE LA MATRICE 2023 ---")
+
+# NORMALISATION : On applique la même règle de centrage/réduction sur 2023
+base_normalisee_2023 <- base_2023_sans_na %>%
+  mutate(across(-Y_GAP_ACT_GLOBAL, ~ scale(.) %>% as.numeric()))
+
+# Séparation de la cible 2023
+vecteur_Y_2023 <- base_normalisee_2023$Y_GAP_ACT_GLOBAL
+
+# Transformation en matrice (doit avoir exactement les mêmes colonnes que matrice_X)
+matrice_X_2023 <- model.matrix(Y_GAP_ACT_GLOBAL ~ . - 1, data = base_normalisee_2023)
+
+print("--- 2. PRÉDICTION SUR LE JEU DE DONNÉES 2023 ---")
+
+# On applique le modèle Lasso (qui a le meilleur lambda) sur la matrice 2023
+predictions_2023_lasso <- predict(modele_lasso_cv, s = meilleur_lambda, newx = matrice_X_2023)
+
+print("--- 3. ÉVALUATION DE LA ROBUSTESSE (DATA DRIFT) ---")
+
+# Calcul du R2 sur les données de 2023
+# (On utilise as.vector pour s'assurer que c'est un format compatible avec cor())
+r2_2023_lasso <- cor(as.vector(predictions_2023_lasso), vecteur_Y_2023)^2
+
+# Calcul de la RMSE sur 2023
+rmse_2023_lasso <- rmse(vecteur_Y_2023, as.vector(predictions_2023_lasso))
+
+print(paste("Performance R2 Lasso sur 2023 :", round(r2_2023_lasso, 4)))
+print(paste("Erreur RMSE Lasso sur 2023 :", round(rmse_2023_lasso, 4)))
+
+print("--- BILAN : COMPARAISON RANDOM FOREST vs LASSO ---")
+print(paste("RMSE Random Forest :", round(rmse_2023, 4)))
+print(paste("RMSE Lasso :", round(rmse_2023_lasso, 4)))

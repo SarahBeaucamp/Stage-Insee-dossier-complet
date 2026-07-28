@@ -1,7 +1,7 @@
 # ==============================================================================
 # PARTIE 3 (CORRIGÉE) : LE MODÈLE LINÉAIRE PÉNALISÉ (GLM LASSO) AVEC NORMALISATION
 # ==============================================================================
-
+install.packages("glmnet")
 library(glmnet)
 library(dplyr)
 
@@ -55,3 +55,4 @@ print(paste("Sur les", ncol(matrice_X), "variables initiales, le Lasso en a écr
 
 print("--- VOICI LE NOUVEAU TOP 15 COMPARABLE DE TON ÉQUATION ---")
 print(head(tableau_coefs, 16))
+
