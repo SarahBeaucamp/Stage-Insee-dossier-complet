@@ -56,3 +56,22 @@ print(paste("Sur les", ncol(matrice_X), "variables initiales, le Lasso en a écr
 print("--- VOICI LE NOUVEAU TOP 15 COMPARABLE DE TON ÉQUATION ---")
 print(head(tableau_coefs, 16))
 
+# ==============================================================================
+# POST-LASSO : OBTENTION DES P-VALUES ET TESTS DE STUDENT
+# ==============================================================================
+
+#Nous permet d'avoir les p-values de toutes nos variables. Les variables de tête sont trés significatives avec des p values miniscule et celles avec des pénalités ne le sont pas. 
+
+# 1. On récupère les noms des variables sélectionnées par le Lasso (en excluant l'intercept)
+variables_selectionnees_noms <- tableau_coefs %>%
+  filter(Variable != "(Intercept)") %>%
+  pull(Variable)
+
+# 2. On reconstruit une formule dynamique avec uniquement ces variables
+formule_post_lasso <- as.formula(paste("Y_GAP_ACT_GLOBAL ~", paste(variables_selectionnees_noms, collapse = " + ")))
+
+# 3. On lance une régression linéaire classique (OLS) sur ces variables
+modele_post_lasso <- lm(formule_post_lasso, data = base_normalisee)
+
+# 4. Affichage du résumé complet (Coefficients, Erreurs types, t-value et p-values !)
+summary(modele_post_lasso)

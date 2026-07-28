@@ -1,7 +1,6 @@
 # ==============================================================================
-# PRÉPARATION DE LA BASE DE DONNÉES ET OPTIMISATION DE LA FORÊT ALÉATOIRE
+# PRÉPARATION DE LA BASE DE DONNÉES ET GESTION EXPERTE DES VALEURS MANQUANTES
 # ==============================================================================
-
 library(DBI)
 library(duckdb)
 library(dplyr)
@@ -34,16 +33,16 @@ dossier_complet <- tbl(con, paste0("read_parquet('", chemin_s3, "')"))
 base_filtree <- dossier_complet %>%
   filter(
     GEO_OBJECT_LABEL == "Commune",
-    str_detect(ID_TAB, "^FAM|^FOR|^EMP|^LOG") | 
-      ID_TAB %in% c("POP_T8", "POP_T9", "REV_T1", "SAL_G1", "SAL_G3", 
-                    "SAL_T1", "SAL_G4", "TOU_T1", "TOU_T2", "TOU_T3", 
-                    "EQUIP_T1", "EQUIP_T2", "EQUIP_T3", "DEN_T1", "POP_T3", "POP_T0")
+    str_detect(ID_TAB, "^EMP|^EQUIP|^TOU") | 
+      ID_TAB %in% c("POP_T5", "POP_T6", "REV_T1", "SAL_G1", "SAL_G3", 
+                    "SAL_T1", "SAL_G4", "DEN_T1", "DEN_T3", "DEN_T4", "RES_T3", 
+                    "RES_T5", "POP_T3", "POP_T0", "LOG_T7", "FOR_T1", "FOR_T2",
+                    "FAM_T1", "FAM_T2", "FAM_T3", "FAM_T4", "FAM_G1", "FAM_G2", "FAM_G4")
   ) %>%
   select(GEO, GEO_LABEL, ID_TAB, TAB_MEASURE_LABEL, OBS_VALUE) %>%
   collect()
 
-print(paste("Nombre de lignes récupérées :", nrow(base_filtree)))
-print(paste("Nombre de variables distinctes :", length(unique(base_filtree$TAB_MEASURE_LABEL))))
+print("Étape 1 terminée : Données extraites.")
 
 # ------------------------------------------------------------------------------
 # ÉTAPE 2 : PIVOT ET NETTOYAGE DES NOMS
@@ -62,8 +61,7 @@ base_large <- base_filtree %>%
 
 names(base_large) <- make.names(names(base_large), unique = TRUE)
 
-print(paste("Nombre de communes :", nrow(base_large)))
-print(paste("Nombre de colonnes :", ncol(base_large)))
+print("Étape 2 terminée : Base pivotée au format Wide.")
 
 # ------------------------------------------------------------------------------
 # ÉTAPE 3 : CRÉATION DU Y, DES TAUX ET GRANDE PURGE
@@ -87,7 +85,7 @@ base_prete_rf <- base_large %>%
       .fns = ~ .x / .data[["Population"]]
     )
   ) %>%
-  mutate(across(everything(), ~ ifelse(is.infinite(.) | is.nan(.), 0, .))) %>%
+  mutate(across(everything(), ~ ifelse(is.infinite(.) | is.nan(.), NA, .))) %>% # On garde les NA pour le moment
   select(
     -TAUX_F, -TAUX_H, -POP_FEMME, -POP_HOMME,
     -Logements, -Population.des.ménages, -Population...Actif, -Nombre.d.emplois,
@@ -99,35 +97,54 @@ base_prete_rf <- base_large %>%
     -contains("Élève", ignore.case = TRUE),
     -matches("^Population.*Femme", ignore.case = TRUE),
     -matches("^Population.*Homme", ignore.case = TRUE)
+    # -matches("^Population.*ans\\.?$", ignore.case = TRUE)
   )
 
+print("Étape 3 terminée : Purge et calculs effectués.")
+
 # ------------------------------------------------------------------------------
-# ÉTAPE 4 : APPLICATION DU SEUIL (430) ET GESTION DES NAs
+# ÉTAPE 4 : FILTRE DE POPULATION ET TRAITEMENT HYBRIDE DES NAs ET SEUIL
 # ------------------------------------------------------------------------------
 
-base_finale <- base_prete_rf %>%
-  filter(Population >= 430) %>%              
+base_pre_filtre <- base_prete_rf %>%
+  filter(Population >= 500) %>%              
   filter(!is.na(Y_GAP_ACT_GLOBAL)) %>%
   select(-GEO, -GEO_LABEL, -Population)      
 
+# 1. Identifier les colonnes soumises au secret statistique (Revenus, Salaires, Pauvreté)
+# Le grepl va chercher tous les mots clés liés à l'argent, peu importe la casse
+colonnes_secret <- names(base_pre_filtre)[grepl("salaire|pauvret|revenu|niveau.de.vie", names(base_pre_filtre), ignore.case = TRUE)]
+
+print("Colonnes identifiées pour l'imputation mathématique (Secret Statistique) :")
+print(colonnes_secret)
+
+# 2. Le traitement hybride : 0 pour les équipements, NA pour l'argent
+base_finale <- base_pre_filtre %>%
+  # On remplace par 0 TOUTES les colonnes SAUF celles identifiées dans colonnes_secret
+  mutate(across(-all_of(colonnes_secret), ~ replace_na(., 0)))
+
 compte_na <- colSums(is.na(base_finale))
-valeurs_manquantes <- compte_na[compte_na > 0]
-print("--- BILAN DES NAs RESTANTS ---")
-print(valeurs_manquantes)
+print("--- BILAN DES NAs APRÈS MISE À ZÉRO DES ÉQUIPEMENTS ---")
+print(compte_na[compte_na > 0])
 
-colonnes_suspectes <- base_finale %>%
-  select(where(is.numeric)) %>%
-  select(where(~ max(., na.rm = TRUE) > 1)) %>%
-  names()
+# ==============================================================================
+# ÉTAPE 6A : IMPUTATION DÉFINITIVE AVEC MISSFOREST
+# ==============================================================================
 
-colonnes_suspectes <- colonnes_suspectes[!grepl("revenu|salaire|densit.", colonnes_suspectes, ignore.case = TRUE)]
-print(paste("Nombre de variables suspectes détectées :", length(colonnes_suspectes)))
+print("--- 1. CONVERSION STRICTE DU FORMAT ---")
+base_finale_propre <- base_finale %>% 
+  mutate(across(everything(), as.numeric)) %>% 
+  as.data.frame()
 
-base_sans_na <- base_finale %>%
-  mutate(across(everything(), ~ replace_na(., 0)))
+print("--- 2. APPLICATION DE MISSFOREST SUR LA BASE COMPLÈTE ---")
+# On lance l'imputation sur la base "propre"
+imputation_finale <- missForest(base_finale_propre, ntree = 50, maxiter = 5)
 
-total_nas_restants <- sum(is.na(base_sans_na))
-print(paste("Nombre total de NAs restants dans la base :", total_nas_restants))
+# On récupère le tableau final nettoyé
+base_sans_na <- imputation_finale$ximp
+
+print(paste("Nombre total de NAs restants :", sum(is.na(base_sans_na))))
+
 
 # ------------------------------------------------------------------------------
 # ÉTAPE 5 : ÉCHANTILLONNAGE ET PRÉPARATION K-FOLD
@@ -149,10 +166,10 @@ plis_cv <- vfold_cv(base_train_val, v = 5)
 # ------------------------------------------------------------------------------
 # ÉTAPE 6 : OPTIMISATION DES HYPERPARAMÈTRES (VALIDATION CROISÉE)
 # ------------------------------------------------------------------------------
-
+# Avant validation croisée, les modèles par défaut ont 17 et 5 
 grille <- expand.grid(
-  mtry = c(130, 135, 140, 145, 150),
-  min.node.size = c(2, 3, 4, 5)
+  mtry = c(17, 70, 100, 130, 150, 170),
+  min.node.size = c(3, 4, 5, 6)
 )
 
 resultats_cv <- data.frame()
