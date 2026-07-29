@@ -563,7 +563,7 @@ if(length(index_commune) > 0) {
 # ==============================================================================
 # ETAPE 14 : MODÉLISATION XGBOOST ET SHAP VALUES EXTRÊMEMENT RAPIDES (2023)
 # ==============================================================================
-
+install.packages("kernelshap")
 install.packages("xgboost")
 library(xgboost)
 library(shapviz)
@@ -614,8 +614,12 @@ library(ggplot2)
 code_insee_cible <- "44109" 
 
 # ==============================================================================
-# 2. EXTRACTION, PRÉDICTION ET SHAP VALUES POUR CETTE COMMUNE
+# 2. EXTRACTION, PRÉDICTION ET SHAP VALUES (100% NATIF & GGPLOT2)
 # ==============================================================================
+
+library(dplyr)
+library(ggplot2)
+library(xgboost)
 
 index_commune <- which(referentiel_communes_2023$GEO == code_insee_cible)
 
@@ -623,52 +627,72 @@ if(length(index_commune) > 0) {
   
   nom_commune <- referentiel_communes_2023$GEO_LABEL[index_commune]
   print(paste("--- ANALYSE CIBLÉE POUR :", nom_commune, "(", code_insee_cible, ") ---"))
-
-  # A0. EXTRACTION DE LA VALEUR RÉELLE DE Y POUR 2023
+  
   valeur_reelle_Y <- base_2023_sans_na$Y_GAP_ACT_GLOBAL[index_commune]  
-    
-  # A. Extraction et alignement strict de la ligne de la commune
   colonnes_entrainement <- colnames(X_train_xgb)
   X_ciblé <- X_2023_xgb[index_commune, colonnes_entrainement, drop = FALSE]
   
-  # B. PRÉDICTION SIMPLE
-  prediction_commune <- predict(modele_xgb, newdata = as.matrix(X_ciblé))
-  print(paste("=> L'écart d'activité prédit par XGBoost pour", nom_commune, "est de :", round(prediction_commune, 4)))
-
-  # D. AFFICHAGE COMPARATIF DIRECT DANS LA CONSOLE
+  # ============================================================================
+  # LE DÉBLOCAGE EST ICI : On force R à utiliser le moteur Booster pur
+  # ============================================================================
+  modele_pur <- modele_xgb
+  class(modele_pur) <- "xgb.Booster"
+  
+  matrice_cible_dmatrix <- xgb.DMatrix(data = as.matrix(X_ciblé))
+  
+  # B. Prédiction classique (sur le modèle pur)
+  prediction_commune <- predict(modele_pur, newdata = matrice_cible_dmatrix)
+  
   print(paste("=> Valeur RÉELLE observée en 2023 :", round(valeur_reelle_Y, 4)))
   print(paste("=> Valeur PRÉDITE par le modèle     :", round(prediction_commune, 4)))
   print(paste("=> Écart (Erreur de prédiction)      :", round(prediction_commune - valeur_reelle_Y, 4)))  
-    
-  # C. CALCUL DES SHAP VALUES (Uniquement pour cette commune)
-  # On prend un petit échantillon de référence (50 lignes de X_train) : c'est très léger pour la RAM
-  set.seed(42)
-  bg_xgb <- X_train_xgb[sample(nrow(X_train_xgb), 50), ] 
   
-  predict_xgb_simple <- function(modele, newdata) {
-    predict(modele, newdata = as.matrix(newdata))
-  }
+  # C. CALCUL SHAP NATIF (Sans erreur de dimension, le moteur pur accepte tout)
+  shap_brut <- predict(modele_pur, newdata = matrice_cible_dmatrix, predcontrib = TRUE)
   
-  # Le calcul se fait uniquement sur la ligne "X_ciblé". C'est instantané et sans danger pour R.
-  shap_commune_kernel <- kernelshap(
-    modele_xgb, 
-    X = X_ciblé, 
-    bg_X = bg_xgb, 
-    pred_fun = predict_xgb_simple
+  shap_vecteur <- shap_brut[1, ]
+  
+  biais_base <- shap_vecteur[length(shap_vecteur)]
+  shap_vars <- shap_vecteur[-length(shap_vecteur)]
+  
+  df_shap <- data.frame(
+    Variable = colonnes_entrainement,
+    Impact = as.numeric(shap_vars)
   )
   
-  # D. AFFICHAGE DU GRAPHIQUE SHAP EN CASCADE (WATERFALL)
-  sv_commune <- shapviz(shap_commune_kernel)
-  graphique_cascade <- sv_waterfall(sv_commune, max_display = 15) +
-    ggtitle(paste("SHAP Values (XGBoost) - Explication de la prédiction pour", nom_commune)) +
-    theme_minimal()
+  df_shap_top <- df_shap %>%
+    mutate(Abs_Impact = abs(Impact)) %>%
+    arrange(desc(Abs_Impact)) %>%
+    head(15) %>%
+    mutate(
+      Sens = ifelse(Impact > 0, "Pousse vers les Hommes (+)", "Pousse vers les Femmes (-)"),
+      Variable = reorder(Variable, abs(Impact))
+    )
   
-  print(graphique_cascade)
+  # D. CRÉATION DU GRAPHIQUE
+  graphique_shap <- ggplot(df_shap_top, aes(x = Impact, y = Variable, fill = Sens)) +
+    geom_col(color = "black", alpha = 0.8) +
+    scale_fill_manual(values = c("Pousse vers les Hommes (+)" = "#27ae60", 
+                                 "Pousse vers les Femmes (-)" = "#c0392b")) +
+    labs(
+      title = paste("Top 15 des impacts locaux (SHAP) sur", nom_commune),
+      subtitle = paste("Base :", round(biais_base, 4), "| Prédiction :", round(prediction_commune, 4)),
+      x = "Impact de la variable sur l'écart d'activité (en points)",
+      y = NULL,
+      fill = "Effet de la variable"
+    ) +
+    theme_minimal() +
+    theme(
+      legend.position = "bottom",
+      plot.title = element_text(face = "bold", size = 14),
+      axis.text.y = element_text(size = 9)
+    )
+  
+  print(graphique_shap)
   
 } else {
   print("❌ La commune n'a pas été trouvée dans le référentiel. Vérifie le code INSEE.")
 }
-
 # ==============================================================================
 # DÉCOMPOSITION D'OAXACA-BLINDER (GROUPES COMPARATIFS CORRIGÉS)
 # ==============================================================================
