@@ -255,6 +255,8 @@ base_prete_rf_2023 <- base_large_2023 %>%
 
 print("Étape 3 terminée : Purge et calculs effectués.")
 
+summary(base_prete_rf_2023$Y_GAP_ACT_GLOBAL)
+
 # ------------------------------------------------------------------------------
 # ÉTAPE 4 : FILTRE DE POPULATION ET TRAITEMENT HYBRIDE DES NAs
 # ------------------------------------------------------------------------------
@@ -263,6 +265,7 @@ base_pre_filtre_2023 <- base_prete_rf_2023 %>%
   filter(Population >= 500) %>%             
   filter(!is.na(Y_GAP_ACT_GLOBAL)) %>%
   select(-Population)     
+
 
 # CORRECTION : Remplacement de base_pre_filtre par base_pre_filtre_2023 dans le grepl
 colonnes_secret_2023 <- names(base_pre_filtre_2023)[grepl("salaire|pauvret|revenu|niveau.de.vie", names(base_pre_filtre_2023), ignore.case = TRUE)]
@@ -278,6 +281,8 @@ print("--- BILAN DES NAs APRÈS MISE À ZÉRO DES ÉQUIPEMENTS ---")
 print(compte_na_2023[compte_na_2023 > 0])
 
 referentiel_communes_2023 <- base_finale_2023 %>% select(GEO, GEO_LABEL)
+
+summary(base_finale_2023$Y_GAP_ACT_GLOBAL)
 
 # ==============================================================================
 # ÉTAPE 4B : ALIGNEMENT DES COLONNES DU MODÈLE (RETRAIT DES VARIABLES DISPARUES)
