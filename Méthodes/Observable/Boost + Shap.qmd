@@ -103,50 +103,49 @@ htl.html`
         <p class="kpi-value pred-value">${(resultat_commune.Y_PREDIT_XGB * 100).toFixed(2)} %</p>
       </div>
     </div>
-  ` : htl.html`<p style="color: gray; font-style: italic;">En attente de sélection...</p>`}
+  ` : htl.html`<p style="color: gray; font-style: italic;">"Par souci de significativité statistique, les résultats ne sont pas présentés pour les communes de moins de 500 habitants."</p>`}
 `
 ```
 
 ## Explication du modèle (Valeurs SHAP) {height="60%"}
 
 ```{ojs affichage_shap}
-// 1. On prépare les données SHAP extraites de DuckDB pour le graphique
-data_shap = (isGeoSelected && resultat_commune) ? [
-  { variable: resultat_commune.VAR_1, impact: resultat_commune.SHAP_1 },
-  { variable: resultat_commune.VAR_2, impact: resultat_commune.SHAP_2 },
-  { variable: resultat_commune.VAR_3, impact: resultat_commune.SHAP_3 },
-  { variable: resultat_commune.VAR_4, impact: resultat_commune.SHAP_4 },
-  { variable: resultat_commune.VAR_5, impact: resultat_commune.SHAP_5 }
+// On s'assure que data_shap est un tableau valide avec des valeurs non nulles
+data_shap = (isGeoSelected && resultat_commune && resultat_commune.VAR_1) ? [
+  { variable: resultat_commune.VAR_1, impact: Number(resultat_commune.SHAP_1) },
+  { variable: resultat_commune.VAR_2, impact: Number(resultat_commune.SHAP_2) },
+  { variable: resultat_commune.VAR_3, impact: Number(resultat_commune.SHAP_3) },
+  { variable: resultat_commune.VAR_4, impact: Number(resultat_commune.SHAP_4) },
+  { variable: resultat_commune.VAR_5, impact: Number(resultat_commune.SHAP_5) }
 ] : [];
 
-// 2. On trace le graphique des 5 variables les plus influentes
-Plot.plot({
-  title: isGeoSelected ? `Top 5 des variables expliquant la prédiction pour ${selection_geo.GEO_LABEL}` : "",
+// On ajoute une condition : si les données sont vides, on affiche un message propre au lieu d'un bug
+data_shap.length > 0 ? Plot.plot({
+  title: `Top 5 des variables expliquant la prédiction pour ${selection_geo.GEO_LABEL}`,
   subtitle: "Impact local sur l'écart d'activité (en points)",
-  marginLeft: 350, // Très important pour laisser la place aux longs noms de variables Insee
+  height: 280,
+  marginLeft: 320, 
   x: { 
     label: "Impact (Valeur SHAP)", 
     grid: true 
   },
   y: { 
     label: null,
-    // On garde l'ordre de VAR_1 (le plus fort) à VAR_5
     domain: data_shap.map(d => d.variable).reverse()
-  },
-  color: { 
-    domain: ["Pousse vers les Hommes (+)", "Pousse vers les Femmes (-)"], 
-    range: ["#27ae60", "#c0392b"] 
   },
   marks: [
     Plot.barX(data_shap, {
       x: "impact",
       y: "variable",
       fill: d => d.impact > 0 ? "Pousse vers les Hommes (+)" : "Pousse vers les Femmes (-)",
-      rx: 3,
-      title: d => `${d.variable} \nImpact:${d.impact.toFixed(4)}`
+      rx: 3
     }),
     Plot.ruleX([0], { stroke: "#2c3e50", strokeWidth: 2 })
   ],
-  color: {legend: true}
-})
+  color: { 
+    domain: ["Pousse vers les Hommes (+)", "Pousse vers les Femmes (-)"], 
+    range: ["#e67e22", "#2980b9"],
+    legend: true 
+  }
+}) : htl.html`<p style="color: gray; font-style: italic; padding: 20px;">"Par souci de significativité statistique, les résultats ne sont pas présentés pour les communes de moins de 500 habitants."</p>`
 ```
