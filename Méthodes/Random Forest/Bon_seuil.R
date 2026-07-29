@@ -260,3 +260,75 @@ resultats_grille <- resultats_grille %>% arrange(desc(R2_Estime_Pct))
 
 print("--- FIN DE L'OPTIMISATION : TOP 10 DES MEILLEURS PARAMÈTRES ---")
 print(head(resultats_grille, 10))
+
+#===============================================================================
+# OPTIMISATION DES HYPERPARAM7TRE
+#===============================================================================
+
+# On trouve 150 et 4 ou 130 et 4, comme on préfère
+
+# ==============================================================================
+# ETAPE 3 : COURBE D'APPRENTISSAGE DE LA FORÊT ALÉATOIRE (CHOIX DU NOMBRE D'ARBRES)
+# ==============================================================================
+
+library(ranger)
+library(ggplot2)
+library(dplyr)
+
+print("--- 1. CALCUL DE L'ERREUR EN FONCTION DU NOMBRE D'ARBRES ---")
+
+# On définit une séquence de nombre d'arbres à tester (par exemple de 10 à 500 par pas de 10)
+# Cela permet d'observer précisément l'évolution de la chute de l'erreur puis du plateau.
+nombre_arbres_seq <- seq(10, 500, by = 10)
+
+# On initialise un vecteur vide pour stocker les RMSE correspondants
+rmse_par_arbre <- numeric(length(nombre_arbres_seq))
+
+# Boucle d'évaluation pour chaque nombre d'arbres (avec mtry = 150 et min.node.size = 4)
+for (i in seq_along(nombre_arbres_seq)) {
+  nb_arbres <- nombre_arbres_seq[i]
+  
+  # Entraînement du modèle temporaire avec le nombre d'arbres ciblé
+  modele_temp <- ranger(
+    formula = Y_GAP_ACT_GLOBAL ~ ., 
+    data = base_train,
+    num.trees = nb_arbres,
+    mtry = 150,                 # Ton hyperparamètre optimal trouvé à l'étape 2
+    min.node.size = 4,          # Ton hyperparamètre optimal trouvé à l'étape 2
+    importance = 'none'         # On désactive pour aller plus vite dans la boucle
+  )
+  
+  # Prédiction sur l'échantillon de validation
+  preds_temp <- predict(modele_temp, data = base_val)$predictions
+  
+  # Calcul du RMSE sur l'échantillon de validation
+  rmse_par_arbre[i] <- sqrt(mean((base_val$Y_GAP_ACT_GLOBAL - preds_temp)^2))
+}
+
+# Création d'un tableau propre pour ggplot2
+data_courbe <- data.frame(
+  Nombre_Arbres = nombre_arbres_seq,
+  RMSE = rmse_par_arbre
+)
+
+print("--- 2. GÉNÉRATION DU GRAPHIQUE ÉLÉGANT (COURBE D'APPRENTISSAGE) ---")
+
+ggplot(data_courbe, aes(x = Nombre_Arbres, y = RMSE)) +
+  # Ligne principale fluide et esthétique
+  geom_line(color = "#2c3e50", linewidth = 1.2) +
+  geom_point(color = "#e74c3c", size = 1.5) +
+  # Zone ombragée pour mettre en valeur la courbe
+  geom_ribbon(aes(ymin = min(RMSE), ymax = RMSE), fill = "#3498db", alpha = 0.1) +
+  # Personnalisation des axes et du thème (parfait pour un mémoire)
+  theme_minimal(base_size = 13) +
+  labs(
+    title = "Courbe d'apprentissage de la Forêt Aléatoire",
+    subtitle = "Évolution de l'erreur (RMSE) sur l'échantillon de validation selon le nombre d'arbres",
+    x = "Nombre d'arbres dans la forêt (num.trees)",
+    y = "RMSE (Erreur Quadratique Moyenne sur Validation)"
+  ) +
+  theme(
+    plot.title = element_text(face = "bold", size = 15, hjust = 0.5),
+    plot.subtitle = element_text(size = 11, hjust = 0.5, color = "gray40"),
+    panel.grid.minor = element_blank()
+  )
