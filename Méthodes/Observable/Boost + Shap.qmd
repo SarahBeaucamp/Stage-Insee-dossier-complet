@@ -34,7 +34,7 @@ include-in-header:
 db = DuckDBClient.of({})
 
 // 2. Connexion à la base 2023 contenant tes prédictions ET tes SHAP values
-chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/predictions_xgboost_2023.parquet'
+chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/predictions_xgboost.parquet'
 ```
 
 # Recherche géographique {.sidebar width="30%"}
@@ -204,7 +204,7 @@ communes_geo <- communes_raw %>%
   collect()
 
 
-chemin_xgb <- "s3://sarahbeaucamp/predictions_xgboost_2023.parquet"
+chemin_xgb <- "s3://sarahbeaucamp/predictions_xgboost.parquet"
 preds_xgb <- tbl(con, paste0("read_parquet('", chemin_xgb, "')")) %>%
   collect()
 
@@ -263,94 +263,69 @@ subplot(
 
 # Simulateur
 
-## Résultats de la simulation {height="25%"}
+## Résultats et Ajustements {height="100%"}
 
-```{ojs calcul_et_kpi}
-pred_originale = (isGeoSelected && resultat_commune) ? resultat_commune.Y_PREDIT_XGB * 100 : 0;
-somme_shap_originale = data_shap.length > 0 ? d3.sum(data_shap, d => d.impact * 100) : 0;
-
-// Fonction de règle de 3 : (Nouvelle Valeur / Ancienne Valeur) * Ancien Impact SHAP
-function calc_impact(index, nouvelle_valeur) {
-  if (data_shap.length <= index) return 0;
-  let ancienne_valeur = data_shap[index].valeur;
-  let ancien_impact = data_shap[index].impact * 100;
-  // Sécurité si l'ancienne valeur est pile 0 pour éviter une division par zéro
-  if (ancienne_valeur === 0) return ancien_impact; 
-  return ancien_impact * (nouvelle_valeur / ancienne_valeur);
+```{ojs simulateur_ultime}
+// --- Parseur robuste : gère number, "0,37", "0.37", null, undefined, "" ---
+val = (col) => {
+  if (!resultat_commune) return 0;
+  const raw = resultat_commune[col];
+  if (raw === null || raw === undefined || raw === "") return 0;
+  const n = Number(String(raw).replace(',', '.'));
+  return Number.isFinite(n) ? n : 0;
 }
 
-// On calcule la nouvelle somme des impacts basée sur les curseurs
-somme_shap_simulee = calc_impact(0, sim_val1) + 
-                     calc_impact(1, sim_val2) + 
-                     calc_impact(2, sim_val3) + 
-                     calc_impact(3, sim_val4) + 
-                     calc_impact(4, sim_val5);
+// --- Curseurs : initialisés sur les valeurs réelles VAL_1...VAL_5 ---
+viewof s1 = Inputs.range([0, 1], { value: val('VAL_1'), label: resultat_commune?.VAR_1 || "Var 1", step: 0.01, width: 800 })
+viewof s2 = Inputs.range([0, 1], { value: val('VAL_2'), label: resultat_commune?.VAR_2 || "Var 2", step: 0.01, width: 800 })
+viewof s3 = Inputs.range([0, 1], { value: val('VAL_3'), label: resultat_commune?.VAR_3 || "Var 3", step: 0.01, width: 800 })
+viewof s4 = Inputs.range([0, 1], { value: val('VAL_4'), label: resultat_commune?.VAR_4 || "Var 4", step: 0.01, width: 800 })
+viewof s5 = Inputs.range([0, 1], { value: val('VAL_5'), label: resultat_commune?.VAR_5 || "Var 5", step: 0.01, width: 800 })
 
-pred_simulee = pred_originale - somme_shap_originale + somme_shap_simulee;
-delta_pred = pred_simulee - pred_originale;
+// --- Calculs réactifs ---
+pred_orig = resultat_commune ? val('Y_PREDIT_XGB') * 100 : 0;
+somme_orig = (val('SHAP_1') + val('SHAP_2') + val('SHAP_3') + val('SHAP_4') + val('SHAP_5')) * 100;
 
+calc_impact = (v_init, i_init, v_slider) => {
+  if (v_init === 0) return i_init;
+  return i_init * (v_slider / v_init);
+}
+
+somme_simulee = calc_impact(val('VAL_1'), val('SHAP_1') * 100, s1) + 
+                calc_impact(val('VAL_2'), val('SHAP_2') * 100, s2) + 
+                calc_impact(val('VAL_3'), val('SHAP_3') * 100, s3) + 
+                calc_impact(val('VAL_4'), val('SHAP_4') * 100, s4) + 
+                calc_impact(val('VAL_5'), val('SHAP_5') * 100, s5);
+
+pred_sim = pred_orig - somme_orig + somme_simulee;
+ecart = pred_sim - pred_orig;
+
+// --- Debug : colonnes réellement disponibles (à retirer une fois validé) ---
+debug_cols = resultat_commune ? Object.keys(resultat_commune) : [];
+
+// --- Affichage ---
 htl.html`
-  ${(isGeoSelected && resultat_commune && data_shap.length > 0) ? htl.html`
+  ${(!isGeoSelected || !resultat_commune) ? htl.html`<div style="color: gray; font-style: italic; padding: 20px;">Sélectionnez une commune valide pour accéder au simulateur.</div>` : 
+  htl.html`
+  <details style="margin-bottom: 15px;">
+    <summary style="cursor: pointer; color: gray;">Debug : colonnes disponibles</summary>
+    <pre style="font-size: 0.8em; color: gray;">${debug_cols.join(", ")}</pre>
+  </details>
+
   <div class="kpi-container">
     <div class="kpi-card pred-card">
       <p class="kpi-title">Prédiction Initiale</p>
-      <p class="kpi-value pred-value">${pred_originale.toFixed(2)} %</p>
+      <p class="kpi-value pred-value">${pred_orig.toFixed(2)} %</p>
     </div>
     
-    <div class="kpi-card" style="background: ${delta_pred > 0 ? '#fdedec' : (delta_pred < 0 ? '#e8f8f5' : '#f8f9fa')}; border-top: 4px solid ${delta_pred > 0 ? '#e74c3c' : (delta_pred < 0 ? '#1abc9c' : '#bdc3c7')}; transition: 0.3s;">
+    <div class="kpi-card" style="background: ${ecart > 0 ? '#fdedec' : (ecart < 0 ? '#e8f8f5' : '#f8f9fa')}; border-top: 4px solid ${ecart > 0 ? '#e74c3c' : (ecart < 0 ? '#1abc9c' : '#bdc3c7')}; transition: 0.3s;">
       <p class="kpi-title">Prédiction Simulée</p>
-      <p class="kpi-value" style="color: ${delta_pred > 0 ? '#c0392b' : (delta_pred < 0 ? '#16a085' : '#7f8c8d')};">${pred_simulee.toFixed(2)} %</p>
-      <p style="margin:0; font-size: 1.1em; font-weight: bold; color: ${delta_pred > 0 ? '#c0392b' : (delta_pred < 0 ? '#16a085' : 'gray')};">
-        ${delta_pred > 0 ? '▲ +' : (delta_pred < 0 ? '▼ ' : '')}${delta_pred !== 0 ? delta_pred.toFixed(2) + ' pts' : 'Aucun changement'}
+      <p class="kpi-value" style="color: ${ecart > 0 ? '#c0392b' : (ecart < 0 ? '#16a085' : '#7f8c8d')};">${pred_sim.toFixed(2)} %</p>
+      <p style="margin:0; font-size: 1.1em; font-weight: bold; color: ${ecart > 0 ? '#c0392b' : (ecart < 0 ? '#16a085' : 'gray')};">
+        ${ecart > 0 ? '▲ +' : (ecart < 0 ? '▼ ' : '')}${ecart !== 0 ? ecart.toFixed(2) + ' pts' : 'Aucun changement'}
       </p>
     </div>
   </div>
-  ` : htl.html`<div style="color: gray; font-style: italic; padding: 20px;">Sélectionnez une commune valide pour accéder au simulateur.</div>`}
+  `}
 `
-```
-
-## Ajustement des variables (de 0 à 100%) {height="75%"}
-
-```{ojs curseurs}
-// Curseurs allant de 0 à 1, initialisés sur la VRAIE valeur de la commune
-viewof sim_val1 = data_shap.length > 0 ? Inputs.range([0, 1], {
-  value: data_shap[0].valeur,
-  label: data_shap[0].variable,
-  step: 0.01,
-  format: x => (x * 100).toFixed(0) + " %",
-  width: 800
-}) : htl.html`<div style="display:none;"></div>`;
-
-viewof sim_val2 = data_shap.length > 1 ? Inputs.range([0, 1], {
-  value: data_shap[1].valeur,
-  label: data_shap[1].variable,
-  step: 0.01,
-  format: x => (x * 100).toFixed(0) + " %",
-  width: 800
-}) : htl.html`<div style="display:none;"></div>`;
-
-viewof sim_val3 = data_shap.length > 2 ? Inputs.range([0, 1], {
-  value: data_shap[2].valeur,
-  label: data_shap[2].variable,
-  step: 0.01,
-  format: x => (x * 100).toFixed(0) + " %",
-  width: 800
-}) : htl.html`<div style="display:none;"></div>`;
-
-viewof sim_val4 = data_shap.length > 3 ? Inputs.range([0, 1], {
-  value: data_shap[3].valeur,
-  label: data_shap[3].variable,
-  step: 0.01,
-  format: x => (x * 100).toFixed(0) + " %",
-  width: 800
-}) : htl.html`<div style="display:none;"></div>`;
-
-viewof sim_val5 = data_shap.length > 4 ? Inputs.range([0, 1], {
-  value: data_shap[4].valeur,
-  label: data_shap[4].variable,
-  step: 0.01,
-  format: x => (x * 100).toFixed(0) + " %",
-  width: 800
-}) : htl.html`<div style="display:none;"></div>`;
-```
 ```
