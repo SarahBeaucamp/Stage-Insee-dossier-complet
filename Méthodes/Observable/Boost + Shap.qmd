@@ -68,7 +68,7 @@ isGeoSelected = (selection_geo !== null);
 htl.html`
   <div style="font-size: 1.2em; margin-bottom: 10px;">
     <strong>Commune analysée :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : "Veuillez sélectionner un territoire à gauche"} 
-    ${isGeoSelected ? `<span style="color: gray;">(${selection_geo.GEO})</span>` : ""}
+    ${isGeoSelected ? htl.html`<span style="color: gray;">(${selection_geo.GEO})</span>` : ""}
   </div>
 `
 ```
@@ -110,7 +110,7 @@ htl.html`
 ## Explication du modèle (Valeurs SHAP) {height="60%"}
 
 ```{ojs affichage_shap}
-// On s'assure que data_shap est un tableau valide avec des valeurs non nulles
+// 1. On déclare data_shap de manière GLOBALE pour que le simulateur y ait accès !
 data_shap = (isGeoSelected && resultat_commune && resultat_commune.VAR_1) ? [
   { variable: resultat_commune.VAR_1, impact: Number(resultat_commune.SHAP_1) },
   { variable: resultat_commune.VAR_2, impact: Number(resultat_commune.SHAP_2) },
@@ -119,33 +119,238 @@ data_shap = (isGeoSelected && resultat_commune && resultat_commune.VAR_1) ? [
   { variable: resultat_commune.VAR_5, impact: Number(resultat_commune.SHAP_5) }
 ] : [];
 
-// On ajoute une condition : si les données sont vides, on affiche un message propre au lieu d'un bug
-data_shap.length > 0 ? Plot.plot({
-  title: `Top 5 des variables expliquant la prédiction pour ${selection_geo.GEO_LABEL}`,
-  subtitle: "Impact local sur l'écart d'activité (en points)",
-  height: 280,
-  marginLeft: 320, 
-  x: { 
-    label: "Impact (Valeur SHAP)", 
-    grid: true 
-  },
-  y: { 
-    label: null,
-    domain: data_shap.map(d => d.variable).reverse()
-  },
-  marks: [
-    Plot.barX(data_shap, {
-      x: "impact",
-      y: "variable",
-      fill: d => d.impact > 0 ? "Pousse vers les Hommes (+)" : "Pousse vers les Femmes (-)",
-      rx: 3
-    }),
-    Plot.ruleX([0], { stroke: "#2c3e50", strokeWidth: 2 })
-  ],
-  color: { 
-    domain: ["Pousse vers les Hommes (+)", "Pousse vers les Femmes (-)"], 
-    range: ["#e67e22", "#2980b9"],
-    legend: true 
+// 2. Affichage réactif du graphique
+affichage_graphique_shap = {
+  // Si aucune commune sélectionnée ou données manquantes
+  if (!isGeoSelected || !resultat_commune) {
+    return htl.html`<div style="color: gray; font-style: italic; padding: 20px;">Par souci de significativité statistique, les résultats ne sont pas présentés pour les communes de moins de 500 habitants.</div>`;
   }
-}) : htl.html`<p style="color: gray; font-style: italic; padding: 20px;">"Par souci de significativité statistique, les résultats ne sont pas présentés pour les communes de moins de 500 habitants."</p>`
+
+  // Si la commune n'a pas de données SHAP
+  if (data_shap.length === 0) {
+    return htl.html`<div style="color: gray; font-style: italic; padding: 20px;">Par souci de significativité statistique, les résultats détaillés ne sont pas présentés pour cette commune.</div>`;
+  }
+
+  // Création du graphique avec largeur fixe (width: 800) pour éviter la disparition
+  return Plot.plot({
+    title: `Top 5 des variables expliquant la prédiction pour ${selection_geo.GEO_LABEL}`,
+    subtitle: "Impact local sur l'écart d'activité (en points)",
+    height: 280,
+    width: 800,
+    marginLeft: 220,
+    x: { 
+      label: "Impact (Valeur SHAP)", 
+      grid: true 
+    },
+    y: { 
+      label: null,
+      domain: data_shap.map(d => d.variable).reverse()
+    },
+    marks: [
+      Plot.barX(data_shap, {
+        x: "impact",
+        y: "variable",
+        fill: d => d.impact > 0 ? "Pousse vers les Hommes (+)" : "Pousse vers les Femmes (-)",
+        rx: 3
+      }),
+      Plot.ruleX([0], { stroke: "#2c3e50", strokeWidth: 2 })
+    ],
+    color: { 
+      domain: ["Pousse vers les Hommes (+)", "Pousse vers les Femmes (-)"], 
+      range: ["#e67e22", "#2980b9"],
+      legend: true 
+    }
+  });
+}
+```
+
+# Cartographie (Réel vs Prédit)
+
+## Comparaison nationale {height="100%"}
+
+```{r, warning=FALSE, message=FALSE}
+#| echo: false
+#| out-width: "100%"
+
+library(DBI)
+library(duckdb)
+library(dplyr)
+library(ggplot2)
+library(plotly)
+
+# --- Connexion DuckDB ---
+con <- dbConnect(duckdb(), dbdir = "base.duckdb")
+
+# On ajoute invisible() pour cacher les [1] 0 et [1] 1
+invisible(dbExecute(con, "INSTALL httpfs; LOAD httpfs; INSTALL aws; LOAD aws;"))
+invisible(dbExecute(con, "CREATE OR REPLACE SECRET (
+  TYPE S3,
+  PROVIDER CREDENTIAL_CHAIN,
+  ENDPOINT 'minio.lab.sspcloud.fr',
+  URL_STYLE 'path'
+);"))
+
+chemin_communes <- "s3://sarahbeaucamp/communes_france_2023.parquet"
+communes_raw <- tbl(con, paste0("read_parquet('", chemin_communes, "')"))
+
+communes_geo <- communes_raw %>%
+  select(
+    GEO = code_insee,
+    lat = latitude_centre,
+    lon = longitude_centre,
+    population = population
+  ) %>%
+  filter(!substr(GEO, 1, 2) %in% c("97", "98")) %>%
+  collect()
+
+
+chemin_xgb <- "s3://sarahbeaucamp/predictions_xgboost_2023.parquet"
+preds_xgb <- tbl(con, paste0("read_parquet('", chemin_xgb, "')")) %>%
+  collect()
+
+
+df_carte <- preds_xgb %>%
+  inner_join(communes_geo, by = "GEO") %>%
+  filter(!is.na(lat) & !is.na(lon)) %>%
+  filter(population >= 500)
+
+
+min_val <- min(c(df_carte$Y_OBSERVE, df_carte$Y_PREDIT_XGB), na.rm = TRUE)
+max_val <- max(c(df_carte$Y_OBSERVE, df_carte$Y_PREDIT_XGB), na.rm = TRUE)
+
+
+p1 <- ggplot(df_carte, aes(x = lon, y = lat, 
+                           size = population, 
+                           color = Y_OBSERVE,
+                           text = paste0("<b>", GEO_LABEL, "</b><br>",
+                                         "Réel : ", round(Y_OBSERVE * 100, 1), "%<br>",
+                                         "Pop : ", population))) +
+  geom_point(alpha = 0.6, stroke = 0) +
+  scale_size_continuous(range = c(0.2, 3), guide = "none") + 
+  scale_color_viridis_c(option = "plasma", limits = c(min_val, max_val), name = "Taux") +
+  coord_quickmap() + 
+  theme_void() +
+  labs(title = "Valeur Réelle Observée") +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+
+
+p2 <- ggplot(df_carte, aes(x = lon, y = lat, 
+                           size = population, 
+                           color = Y_PREDIT_XGB,
+                           text = paste0("<b>", GEO_LABEL, "</b><br>",
+                                         "Prédit : ", round(Y_PREDIT_XGB * 100, 1), "%<br>",
+                                         "Pop : ", population))) +
+  geom_point(alpha = 0.6, stroke = 0) +
+  scale_size_continuous(range = c(0.2, 3), guide = "none") +
+  scale_color_viridis_c(option = "plasma", limits = c(min_val, max_val), name = "Taux") +
+  coord_quickmap() +
+  theme_void() +
+  labs(title = "Prédiction XGBoost") +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+
+
+subplot(
+  ggplotly(p1, tooltip = "text"),
+  ggplotly(p2, tooltip = "text"),
+  nrows = 1,
+  shareX = TRUE,
+  shareY = TRUE,
+  titleX = FALSE,
+  titleY = FALSE
+) %>% 
+  layout(title = "Comparaison de l'Écart d'Activité : Réel vs Prédit")
+```
+
+# Simulateur
+
+## Résultats de la simulation {height="25%"}
+
+```{ojs calcul_et_kpi}
+pred_originale = (isGeoSelected && resultat_commune) ? resultat_commune.Y_PREDIT_XGB * 100 : 0;
+somme_shap_originale = data_shap.length > 0 ? d3.sum(data_shap, d => d.impact * 100) : 0;
+
+// Fonction de règle de 3 : (Nouvelle Valeur / Ancienne Valeur) * Ancien Impact SHAP
+function calc_impact(index, nouvelle_valeur) {
+  if (data_shap.length <= index) return 0;
+  let ancienne_valeur = data_shap[index].valeur;
+  let ancien_impact = data_shap[index].impact * 100;
+  // Sécurité si l'ancienne valeur est pile 0 pour éviter une division par zéro
+  if (ancienne_valeur === 0) return ancien_impact; 
+  return ancien_impact * (nouvelle_valeur / ancienne_valeur);
+}
+
+// On calcule la nouvelle somme des impacts basée sur les curseurs
+somme_shap_simulee = calc_impact(0, sim_val1) + 
+                     calc_impact(1, sim_val2) + 
+                     calc_impact(2, sim_val3) + 
+                     calc_impact(3, sim_val4) + 
+                     calc_impact(4, sim_val5);
+
+pred_simulee = pred_originale - somme_shap_originale + somme_shap_simulee;
+delta_pred = pred_simulee - pred_originale;
+
+htl.html`
+  ${(isGeoSelected && resultat_commune && data_shap.length > 0) ? htl.html`
+  <div class="kpi-container">
+    <div class="kpi-card pred-card">
+      <p class="kpi-title">Prédiction Initiale</p>
+      <p class="kpi-value pred-value">${pred_originale.toFixed(2)} %</p>
+    </div>
+    
+    <div class="kpi-card" style="background: ${delta_pred > 0 ? '#fdedec' : (delta_pred < 0 ? '#e8f8f5' : '#f8f9fa')}; border-top: 4px solid ${delta_pred > 0 ? '#e74c3c' : (delta_pred < 0 ? '#1abc9c' : '#bdc3c7')}; transition: 0.3s;">
+      <p class="kpi-title">Prédiction Simulée</p>
+      <p class="kpi-value" style="color: ${delta_pred > 0 ? '#c0392b' : (delta_pred < 0 ? '#16a085' : '#7f8c8d')};">${pred_simulee.toFixed(2)} %</p>
+      <p style="margin:0; font-size: 1.1em; font-weight: bold; color: ${delta_pred > 0 ? '#c0392b' : (delta_pred < 0 ? '#16a085' : 'gray')};">
+        ${delta_pred > 0 ? '▲ +' : (delta_pred < 0 ? '▼ ' : '')}${delta_pred !== 0 ? delta_pred.toFixed(2) + ' pts' : 'Aucun changement'}
+      </p>
+    </div>
+  </div>
+  ` : htl.html`<div style="color: gray; font-style: italic; padding: 20px;">Sélectionnez une commune valide pour accéder au simulateur.</div>`}
+`
+```
+
+## Ajustement des variables (de 0 à 100%) {height="75%"}
+
+```{ojs curseurs}
+// Curseurs allant de 0 à 1, initialisés sur la VRAIE valeur de la commune
+viewof sim_val1 = data_shap.length > 0 ? Inputs.range([0, 1], {
+  value: data_shap[0].valeur,
+  label: data_shap[0].variable,
+  step: 0.01,
+  format: x => (x * 100).toFixed(0) + " %",
+  width: 800
+}) : htl.html`<div style="display:none;"></div>`;
+
+viewof sim_val2 = data_shap.length > 1 ? Inputs.range([0, 1], {
+  value: data_shap[1].valeur,
+  label: data_shap[1].variable,
+  step: 0.01,
+  format: x => (x * 100).toFixed(0) + " %",
+  width: 800
+}) : htl.html`<div style="display:none;"></div>`;
+
+viewof sim_val3 = data_shap.length > 2 ? Inputs.range([0, 1], {
+  value: data_shap[2].valeur,
+  label: data_shap[2].variable,
+  step: 0.01,
+  format: x => (x * 100).toFixed(0) + " %",
+  width: 800
+}) : htl.html`<div style="display:none;"></div>`;
+
+viewof sim_val4 = data_shap.length > 3 ? Inputs.range([0, 1], {
+  value: data_shap[3].valeur,
+  label: data_shap[3].variable,
+  step: 0.01,
+  format: x => (x * 100).toFixed(0) + " %",
+  width: 800
+}) : htl.html`<div style="display:none;"></div>`;
+
+viewof sim_val5 = data_shap.length > 4 ? Inputs.range([0, 1], {
+  value: data_shap[4].valeur,
+  label: data_shap[4].variable,
+  step: 0.01,
+  format: x => (x * 100).toFixed(0) + " %",
+  width: 800
+}) : htl.html`<div style="display:none;"></div>`;
+```
 ```
