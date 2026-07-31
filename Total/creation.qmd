@@ -307,30 +307,86 @@ equip_mutate = equip_brut.map(d => ({
 ```
 
 ```{ojs result_plot}
-Plot.plot({
-  title: "DEN G1 - Évolution des créations d'entreprises",
-  marginBottom: 40,
-  marginLeft: 50,
-  color: {
-    domain: ["Ensemble", "Entrepreneur individuel", "Société à responsabilité limitée", "Société par actions simplifiée", "Autres sociétés"],
-    range: ["#174695", "#FB5A5A", "#949494", "#268DFF", "#C4101D"]
-  },
-  x: { label: null, tickFormat: "" },
-  y: { label: "en nombre", grid: true },
-  marks: [
-    Plot.lineY(equip_mutate, { x: "TIME_PERIOD", y: "OBS_VALUE", stroke: "societe", strokeWidth: 2 }),
-    Plot.dot(equip_mutate, { x: "TIME_PERIOD", y: "OBS_VALUE", fill: "societe" })
-  ]
-})
+mon_graphique_final8 = {
+  // 1. Génération du graphique
+  const p = Plot.plot({
+    title: "DEN G1 - Évolution des créations d'entreprises",
+    marginBottom: 40,
+    marginLeft: 50,
+    color: {
+      domain: ["Ensemble", "Entrepreneur individuel", "Société à responsabilité limitée", "Société par actions simplifiée", "Autres sociétés"],
+      range: ["#174695", "#FB5A5A", "#949494", "#268DFF", "#C4101D"]
+    },
+    x: { label: null, tickFormat: "" },
+    y: { label: "en nombre", grid: true },
+    marks: [
+      Plot.lineY(equip_mutate, { x: "TIME_PERIOD", y: "OBS_VALUE", stroke: "societe", strokeWidth: 2 }),
+      Plot.dot(equip_mutate, { x: "TIME_PERIOD", y: "OBS_VALUE", fill: "societe" })
+    ]
+  });
+
+  // 2. Création du bouton discret flottant
+  const btn = html`<button style="position: absolute; top: 10px; right: 10px; background: white; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555; z-index: 100;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "white";
+  
+  // Action au clic avec masquage temporaire
+  btn.onclick = async () => {
+    btn.style.display = "none";
+    
+    const html2pdf = await require("html2pdf.js");
+    await html2pdf().set({
+      margin: 15,
+      filename: "Graphique_Creations_Entreprises.pdf",
+      html2canvas: { scale: 2 }
+    }).from(p).save();
+    
+    btn.style.display = "block";
+  };
+
+  // 3. Ajout du bouton à l'intérieur du graphique
+  p.style.position = "relative";
+  p.appendChild(btn);
+
+  return p;
+}
 ```
 
 ## Données brutes
 
 ```{ojs result_table}
-Inputs.table(equip_mutate, {
+// 1. Génération du tableau
+mon_tableau8 = Inputs.table(equip_mutate, {
   columns: ["TIME_PERIOD", "societe", "OBS_VALUE"],
   header: { TIME_PERIOD: "Année", societe: "Type", OBS_VALUE: "Valeur" }
-})
+});
+
+// 2. Création du bouton
+btn_pdf_tableau8 = {
+  const btn = html`<button style="background: transparent; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "transparent";
+  
+  btn.onclick = async () => {
+    const html2pdf = await require("html2pdf.js");
+    html2pdf().set({
+      margin: 15,
+      filename: "Tableau_Creations_Entreprises.pdf",
+      html2canvas: { scale: 2 }
+    }).from(mon_tableau8).save();
+  };
+  return btn;
+}
+
+// 3. Affichage avec le bouton positionné juste au-dessus
+html`
+<div style="text-align: right; margin-bottom: 5px;">
+  ${btn_pdf_tableau8}
+</div>
+<div>${mon_tableau8}</div>
+`
 ```
 
 # Évolution des créations d'établissements
@@ -364,36 +420,91 @@ data_plot = data_brute.map(d => ({
 ```
 
 ```{ojs plot_evolution}
-Plot.plot({
-  title: isGeoSelected ? `Évolution – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
-  x: { 
-    label: "Année", 
-    tickFormat: "d" // Évite les virgules dans les années 
-  },
-  y: { 
-    label: "Valeur (Nombre)", 
-    grid: true 
-  },
-  color: { 
-    legend: true 
-  },
-  marks: [
-    Plot.lineY(data_plot, { x: "annee", y: "valeur", stroke: "label", strokeWidth: 2 }),
-    Plot.dot(data_plot, { x: "annee", y: "valeur", fill: "label", r: 4 })
-  ]
-})
+mon_graphique_final9 = {
+  // 1. Génération du graphique
+  const p = Plot.plot({
+    title: isGeoSelected ? `Évolution – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+    x: { 
+      label: "Année", 
+      tickFormat: "d" // Évite les virgules dans les années 
+    },
+    y: { 
+      label: "Valeur (Nombre)", 
+      grid: true 
+    },
+    color: { 
+      legend: true 
+    },
+    marks: [
+      Plot.lineY(data_plot, { x: "annee", y: "valeur", stroke: "label", strokeWidth: 2 }),
+      Plot.dot(data_plot, { x: "annee", y: "valeur", fill: "label", r: 4 })
+    ]
+  });
+
+  // 2. Création du bouton discret flottant
+  const btn = html`<button style="position: absolute; top: 10px; right: 10px; background: white; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555; z-index: 100;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "white";
+  
+  // Action au clic avec masquage temporaire
+  btn.onclick = async () => {
+    btn.style.display = "none";
+    
+    const html2pdf = await require("html2pdf.js");
+    await html2pdf().set({
+      margin: 15,
+      filename: `Graphique_Evolution_${selection_geo?.GEO_LABEL || 'Territoire'}.pdf`,
+      html2canvas: { scale: 2 }
+    }).from(p).save();
+    
+    btn.style.display = "block";
+  };
+
+  // 3. Ajout du bouton à l'intérieur du graphique
+  p.style.position = "relative";
+  p.appendChild(btn);
+
+  return p;
+}
 ```
 
 ```{ojs table_result}
-// Tableau récapitulatif
-Inputs.table(data_plot, {
+// 1. Génération du tableau
+mon_tableau9 = Inputs.table(data_plot, {
   columns: ["annee", "label", "valeur"],
   header: { 
     annee: "Année", 
     label: "Indicateur", 
     valeur: "Valeur" 
   }
-})
+});
+
+// 2. Création du bouton
+btn_pdf_tableau9 = {
+  const btn = html`<button style="background: transparent; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "transparent";
+  
+  btn.onclick = async () => {
+    const html2pdf = await require("html2pdf.js");
+    html2pdf().set({
+      margin: 15,
+      filename: `Tableau_Evolution_${selection_geo?.GEO_LABEL || 'Territoire'}.pdf`,
+      html2canvas: { scale: 2 }
+    }).from(mon_tableau9).save();
+  };
+  return btn;
+}
+
+// 3. Affichage avec le bouton positionné juste au-dessus
+html`
+<div style="text-align: right; margin-bottom: 5px;">
+  ${btn_pdf_tableau9}
+</div>
+<div>${mon_tableau9}</div>
+`
 ```
 
 # Créations d'établissements par secteur d'activité en 2025
@@ -459,39 +570,93 @@ data_clean5 = equip_summarise5.map(function(d) {
 ```
 
 ```{ojs result_plot}
-// Histogramme horizontal (lisibilité)
-Plot.plot({
-  title: isGeoSelected ? `Créations d'établissements en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
-  marginLeft: 250, // Marge large pour afficher les textes des secteurs à gauche
-  x: { 
-    label: "Nombre de nouveaux établissements", 
-    grid: true 
-  },
-  y: { 
-    label: null 
-  },
-  marks: [
-    Plot.barX(data_clean5, { x: "total_groupe", y: "secteur5", fill: "#174695" }),
-    Plot.ruleX([0])
-  ]
-})
+mon_graphique_final10 = {
+  // 1. Génération du graphique
+  const p = Plot.plot({
+    title: isGeoSelected ? `Créations d'établissements en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+    marginLeft: 250, // Marge conservée pour la lisibilité
+    x: { 
+      label: "Nombre de nouveaux établissements", 
+      grid: true 
+    },
+    y: { 
+      label: null 
+    },
+    marks: [
+      Plot.barX(data_clean5, { x: "total_groupe", y: "secteur5", fill: "#174695" }),
+      Plot.ruleX([0])
+    ]
+  });
+
+  // 2. Création du bouton discret flottant
+  const btn = html`<button style="position: absolute; top: 10px; right: 10px; background: white; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555; z-index: 100;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "white";
+  
+  // Action au clic avec masquage temporaire
+  btn.onclick = async () => {
+    btn.style.display = "none";
+    
+    const html2pdf = await require("html2pdf.js");
+    await html2pdf().set({
+      margin: 15,
+      filename: `Graphique_Creations_Etablissements_${selection_geo?.GEO_LABEL || 'Territoire'}.pdf`,
+      html2canvas: { scale: 2 }
+    }).from(p).save();
+    
+    btn.style.display = "block";
+  };
+
+  // 3. Ajout du bouton à l'intérieur du graphique
+  p.style.position = "relative";
+  p.appendChild(btn);
+
+  return p;
+}
 ```
 
 ```{ojs result_table}
-// Ajout de la ligne TOTAL pour le tableau
+// 1. Préparation des données
 equip_pour_tableau5 = {
   let data5 = data_clean5.slice(); 
-  data5.push({ secteur5: "TOTAL", total_groupe: total5 });
   return data5;
 }
 
-Inputs.table(equip_pour_tableau5, {
+// 2. Génération du tableau
+mon_tableau10 = Inputs.table(equip_pour_tableau5, {
   columns: ["secteur5", "total_groupe"],
   header: {
     secteur5: "Secteur d'activité",
     total_groupe: "Créations (nombre d'établissements)"
   }
-})
+});
+
+// 3. Création du bouton
+btn_pdf_tableau10 = {
+  const btn = html`<button style="background: transparent; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "transparent";
+  
+  btn.onclick = async () => {
+    const html2pdf = await require("html2pdf.js");
+    html2pdf().set({
+      margin: 15,
+      filename: `Tableau_Creations_Etablissements_${selection_geo?.GEO_LABEL || 'Territoire'}.pdf`,
+      html2canvas: { scale: 2 }
+    }).from(mon_tableau10).save();
+  };
+  return btn;
+}
+
+// 4. Affichage avec le bouton positionné juste au-dessus
+html`
+<div style="text-align: right; margin-bottom: 5px;">
+  ${btn_pdf_tableau10}
+</div>
+<div>${mon_tableau10}</div>
+`
 ```
 
 # Nombre d'unités légales économiquement actives en 2023
@@ -575,41 +740,94 @@ eco_act_trie = eco_act.sort((a, b) => ordre_secteurs.indexOf(a.secteur_act) - or
 ```
 
 ```{ojs result_plot}
-// Histogramme 
-Plot.plot({
-  title: isGeoSelected ? `Unités légales économiquement actives en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
-  marginBottom: 100,
-  x: { 
-    domain: ordre_secteurs, // Force l'ordre sur l'axe X
-    label: null,
-    tickFormat: (d) => d.length > 18 ? d.slice(0, 18) + "…" : d
-  },
-  y: { 
-    label: "Nombre d'unités légales", 
-    grid: true 
-  },
-  marks: [
-    Plot.barY(eco_act_trie, { x: "secteur_act", y: "total_groupe", fill: "#174695" }),
-    Plot.ruleY([0])
-  ]
-})
+mon_graphique_final11 = {
+  // 1. Génération du graphique
+  const p = Plot.plot({
+    title: isGeoSelected ? `Unités légales économiquement actives en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+    marginLeft: 250, 
+    x: { 
+      label: "Nombre d'unités légales", 
+      grid: true 
+    },
+    y: { 
+      domain: ordre_secteurs,
+      label: null
+    },
+    marks: [
+      Plot.barX(eco_act_trie, { x: "total_groupe", y: "secteur_act", fill: "#174695" }),
+      Plot.ruleX([0])
+    ]
+  });
+
+  // 2. Création du bouton discret flottant
+  const btn = html`<button style="position: absolute; top: 10px; right: 10px; background: white; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555; z-index: 100;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "white";
+  
+  // Action au clic avec masquage temporaire
+  btn.onclick = async () => {
+    btn.style.display = "none";
+    
+    const html2pdf = await require("html2pdf.js");
+    await html2pdf().set({
+      margin: 15,
+      filename: `Graphique_Unites_Legales_${selection_geo?.GEO_LABEL || 'Territoire'}.pdf`,
+      html2canvas: { scale: 2 }
+    }).from(p).save();
+    
+    btn.style.display = "block";
+  };
+
+  // 3. Ajout du bouton à l'intérieur du graphique
+  p.style.position = "relative";
+  p.appendChild(btn);
+
+  return p;
+}
 ```
 
 ```{ojs result_table}
-// Tri et ajout de la ligne TOTAL
+// 1. Préparation des données et ajout de la ligne TOTAL
 eco_act_pour_tableau = {
   let data = eco_act_trie.slice();
-  data.push({ secteur_act: "TOTAL", total_groupe: total });
   return data;
 }
 
-Inputs.table(eco_act_pour_tableau, {
+// 2. Génération du tableau
+mon_tableau11 = Inputs.table(eco_act_pour_tableau, {
   columns: ["secteur_act", "total_groupe"],
   header: {
     secteur_act: "Secteur d'activité",
     total_groupe: "Nombre d'unités légales"
   }
-})
+});
+
+// 3. Création du bouton
+btn_pdf_tableau11 = {
+  const btn = html`<button style="background: transparent; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "transparent";
+  
+  btn.onclick = async () => {
+    const html2pdf = await require("html2pdf.js");
+    html2pdf().set({
+      margin: 15,
+      filename: `Tableau_Unites_Legales_${selection_geo?.GEO_LABEL || 'Territoire'}.pdf`,
+      html2canvas: { scale: 2 }
+    }).from(mon_tableau11).save();
+  };
+  return btn;
+}
+
+// 4. Affichage avec le bouton positionné juste au-dessus
+html`
+<div style="text-align: right; margin-bottom: 5px;">
+  ${btn_pdf_tableau11}
+</div>
+<div>${mon_tableau11}</div>
+`
 ```
 
 # Nombre d'établissements économiquement actifs en 2023
@@ -694,40 +912,93 @@ etab_trie4 = etab4.sort((a, b) => ordre_secteurs4.indexOf(a.secteur_act) - ordre
 ```
 
 ```{ojs result_plot}
-// Histogramme 
-Plot.plot({
-  title: isGeoSelected ? `Établissements économiquement actifs en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
-  marginBottom: 100,
-  x: { 
-    domain: ordre_secteurs4, // Force l'ordre sur l'axe X
-    label: null,
-    tickFormat: (d) => d.length > 18 ? d.slice(0, 18) + "…" : d
-  },
-  y: { 
-    label: "Nombre d'établissements", 
-    grid: true 
-  },
-  marks: [
-    Plot.barY(etab_trie4, { x: "secteur_act", y: "total_groupe", fill: "#174695" }),
-    Plot.ruleY([0])
-  ]
-})
+mon_graphique_final12 = {
+  // 1. Génération du graphique
+  const p = Plot.plot({
+    title: isGeoSelected ? `Établissements économiquement actifs en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+    marginLeft: 250, // Remplace le marginBottom pour laisser la place aux libellés sur la gauche
+    x: { 
+      label: "Nombre d'établissements", 
+      grid: true 
+    },
+    y: { 
+      domain: ordre_secteurs4, // Force l'ordre sur l'axe Y
+      label: null
+    },
+    marks: [
+      Plot.barX(etab_trie4, { x: "total_groupe", y: "secteur_act", fill: "#174695" }),
+      Plot.ruleX([0])
+    ]
+  });
+
+  // 2. Création du bouton discret flottant
+  const btn = html`<button style="position: absolute; top: 10px; right: 10px; background: white; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555; z-index: 100;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "white";
+  
+  // Action au clic avec masquage temporaire
+  btn.onclick = async () => {
+    btn.style.display = "none";
+    
+    const html2pdf = await require("html2pdf.js");
+    await html2pdf().set({
+      margin: 15,
+      filename: `Graphique_Etablissements_Actifs_${selection_geo?.GEO_LABEL || 'Territoire'}.pdf`,
+      html2canvas: { scale: 2 }
+    }).from(p).save();
+    
+    btn.style.display = "block";
+  };
+
+  // 3. Ajout du bouton à l'intérieur du graphique
+  p.style.position = "relative";
+  p.appendChild(btn);
+
+  return p;
+}
 ```
 
 ```{ojs result_table}
-// Tri et ajout de la ligne TOTAL
+// 1. Tri et ajout de la ligne TOTAL
 etab_pour_tableau4 = {
   let data4 = etab_trie4.slice();
-  data4.push({ secteur_act: "TOTAL", total_groupe: total4 });
   return data4;
 }
 
-Inputs.table(etab_pour_tableau4, {
+// 2. Génération du tableau
+mon_tableau12 = Inputs.table(etab_pour_tableau4, {
   columns: ["secteur_act", "total_groupe"],
   header: {
     secteur_act: "Secteur d'activité",
     total_groupe: "Nombre d'établissements"
   }
-})
+});
+
+// 3. Création du bouton
+btn_pdf_tableau12 = {
+  const btn = html`<button style="background: transparent; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "transparent";
+  
+  btn.onclick = async () => {
+    const html2pdf = await require("html2pdf.js");
+    html2pdf().set({
+      margin: 15,
+      filename: `Tableau_Etablissements_Actifs_${selection_geo?.GEO_LABEL || 'Territoire'}.pdf`,
+      html2canvas: { scale: 2 }
+    }).from(mon_tableau12).save();
+  };
+  return btn;
+}
+
+// 4. Affichage avec le bouton positionné juste au-dessus
+html`
+<div style="text-align: right; margin-bottom: 5px;">
+  ${btn_pdf_tableau12}
+</div>
+<div>${mon_tableau12}</div>
+`
 ```
 

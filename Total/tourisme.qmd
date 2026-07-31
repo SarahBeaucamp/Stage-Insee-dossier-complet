@@ -403,7 +403,6 @@ mon_graphique_final = {
 // 1. Tableau
 equip_pour_tableau1 = {
   let data = equip_trie1.slice(); 
-  data.push({ etoiles: "TOTAL", total_groupe: total1 });
   return data;
 }
 
@@ -567,7 +566,6 @@ mon_graphique_final2 = {
 ```{ojs result_table}
 equip_pour_tableau2 = {
   let data = equip_trie2.slice(); 
-  data.push({ etoiles: "TOTAL", total_groupe: total2 });
   return data;
 }
 
@@ -704,7 +702,6 @@ mon_graphique_final3 = {
 ```{ojs result_table}
 equip_pour_tableau3 = {
   let data = equip_synthese3.slice(); 
-  data.push({ categorie: "TOTAL", total_groupe: total3 });
   return data;
 }
 
