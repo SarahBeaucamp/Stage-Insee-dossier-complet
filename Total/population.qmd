@@ -273,7 +273,7 @@ viewof selection_geo = Inputs.table(
 )
 ```
 
-# Population par sexe et âge regroupé en 2023
+# Population par sexe et âge regroupé en 2022
 
 ## Territoire sélectionné {height="15%"}
 
@@ -370,41 +370,68 @@ equip_trie = equip.sort((a, b) => ordre_ages.indexOf(a.TRANCHE_AGE) - ordre_ages
 ```
 
 ```{ojs result_plot}
-// Histogramme double
-Plot.plot({
-  title: isGeoSelected ? `Population par sexe et âge regroupé – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
-  subtitle: `Année ${selection_annee}`,
-  marginBottom: 60,
-  marginLeft: 50,
-  // L'axe X principal est masqué, car les labels sont gérés par le fx (facets)
-  x: { axis: null }, 
-  y: { 
-    label: "Proportion d'hommes et de femmes", 
-    tickFormat: "%", 
-    grid: true 
-  },
-  // Facet X : permet de grouper les barres par tranche d'âge
-  fx: { 
-    domain: ordre_ages, 
-    label: "Tranches d'âge", 
-    tickRotate: -30 
-  },
-  color: { 
-    domain: ["Homme", "Femme"], 
-    range: ["#174695", "#FB5A5A"], 
-    legend: true 
-  },
-  marks: [
-    Plot.barY(equip_trie, {
-      x: "SEXE", 
-      y: "part_locale", 
-      fill: "SEXE", 
-      fx: "TRANCHE_AGE",
-      title: d => `${d.SEXE} - ${d.TRANCHE_AGE}\n${d.population_exacte} personnes (${(d.part_locale*100).toFixed(1)}%)`
-    }),
-    Plot.ruleY([0])
-  ]
-})
+mon_graphique_final24 = {
+  // 1. Génération du graphique
+  const p = Plot.plot({
+    title: isGeoSelected ? `Population par sexe et âge regroupé` : "Sélectionnez un territoire",
+    marginBottom: 60,
+    marginLeft: 50,
+    // L'axe X principal est masqué, car les labels sont gérés par le fx (facets)
+    x: { axis: null }, 
+    y: { 
+      label: "Proportion d'hommes et de femmes", 
+      tickFormat: "%", 
+      grid: true 
+    },
+    // Facet X : permet de grouper les barres par tranche d'âge
+    fx: { 
+      domain: ordre_ages, 
+      label: "Tranches d'âge", 
+      tickRotate: -30 
+    },
+    color: { 
+      domain: ["Homme", "Femme"], 
+      range: ["#174695", "#FB5A5A"], 
+      legend: true 
+    },
+    marks: [
+      Plot.barY(equip_trie, {
+        x: "SEXE", 
+        y: "part_locale", 
+        fill: "SEXE", 
+        fx: "TRANCHE_AGE",
+        title: d => `${d.SEXE} - ${d.TRANCHE_AGE}\n${d.population_exacte} personnes (${(d.part_locale*100).toFixed(1)}%)`
+      }),
+      Plot.ruleY([0])
+    ]
+  });
+
+  // 2. Création du bouton discret flottant
+  const btn = html`<button style="position: absolute; top: 10px; right: 10px; background: white; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555; z-index: 100;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "white";
+  
+  // Action au clic avec masquage temporaire
+  btn.onclick = async () => {
+    btn.style.display = "none";
+    
+    const html2pdf = await require("html2pdf.js");
+    await html2pdf().set({
+      margin: 15,
+      filename: `Graphique_Pop_Sexe_Age_${selection_geo?.GEO_LABEL || 'Territoire'}.pdf`,
+      html2canvas: { scale: 2 }
+    }).from(p).save();
+    
+    btn.style.display = "block";
+  };
+
+  // 3. Ajout du bouton à l'intérieur du graphique
+  p.style.position = "relative";
+  p.appendChild(btn);
+
+  return p;
+}
 ```
 
 ```{ojs result_pyramide_calc}
@@ -425,37 +452,66 @@ ordre_ages_pyramide = ordre_ages.slice().reverse();
 ```
 
 ```{ojs result_pyramide_plot}
-Plot.plot({
-  title: isGeoSelected ? `Pyramide des âges – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
-  subtitle: `Année ${selection_annee}`,
-  marginLeft: 60,
-  marginRight: 20,
-  height: 400,
-  x: {
-    label: "Effectif",
-    domain: [-max_effectif * 1.05, max_effectif * 1.05],
-    tickFormat: d => Math.abs(d).toLocaleString("fr-FR"),
-    grid: true
-  },
-  y: {
-    domain: ordre_ages_pyramide,
-    label: "Tranche d'âge"
-  },
-  color: {
-    domain: ["Homme", "Femme"],
-    range: ["#174695", "#FB5A5A"],
-    legend: true
-  },
-  marks: [
-    Plot.barX(equip_pyramide, {
-      x: "valeur_signee",
-      y: "TRANCHE_AGE",
-      fill: "SEXE",
-      title: d => `${d.SEXE} - ${d.TRANCHE_AGE}\n${d.population_exacte.toLocaleString("fr-FR")} personnes`
-    }),
-    Plot.ruleX([0])
-  ]
-})
+mon_graphique_final25 = {
+  // 1. Génération du graphique
+  const p = Plot.plot({
+    title: isGeoSelected ? `Pyramide des âges` : "Sélectionnez un territoire",
+    subtitle: `Année ${selection_annee}`,
+    marginLeft: 60,
+    marginRight: 20,
+    height: 400,
+    x: {
+      label: "Effectif",
+      domain: [-max_effectif * 1.05, max_effectif * 1.05],
+      tickFormat: d => Math.abs(d).toLocaleString("fr-FR"),
+      grid: true
+    },
+    y: {
+      domain: ordre_ages_pyramide,
+      label: "Tranche d'âge"
+    },
+    color: {
+      domain: ["Homme", "Femme"],
+      range: ["#174695", "#FB5A5A"],
+      legend: true
+    },
+    marks: [
+      Plot.barX(equip_pyramide, {
+        x: "valeur_signee",
+        y: "TRANCHE_AGE",
+        fill: "SEXE",
+        title: d => `${d.SEXE} - ${d.TRANCHE_AGE}\n${d.population_exacte.toLocaleString("fr-FR")} personnes`
+      }),
+      Plot.ruleX([0])
+    ]
+  });
+
+  // 2. Création du bouton discret flottant
+  const btn = html`<button style="position: absolute; top: 10px; right: 10px; background: white; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555; z-index: 100;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "white";
+  
+  // Action au clic avec masquage temporaire
+  btn.onclick = async () => {
+    btn.style.display = "none";
+    
+    const html2pdf = await require("html2pdf.js");
+    await html2pdf().set({
+      margin: 15,
+      filename: `Graphique_Pyramide_Ages_${selection_geo?.GEO_LABEL || 'Territoire'}.pdf`,
+      html2canvas: { scale: 2 }
+    }).from(p).save();
+    
+    btn.style.display = "block";
+  };
+
+  // 3. Ajout du bouton à l'intérieur du graphique
+  p.style.position = "relative";
+  p.appendChild(btn);
+
+  return p;
+}
 ```
 
 
@@ -542,106 +598,160 @@ equip_trie1 = equip1.sort((a, b) => ordre_niveaux.indexOf(a.Lieu_de_résidence) 
 ```
 
 ```{ojs result_plot}
-camembert = {
-  if (!isGeoSelected || total1 === 0) return htl.html`<div>Sélectionnez un territoire ou aucune donnée disponible pour cette année.</div>`;
-  
-  const width = 600;
-  const height = 350;
-  const radius = Math.min(width, height) / 2 - 20;
-
-  const arc = d3.arc().innerRadius(0).outerRadius(radius);
-  
-  const pie = d3.pie()
-    .value(d => d.total_groupe)
-    .sort(null)
-    .startAngle(2 * Math.PI)
-    .endAngle(0);
-
-  const color = d3.scaleOrdinal()
-    .domain(ordre_niveaux)
-    .range(["#08519c", "#6baed6", "#bdd7e7"]); // Du plus foncé au plus clair
-
-  const svg = d3.create("svg")
-    .attr("viewBox", [0, 0, width, height])
-    .style("font-family", "sans-serif");
-
-  const gPie = svg.append("g")
-    .attr("transform", `translate(${width / 3}, ${height / 2})`);
-
-  gPie.selectAll("path")
-    .data(pie(equip_trie1))
-    .join("path")
-    .attr("fill", d => color(d.data.Lieu_de_résidence))
-    .attr("stroke", "white")
-    .attr("stroke-width", "1.5px")
-    .attr("d", arc)
-    .append("title")
-    .text(d => `${d.data.Lieu_de_résidence}: ${d.data.total_groupe}`);
-
-  gPie.selectAll("text")
-    .data(pie(equip_trie1))
-    .join("text")
-    .attr("transform", d => `translate(${arc.centroid(d)})`)
-    .attr("text-anchor", "middle")
-    // Noir pour la couleur claire, blanc pour les couleurs foncées
-    .attr("fill", d => d.data.Lieu_de_résidence === "Dans une autre commune" ? "black" : "white") 
-    .attr("font-size", "12px")
-    .attr("font-weight", "bold")
-    // Affiche uniquement si c'est assez grand pour être lisible
-    .text(d => d.data.part_groupe >= 3 ? `${d.data.part_groupe.toFixed(1)}%` : "");
-
-  const legend = svg.append("g")
-    .attr("transform", `translate(${width * 0.60}, ${height / 2 - 50})`);
+mon_graphique_final26 = {
+  // 1. Construction du camembert D3
+  const camembert = (() => {
+    if (!isGeoSelected || total1 === 0) return htl.html`<div>Sélectionnez un territoire ou aucune donnée disponible pour cette année.</div>`;
     
-  legend.append("text")
-    .attr("x", 0)
-    .attr("y", -10)
-    .attr("font-weight", "bold")
-    .attr("font-size", "12px")
-    .text("Lieu de résidence");
+    const width = 600;
+    const height = 350;
+    const radius = Math.min(width, height) / 2 - 20;
 
-  const categories = color.domain();
-  categories.forEach((cat, i) => {
-    const row = legend.append("g").attr("transform", `translate(0, ${i * 25 + 10})`);
-    row.append("rect").attr("width", 15).attr("height", 15).attr("fill", color(cat)).attr("rx", 2);
-    // On ajoute un retour à la ligne manuel en SVG pour les textes longs
-    if(cat === "Dans un autre logement de la même commune") {
-        row.append("text").attr("x", 25).attr("y", 10).attr("font-size", "12px").text("Dans un autre logement");
-        row.append("text").attr("x", 25).attr("y", 24).attr("font-size", "12px").text("de la même commune");
-    } else {
-        row.append("text").attr("x", 25).attr("y", 12).attr("font-size", "12px").text(cat);
-    }
-  });
+    const arc = d3.arc().innerRadius(0).outerRadius(radius);
+    
+    const pie = d3.pie()
+      .value(d => d.total_groupe)
+      .sort(null)
+      .startAngle(2 * Math.PI)
+      .endAngle(0);
 
-  return svg.node();
+    const color = d3.scaleOrdinal()
+      .domain(ordre_niveaux)
+      .range(["#08519c", "#6baed6", "#bdd7e7"]); // Du plus foncé au plus clair
+
+    const svg = d3.create("svg")
+      .attr("viewBox", [0, 0, width, height])
+      .style("font-family", "sans-serif");
+
+    const gPie = svg.append("g")
+      .attr("transform", `translate(${width / 3}, ${height / 2})`);
+
+    gPie.selectAll("path")
+      .data(pie(equip_trie1))
+      .join("path")
+      .attr("fill", d => color(d.data.Lieu_de_résidence))
+      .attr("stroke", "white")
+      .attr("stroke-width", "1.5px")
+      .attr("d", arc)
+      .append("title")
+      .text(d => `${d.data.Lieu_de_résidence}: ${d.data.total_groupe}`);
+
+    gPie.selectAll("text")
+      .data(pie(equip_trie1))
+      .join("text")
+      .attr("transform", d => `translate(${arc.centroid(d)})`)
+      .attr("text-anchor", "middle")
+      // Noir pour la couleur claire, blanc pour les couleurs foncées
+      .attr("fill", d => d.data.Lieu_de_résidence === "Dans une autre commune" ? "black" : "white") 
+      .attr("font-size", "12px")
+      .attr("font-weight", "bold")
+      // Affiche uniquement si c'est assez grand pour être lisible
+      .text(d => d.data.part_groupe >= 3 ? `${d.data.part_groupe.toFixed(1)}%` : "");
+
+    const legend = svg.append("g")
+      .attr("transform", `translate(${width * 0.60}, ${height / 2 - 50})`);
+      
+    legend.append("text")
+      .attr("x", 0)
+      .attr("y", -10)
+      .attr("font-weight", "bold")
+      .attr("font-size", "12px")
+      .text("Lieu de résidence");
+
+    const categories = color.domain();
+    categories.forEach((cat, i) => {
+      const row = legend.append("g").attr("transform", `translate(0, ${i * 25 + 10})`);
+      row.append("rect").attr("width", 15).attr("height", 15).attr("fill", color(cat)).attr("rx", 2);
+      // On ajoute un retour à la ligne manuel en SVG pour les textes longs
+      if(cat === "Dans un autre logement de la même commune") {
+          row.append("text").attr("x", 25).attr("y", 10).attr("font-size", "12px").text("Dans un autre logement");
+          row.append("text").attr("x", 25).attr("y", 24).attr("font-size", "12px").text("de la même commune");
+      } else {
+          row.append("text").attr("x", 25).attr("y", 12).attr("font-size", "12px").text(cat);
+      }
+    });
+
+    return svg.node();
+  })();
+
+  // 2. Emballage HTML avec titre dans un conteneur au fond blanc
+  const conteneur_graphe = htl.html`
+    <div style="display: flex; flex-direction: column; align-items: center; background: white; padding: 20px;">
+      <h3 style="margin-bottom: 0px; font-family: sans-serif; font-weight: bold;">Lieu de résidence 1 an auparavant</h3>
+      ${camembert}
+    </div>
+  `;
+
+  // 3. Création du bouton discret flottant
+  const btn = htl.html`<button style="position: absolute; top: 10px; right: 10px; background: white; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555; z-index: 100;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "white";
+  
+  // Action au clic
+  btn.onclick = async () => {
+    btn.style.display = "none";
+    
+    const html2pdf = await require("html2pdf.js");
+    await html2pdf().set({
+      margin: 15,
+      filename: `Graphique_Lieu_Residence_${selection_geo?.GEO_LABEL || 'Territoire'}.pdf`,
+      html2canvas: { scale: 2 }
+    }).from(conteneur_graphe).save();
+    
+    btn.style.display = "block";
+  };
+
+  // 4. On enveloppe le tout pour positionner le bouton
+  const final_wrapper = htl.html`<div style="position: relative;">
+    ${btn}
+    ${conteneur_graphe}
+  </div>`;
+
+  return final_wrapper;
 }
-
-htl.html`
-  <div style="display: flex; flex-direction: column; align-items: center;">
-    <h3 style="margin-bottom: 0px; font-family: sans-serif; font-weight: bold;">Lieu de résidence 1 an auparavant</h3>
-    <span style="font-size: 13px; font-style: italic; font-family: sans-serif; color: #555; margin-bottom: 20px;">
-      Source : Recensement Insee ${selection_annee} – ${isGeoSelected ? selection_geo.GEO_LABEL : ""}
-    </span>
-    ${camembert}
-  </div>
-`
 ```
 
 ```{ojs result_table}
-// Tri manuellement et ajout de la ligne TOTAL
-equip_pour_tableau1 = {
-  let data1 = equip_trie1.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
-  data1.push({ Lieu_de_résidence: "TOTAL", total_groupe: total1 });
-  return data1;
+// 1. Tri manuellement et ajout de la ligne TOTAL
+equip_pour_tableau26 = {
+  let data = equip_trie1.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
+  return data;
 }
 
-// Affichage du tableau
-Inputs.table(equip_pour_tableau1, {
+// 2. Génération du tableau
+mon_tableau26 = Inputs.table(equip_pour_tableau26, {
   columns: ["Lieu_de_résidence", "total_groupe"],
   header: {
     Lieu_de_résidence: "Lieu de résidence",
     total_groupe: "Nombre de personnes"
   }
-})
+});
+
+// 3. Création du bouton
+btn_pdf_tableau26 = {
+  const btn = html`<button style="background: transparent; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "transparent";
+  
+  btn.onclick = async () => {
+    const html2pdf = await require("html2pdf.js");
+    html2pdf().set({
+      margin: 15,
+      filename: `Tableau_Lieu_Residence_${selection_geo?.GEO_LABEL || 'Territoire'}.pdf`,
+      html2canvas: { scale: 2 }
+    }).from(mon_tableau26).save();
+  };
+  return btn;
+}
+
+// 4. Affichage avec le bouton positionné juste au-dessus
+html`
+<div style="text-align: right; margin-bottom: 5px;">
+  ${btn_pdf_tableau26}
+</div>
+<div>${mon_tableau26}</div>
+`
 ```
 

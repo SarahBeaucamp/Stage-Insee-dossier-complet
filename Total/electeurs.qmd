@@ -316,52 +316,105 @@ elec = isGeoSelected
 ```
 
 ```{ojs result_plot}
-Plot.plot({
-  title: "Nombre d'électeurs inscrits sur liste principale par élection",
-  marginBottom: 40,
-  x: { 
-    label: "Année de l'élection", 
-    tickFormat: "d" // Empêche d'afficher les années avec des virgules (ex: 2,022)
-  },
-  y: { 
-    label: "Nombre d'électeurs", 
-    grid: true 
-  },
-  marks: [
-    // 1. Trace une ligne bleue continue entre toutes les années
-    Plot.line(elec, { 
-      x: "TIME_PERIOD", 
-      y: "OBS_VALUE", 
-      stroke: "blue", 
-      strokeWidth: 2 
-    }),
+mon_graphique_final13 = {
+  // 1. Génération du graphique
+  const p = Plot.plot({
+    title: "Nombre d'électeurs inscrits sur liste principale par élection",
+    marginBottom: 40,
+    x: { 
+      label: "Année de l'élection", 
+      tickFormat: "d" // Empêche d'afficher les années avec des virgules
+    },
+    y: { 
+      label: "Nombre d'électeurs", 
+      grid: true 
+    },
+    marks: [
+      // Ligne continue
+      Plot.line(elec, { 
+        x: "TIME_PERIOD", 
+        y: "OBS_VALUE", 
+        stroke: "blue", 
+        strokeWidth: 2 
+      }),
+      // Points avec info-bulle
+      Plot.dot(elec, { 
+        x: "TIME_PERIOD", 
+        y: "OBS_VALUE", 
+        fill: "#174695", 
+        r: 4,
+        title: (d) => `${d.TAB_MEASURE_LABEL} (${d.TIME_PERIOD})\nÉlecteurs : ${d.OBS_VALUE}`
+      })
+    ]
+  });
+
+  // 2. Création du bouton discret flottant
+  const btn = html`<button style="position: absolute; top: 10px; right: 10px; background: white; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555; z-index: 100;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "white";
+  
+  // Action au clic avec masquage temporaire
+  btn.onclick = async () => {
+    btn.style.display = "none";
     
-    // 2. Ajoute les points avec une info-bulle au survol
-    Plot.dot(elec, { 
-      x: "TIME_PERIOD", 
-      y: "OBS_VALUE", 
-      fill: "#174695", 
-      r: 4,
-      // Ajout interactif : affiche les infos quand on passe la souris sur le point
-      title: (d) => `${d.TAB_MEASURE_LABEL} (${d.TIME_PERIOD})\nÉlecteurs : ${d.OBS_VALUE}`
-    })
-  ]
-})
+    const html2pdf = await require("html2pdf.js");
+    await html2pdf().set({
+      margin: 15,
+      filename: "Graphique_Electeurs_Inscrits.pdf",
+      html2canvas: { scale: 2 }
+    }).from(p).save();
+    
+    btn.style.display = "block";
+  };
+
+  // 3. Ajout du bouton à l'intérieur du graphique
+  p.style.position = "relative";
+  p.appendChild(btn);
+
+  return p;
+}
 ```
 
 ```{ojs result_table}
-// 1. On trie les données par ordre chronologique (du plus ancien au plus récent)
+// 1. Préparation des données triées
 elec_pour_tableau = {
   return elec.slice().sort((a, b) => d3.ascending(a.TIME_PERIOD, b.TIME_PERIOD));
 }
 
-// 2. Affichage du tableau interactif
-Inputs.table(elec_pour_tableau, {
+// 2. Génération du tableau
+mon_tableau13 = Inputs.table(elec_pour_tableau, {
   columns: ["TIME_PERIOD", "TAB_MEASURE_LABEL", "OBS_VALUE"],
   header: {
     TIME_PERIOD: "Année",
     TAB_MEASURE_LABEL: "Type d'élection",
     OBS_VALUE: "Nombre d'électeurs"
   }
-})
+});
+
+// 3. Création du bouton
+btn_pdf_tableau13 = {
+  const btn = html`<button style="background: transparent; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "transparent";
+  
+  btn.onclick = async () => {
+    const html2pdf = await require("html2pdf.js");
+    html2pdf().set({
+      margin: 15,
+      filename: "Tableau_Electeurs_Inscrits.pdf",
+      html2canvas: { scale: 2 }
+    }).from(mon_tableau13).save();
+  };
+  return btn;
+}
+
+// 4. Affichage avec le bouton positionné juste au-dessus
+html`
+<div style="text-align: right; margin-bottom: 5px;">
+  ${btn_pdf_tableau13}
+</div>
+<div>${mon_tableau13}</div>
+`
 ```

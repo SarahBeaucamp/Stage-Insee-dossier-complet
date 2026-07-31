@@ -334,36 +334,65 @@ solde = solde_summarise.map(function(d) {
 ```
 
 ```{ojs result_plot}
-// Équivalent du ggplot: geom_line + scale_color_manual + theme_minimal
-Plot.plot({
-  title: isGeoSelected ? `Naissances et décès domiciliés – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
-  marginBottom: 40,
-  marginLeft: 50,
-  color: {
-    domain: ["Nombre de naissances vivantes", "Nombre de décès"],
-    range: ["#174695", "#FB5A5A"],
-    legend: true
-  },
-  x: { 
-    label: null, 
-    tickFormat: "d",
-    grid: false
-  },
-  y: { 
-    label: "en nombre", 
-    grid: true 
-  },
-  marks: [
-    Plot.lineY(solde, { x: d => +d.TIME_PERIOD, y: "total_groupe", stroke: "TAB_MEASURE_LABEL", strokeWidth: 2 }),
-    Plot.dot(solde, { x: d => +d.TIME_PERIOD, y: "total_groupe", fill: "TAB_MEASURE_LABEL" })
-  ]
-})
+mon_graphique_final23 = {
+  // 1. Génération du graphique
+  const p = Plot.plot({
+    title: isGeoSelected ? `Naissances et décès domiciliés – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+    marginBottom: 40,
+    marginLeft: 50,
+    color: {
+      domain: ["Nombre de naissances vivantes", "Nombre de décès"],
+      range: ["#174695", "#FB5A5A"],
+      legend: true
+    },
+    x: { 
+      label: null, 
+      tickFormat: "d",
+      grid: false
+    },
+    y: { 
+      label: "en nombre", 
+      grid: true 
+    },
+    marks: [
+      Plot.lineY(solde, { x: d => +d.TIME_PERIOD, y: "total_groupe", stroke: "TAB_MEASURE_LABEL", strokeWidth: 2 }),
+      Plot.dot(solde, { x: d => +d.TIME_PERIOD, y: "total_groupe", fill: "TAB_MEASURE_LABEL" })
+    ]
+  });
+
+  // 2. Création du bouton discret flottant
+  const btn = html`<button style="position: absolute; top: 10px; right: 10px; background: white; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555; z-index: 100;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "white";
+  
+  // Action au clic avec masquage temporaire
+  btn.onclick = async () => {
+    btn.style.display = "none";
+    
+    const html2pdf = await require("html2pdf.js");
+    await html2pdf().set({
+      margin: 15,
+      filename: `Graphique_Naissances_Deces_${selection_geo?.GEO_LABEL || 'Territoire'}.pdf`,
+      html2canvas: { scale: 2 }
+    }).from(p).save();
+    
+    btn.style.display = "block";
+  };
+
+  // 3. Ajout du bouton à l'intérieur du graphique
+  p.style.position = "relative";
+  p.appendChild(btn);
+
+  return p;
+}
 ```
 
 ## Données brutes
 
 ```{ojs result_table}
-Inputs.table(solde, {
+// 1. Génération du tableau
+mon_tableau23 = Inputs.table(solde, {
   columns: ["TIME_PERIOD", "TAB_MEASURE_LABEL", "total_groupe", "part_groupe"],
   header: {
     TIME_PERIOD: "Année",
@@ -371,6 +400,32 @@ Inputs.table(solde, {
     total_groupe: "Nombre",
     part_groupe: "Part (%)"
   }
-})
+});
+
+// 2. Création du bouton
+btn_pdf_tableau23 = {
+  const btn = html`<button style="background: transparent; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "transparent";
+  
+  btn.onclick = async () => {
+    const html2pdf = await require("html2pdf.js");
+    html2pdf().set({
+      margin: 15,
+      filename: `Tableau_Naissances_Deces_${selection_geo?.GEO_LABEL || 'Territoire'}.pdf`,
+      html2canvas: { scale: 2 }
+    }).from(mon_tableau23).save();
+  };
+  return btn;
+}
+
+// 3. Affichage avec le bouton positionné juste au-dessus
+html`
+<div style="text-align: right; margin-bottom: 5px;">
+  ${btn_pdf_tableau23}
+</div>
+<div>${mon_tableau23}</div>
+`
 ```
 

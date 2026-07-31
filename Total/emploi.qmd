@@ -384,71 +384,128 @@ equip_trie = equip.sort((a, b) => ordre_csp.indexOf(a.CSP) - ordre_csp.indexOf(b
 ```
 
 ```{ojs result_plot}
-Plot.plot({
-  title: isGeoSelected ? `Taux d'emploi par CSP – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
-  subtitle: `Année ${selection_annee}`,
-  marginBottom: 60,
-  marginLeft: 50,
-  x: { axis: null },
-  y: {
-    label: "Part au sein de la CSP",
-    tickFormat: "%",
-    grid: true,
-    domain: [0, 1]
-  },
-  fx: {
-    domain: ordre_csp,
-    label: "CSP",
-    tickRotate: -30
-  },
-  color: {
-    domain: ["Avec Emploi", "Sans Emploi"],
-    range: ["#174695", "#FB5A5A"],
-    legend: true
-  },
-  marks: [
-    Plot.barY(equip_trie, {
-      x: "ACT",
-      y: "part_locale",
-      fill: "ACT",
-      fx: "CSP",
-      title: d => `${d.ACT} - ${d.CSP}\n${d.population_exacte} personnes (${(d.part_locale*100).toFixed(1)}%)` 
-    }),
-    Plot.ruleY([0])
-  ]
-})
+mon_graphique_final14 = {
+  // 1. Génération du graphique
+  const p = Plot.plot({
+    title: isGeoSelected ? `Taux d'emploi par CSP` : "Sélectionnez un territoire",
+    subtitle: `Année ${selection_annee}`,
+    marginBottom: 60,
+    marginLeft: 50,
+    x: { axis: null },
+    y: {
+      label: "Part au sein de la CSP",
+      tickFormat: "%",
+      grid: true,
+      domain: [0, 1]
+    },
+    fx: {
+      domain: ordre_csp,
+      label: "CSP",
+      tickRotate: -30
+    },
+    color: {
+      domain: ["Avec Emploi", "Sans Emploi"],
+      range: ["#174695", "#FB5A5A"],
+      legend: true
+    },
+    marks: [
+      Plot.barY(equip_trie, {
+        x: "ACT",
+        y: "part_locale",
+        fill: "ACT",
+        fx: "CSP",
+        title: d => `${d.ACT} - ${d.CSP}\n${d.population_exacte} personnes (${(d.part_locale*100).toFixed(1)}%)` 
+      }),
+      Plot.ruleY([0])
+    ]
+  });
+
+  // 2. Création du bouton discret flottant
+  const btn = html`<button style="position: absolute; top: 10px; right: 10px; background: white; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555; z-index: 100;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "white";
+  
+  // Action au clic avec masquage temporaire
+  btn.onclick = async () => {
+    btn.style.display = "none";
+    
+    const html2pdf = await require("html2pdf.js");
+    await html2pdf().set({
+      margin: 15,
+      filename: `Graphique_Taux_Emploi_CSP_${selection_geo?.GEO_LABEL || 'Territoire'}.pdf`,
+      html2canvas: { scale: 2 }
+    }).from(p).save();
+    
+    btn.style.display = "block";
+  };
+
+  // 3. Ajout du bouton à l'intérieur du graphique
+  p.style.position = "relative";
+  p.appendChild(btn);
+
+  return p;
+}
 ```
 
 ```{ojs result_plot_empile}
-// Histogramme empilé
-Plot.plot({
-  title: isGeoSelected ? `Répartition emploi / non-emploi par CSP – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
-  subtitle: `Année ${selection_annee}`,
-  marginBottom: 80,
-  marginLeft: 60,
-  x: {
-    domain: ordre_csp,
-    label: null,
-    tickRotate: -30
-  },
-  y: {
-    label: "Nombre de personnes",
-    grid: true
-  },
-  color: {
-    domain: ["Avec Emploi", "Sans Emploi"],
-    range: ["#174695", "#FB5A5A"],
-    legend: true
-  },
-  marks: [
-    Plot.barY(equip_trie, {
-      x: "CSP",
-      y: "population_exacte",
-      fill: "ACT",
-      title: d => `${d.ACT} - ${d.CSP}\n${d.population_exacte} personnes (${(d.part_locale*100).toFixed(1)}%)`
-    }),
-    Plot.ruleY([0])
-  ]
-})
+mon_graphique_final15 = {
+  // 1. Génération du graphique
+  const p = Plot.plot({
+    title: isGeoSelected ? `Répartition emploi / non-emploi par CSP` : "Sélectionnez un territoire",
+    subtitle: `Année ${selection_annee}`,
+    marginBottom: 80,
+    marginLeft: 60,
+    x: {
+      domain: ordre_csp,
+      label: null,
+      tickRotate: -30
+    },
+    y: {
+      label: "Nombre de personnes",
+      grid: true
+    },
+    color: {
+      domain: ["Avec Emploi", "Sans Emploi"],
+      range: ["#174695", "#FB5A5A"],
+      legend: true
+    },
+    marks: [
+      Plot.barY(equip_trie, {
+        x: "CSP",
+        y: "population_exacte",
+        fill: "ACT",
+        title: d => `${d.ACT} - ${d.CSP}\n${d.population_exacte} personnes (${(d.part_locale*100).toFixed(1)}%)`
+      }),
+      Plot.ruleY([0])
+    ]
+  });
+
+  // 2. Création du bouton discret flottant
+  const btn = html`<button style="position: absolute; top: 10px; right: 10px; background: white; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555; z-index: 100;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "white";
+  
+  // Action au clic avec masquage temporaire
+  btn.onclick = async () => {
+    btn.style.display = "none";
+    
+    const html2pdf = await require("html2pdf.js");
+    await html2pdf().set({
+      margin: 15,
+      filename: `Graphique_Repartition_Emploi_CSP_${selection_geo?.GEO_LABEL || 'Territoire'}.pdf`,
+      html2canvas: { scale: 2 }
+    }).from(p).save();
+    
+    btn.style.display = "block";
+  };
+
+  // 3. Ajout du bouton à l'intérieur du graphique
+  p.style.position = "relative";
+  p.appendChild(btn);
+
+  return p;
+}
 ```
 

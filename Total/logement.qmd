@@ -355,63 +355,116 @@ taille_log_trie = taille_log_final.sort((a, b) => ordre_pieces.indexOf(a.pieces)
 ```
 
 ```{ojs result_plot}
-// Histogramme coloré
-Plot.plot({
-  title: isGeoSelected ? `Résidences principales selon le nombre de pièces en ${selection_annee}` : "Sélectionnez un territoire",
-  subtitle: "Source : Recensement Insee",
-  marginBottom: 40,
-  color: {
-    scheme: "Blues", 
-    domain: ordre_pieces,
-    legend: false
-  },
-  x: { 
-    domain: ordre_pieces, 
-    label: null 
-  },
-  y: { 
-    label: "Nombre de logements", 
-    grid: true 
-  },
-  marks: [
-    Plot.barY(taille_log_trie, { 
-      x: "pieces", 
-      y: "total_groupe", 
-      fill: "pieces", 
-      title: d => `${d.pieces}\n${d.total_groupe} logements (${d.part_groupe.toFixed(1)}%)`
-    }),
-    Plot.text(taille_log_trie, {
-      x: "pieces",
-      y: "total_groupe",
-      text: d => `${d.part_groupe.toFixed(1)} %`,
-      dy: -10,
-      fontWeight: "bold"
-    }),
-    Plot.ruleY([0])
-  ]
-})
+mon_graphique_final20 = {
+  // 1. Génération du graphique
+  const p = Plot.plot({
+    title: isGeoSelected ? `Résidences principales selon le nombre de pièces en ${selection_annee}` : "Sélectionnez un territoire",
+    marginBottom: 40,
+    color: {
+      scheme: "Blues", 
+      domain: ordre_pieces,
+      legend: false
+    },
+    x: { 
+      domain: ordre_pieces, 
+      label: null 
+    },
+    y: { 
+      label: "Nombre de logements", 
+      grid: true 
+    },
+    marks: [
+      Plot.barY(taille_log_trie, { 
+        x: "pieces", 
+        y: "total_groupe", 
+        fill: "pieces", 
+        title: d => `${d.pieces}\n${d.total_groupe} logements (${d.part_groupe.toFixed(1)}%)`
+      }),
+      Plot.text(taille_log_trie, {
+        x: "pieces",
+        y: "total_groupe",
+        text: d => `${d.part_groupe.toFixed(1)} %`,
+        dy: -10,
+        fontWeight: "bold"
+      }),
+      Plot.ruleY([0])
+    ]
+  });
+
+  // 2. Création du bouton discret flottant
+  const btn = html`<button style="position: absolute; top: 10px; right: 10px; background: white; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555; z-index: 100;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "white";
+  
+  // Action au clic avec masquage temporaire
+  btn.onclick = async () => {
+    btn.style.display = "none";
+    
+    const html2pdf = await require("html2pdf.js");
+    await html2pdf().set({
+      margin: 15,
+      filename: `Graphique_Pieces_Logements_${selection_geo?.GEO_LABEL || 'Territoire'}.pdf`,
+      html2canvas: { scale: 2 }
+    }).from(p).save();
+    
+    btn.style.display = "block";
+  };
+
+  // 3. Ajout du bouton à l'intérieur du graphique
+  p.style.position = "relative";
+  p.appendChild(btn);
+
+  return p;
+}
 ```
 
 ```{ojs result_table}
-// Ajout de la ligne TOTAL
+// 1. Ajout de la ligne TOTAL
 taille_log_pour_tableau = {
   let data2 = taille_log_trie.map(d => ({
     pieces: d.pieces,
     total_groupe: d.total_groupe,
     part_groupe_fmt: d.part_groupe.toFixed(2) + " %"
   }));
-  data2.push({ pieces: "TOTAL", total_groupe: total2, part_groupe_fmt: "100.00 %" });
   return data2;
 }
 
-Inputs.table(taille_log_pour_tableau, {
+// 2. Génération du tableau
+mon_tableau20 = Inputs.table(taille_log_pour_tableau, {
   columns: ["pieces", "total_groupe", "part_groupe_fmt"],
   header: {
     pieces: "Nombre de pièces",
     total_groupe: "Nombre",
     part_groupe_fmt: "Part (%)"
   }
-})
+});
+
+// 3. Création du bouton
+btn_pdf_tableau20 = {
+  const btn = html`<button style="background: transparent; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "transparent";
+  
+  btn.onclick = async () => {
+    const html2pdf = await require("html2pdf.js");
+    html2pdf().set({
+      margin: 15,
+      filename: `Tableau_Pieces_Logements_${selection_geo?.GEO_LABEL || 'Territoire'}.pdf`,
+      html2canvas: { scale: 2 }
+    }).from(mon_tableau20).save();
+  };
+  return btn;
+}
+
+// 4. Affichage avec le bouton positionné juste au-dessus
+html`
+<div style="text-align: right; margin-bottom: 5px;">
+  ${btn_pdf_tableau20}
+</div>
+<div>${mon_tableau20}</div>
+`
 ```
 
 #  Indice de peuplement des résidences principales
@@ -497,50 +550,105 @@ taille_occup_trie = taille_occup_final.sort((a, b) => ordre_occup.indexOf(a.occu
 ```
 
 ```{ojs result_plot}
-// Histogramme
-Plot.plot({
-  title: isGeoSelected ? `Indice de peuplement des résidences principales en ${selection_annee}` : "Sélectionnez un territoire",
-  marginLeft: 230, 
-  marginRight: 40,
-  x: { 
-    label: "Part (%)", 
-    grid: true 
-  },
-  y: { 
-    domain: ordre_occup, 
-    label: null 
-  },
-  marks: [
-    Plot.barX(taille_occup_trie, { 
-      x: "part_groupe", 
-      y: "occupation", 
-      fill: "#174695", 
-      title: d => `${d.occupation} : ${d.part_groupe.toFixed(1)}% (${d.total_groupe} logements)` 
-    }),
-    Plot.ruleX([0])
-  ]
-})
+mon_graphique_final21 = {
+  // 1. Génération du graphique
+  const p = Plot.plot({
+    title: isGeoSelected ? `Indice de peuplement des résidences principales en ${selection_annee}` : "Sélectionnez un territoire",
+    marginLeft: 230, 
+    marginRight: 40,
+    x: { 
+      label: "Part (%)", 
+      grid: true 
+    },
+    y: { 
+      domain: ordre_occup, 
+      label: null 
+    },
+    marks: [
+      Plot.barX(taille_occup_trie, { 
+        x: "part_groupe", 
+        y: "occupation", 
+        fill: "#174695", 
+        title: d => `${d.occupation} : ${d.part_groupe.toFixed(1)}% (${d.total_groupe} logements)` 
+      }),
+      Plot.ruleX([0])
+    ]
+  });
+
+  // 2. Création du bouton discret flottant
+  const btn = html`<button style="position: absolute; top: 10px; right: 10px; background: white; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555; z-index: 100;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "white";
+  
+  // Action au clic avec masquage temporaire
+  btn.onclick = async () => {
+    btn.style.display = "none";
+    
+    const html2pdf = await require("html2pdf.js");
+    await html2pdf().set({
+      margin: 15,
+      filename: `Graphique_Peuplement_Logements_${selection_geo?.GEO_LABEL || 'Territoire'}.pdf`,
+      html2canvas: { scale: 2 }
+    }).from(p).save();
+    
+    btn.style.display = "block";
+  };
+
+  // 3. Ajout du bouton à l'intérieur du graphique
+  p.style.position = "relative";
+  p.appendChild(btn);
+
+  return p;
+}
 ```
 
 ```{ojs result_table}
+// 1. Préparation des données avec la ligne TOTAL
 taille_occup_pour_tableau = {
   let data3 = taille_occup_trie.map(d => ({
     occupation: d.occupation,
     total_groupe: d.total_groupe,
     part_groupe_fmt: d.part_groupe.toFixed(2) + " %"
   }));
-  data3.push({ occupation: "TOTAL", total_groupe: total3, part_groupe_fmt: "100.00 %" });
   return data3;
 }
 
-Inputs.table(taille_occup_pour_tableau, {
+// 2. Génération du tableau
+mon_tableau21 = Inputs.table(taille_occup_pour_tableau, {
   columns: ["occupation", "total_groupe", "part_groupe_fmt"],
   header: {
     occupation: "Indice de peuplement",
     total_groupe: "Nombre de logements",
     part_groupe_fmt: "Part (%)"
   }
-})
+});
+
+// 3. Création du bouton
+btn_pdf_tableau21 = {
+  const btn = html`<button style="background: transparent; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "transparent";
+  
+  btn.onclick = async () => {
+    const html2pdf = await require("html2pdf.js");
+    html2pdf().set({
+      margin: 15,
+      filename: `Tableau_Peuplement_Logements_${selection_geo?.GEO_LABEL || 'Territoire'}.pdf`,
+      html2canvas: { scale: 2 }
+    }).from(mon_tableau21).save();
+  };
+  return btn;
+}
+
+// 4. Affichage avec le bouton positionné juste au-dessus
+html`
+<div style="text-align: right; margin-bottom: 5px;">
+  ${btn_pdf_tableau21}
+</div>
+<div>${mon_tableau21}</div>
+`
 ```
 
 # Résidences principales en 2023 selon la période d'achèvement
@@ -627,49 +735,104 @@ date_resi_trie = date_resi_final.sort((a, b) => ordre_date.indexOf(a.date) - ord
 ```
 
 ```{ojs result_plot}
-// Histogramme
-Plot.plot({
-  title: isGeoSelected ? `Résidences principales selon la période d'achèvement en ${selection_annee}` : "Sélectionnez un territoire",
-  marginLeft: 130, 
-  marginRight: 40,
-  x: { 
-    label: "Part (%)", 
-    grid: true 
-  },
-  y: { 
-    domain: ordre_date, 
-    label: null 
-  },
-  marks: [
-    Plot.barX(date_resi_trie, { 
-      x: "part_groupe", 
-      y: "date", 
-      fill: "#174695", 
-      title: d => `${d.date} : ${d.part_groupe.toFixed(1)}% (${d.total_groupe} logements)` 
-    }),
-    Plot.ruleX([0])
-  ]
-})
+mon_graphique_final22 = {
+  // 1. Génération du graphique
+  const p = Plot.plot({
+    title: isGeoSelected ? `Résidences principales selon la période d'achèvement en ${selection_annee}` : "Sélectionnez un territoire",
+    marginLeft: 130, 
+    marginRight: 40,
+    x: { 
+      label: "Part (%)", 
+      grid: true 
+    },
+    y: { 
+      domain: ordre_date, 
+      label: null 
+    },
+    marks: [
+      Plot.barX(date_resi_trie, { 
+        x: "part_groupe", 
+        y: "date", 
+        fill: "#174695", 
+        title: d => `${d.date} : ${d.part_groupe.toFixed(1)}% (${d.total_groupe} logements)` 
+      }),
+      Plot.ruleX([0])
+    ]
+  });
+
+  // 2. Création du bouton discret flottant
+  const btn = html`<button style="position: absolute; top: 10px; right: 10px; background: white; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555; z-index: 100;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "white";
+  
+  // Action au clic avec masquage temporaire
+  btn.onclick = async () => {
+    btn.style.display = "none";
+    
+    const html2pdf = await require("html2pdf.js");
+    await html2pdf().set({
+      margin: 15,
+      filename: `Graphique_Achevement_Logements_${selection_geo?.GEO_LABEL || 'Territoire'}.pdf`,
+      html2canvas: { scale: 2 }
+    }).from(p).save();
+    
+    btn.style.display = "block";
+  };
+
+  // 3. Ajout du bouton à l'intérieur du graphique
+  p.style.position = "relative";
+  p.appendChild(btn);
+
+  return p;
+}
 ```
 
 ```{ojs result_table}
+// 1. Préparation des données avec la ligne TOTAL
 date_resi_pour_tableau = {
   let data = date_resi_trie.map(d => ({
     date: d.date,
     total_groupe: d.total_groupe,
     part_groupe_fmt: d.part_groupe.toFixed(2) + " %"
   }));
-  data.push({ date: "TOTAL", total_groupe: total, part_groupe_fmt: "100.00 %" });
   return data;
 }
 
-Inputs.table(date_resi_pour_tableau, {
+// 2. Génération du tableau
+mon_tableau22 = Inputs.table(date_resi_pour_tableau, {
   columns: ["date", "total_groupe", "part_groupe_fmt"],
   header: {
     date: "Période d'achèvement",
     total_groupe: "Nombre de logements",
     part_groupe_fmt: "Part (%)"
   }
-})
+});
+
+// 3. Création du bouton
+btn_pdf_tableau22 = {
+  const btn = html`<button style="background: transparent; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555;">📥 PDF</button>`;
+  
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "transparent";
+  
+  btn.onclick = async () => {
+    const html2pdf = await require("html2pdf.js");
+    html2pdf().set({
+      margin: 15,
+      filename: `Tableau_Achevement_Logements_${selection_geo?.GEO_LABEL || 'Territoire'}.pdf`,
+      html2canvas: { scale: 2 }
+    }).from(mon_tableau22).save();
+  };
+  return btn;
+}
+
+// 4. Affichage avec le bouton positionné juste au-dessus
+html`
+<div style="text-align: right; margin-bottom: 5px;">
+  ${btn_pdf_tableau22}
+</div>
+<div>${mon_tableau22}</div>
+`
 ```
 

@@ -310,7 +310,7 @@ equip_mutate = equip_brut.map(d => ({
 mon_graphique_final8 = {
   // 1. Génération du graphique
   const p = Plot.plot({
-    title: "DEN G1 - Évolution des créations d'entreprises",
+    title: "Évolution des créations d'entreprises",
     marginBottom: 40,
     marginLeft: 50,
     color: {
@@ -423,7 +423,7 @@ data_plot = data_brute.map(d => ({
 mon_graphique_final9 = {
   // 1. Génération du graphique
   const p = Plot.plot({
-    title: isGeoSelected ? `Évolution – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+    title: isGeoSelected ? `Évolution` : "Sélectionnez un territoire",
     x: { 
       label: "Année", 
       tickFormat: "d" // Évite les virgules dans les années 
@@ -573,7 +573,7 @@ data_clean5 = equip_summarise5.map(function(d) {
 mon_graphique_final10 = {
   // 1. Génération du graphique
   const p = Plot.plot({
-    title: isGeoSelected ? `Créations d'établissements en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+    title: isGeoSelected ? `Créations d'établissements en ${selection_annee}` : "Sélectionnez un territoire",
     marginLeft: 250, // Marge conservée pour la lisibilité
     x: { 
       label: "Nombre de nouveaux établissements", 
@@ -743,7 +743,7 @@ eco_act_trie = eco_act.sort((a, b) => ordre_secteurs.indexOf(a.secteur_act) - or
 mon_graphique_final11 = {
   // 1. Génération du graphique
   const p = Plot.plot({
-    title: isGeoSelected ? `Unités légales économiquement actives en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+    title: isGeoSelected ? `Unités légales économiquement actives en ${selection_annee}` : "Sélectionnez un territoire",
     marginLeft: 250, 
     x: { 
       label: "Nombre d'unités légales", 
@@ -915,7 +915,7 @@ etab_trie4 = etab4.sort((a, b) => ordre_secteurs4.indexOf(a.secteur_act) - ordre
 mon_graphique_final12 = {
   // 1. Génération du graphique
   const p = Plot.plot({
-    title: isGeoSelected ? `Établissements économiquement actifs en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+    title: isGeoSelected ? `Établissements économiquement actifs en ${selection_annee}` : "Sélectionnez un territoire",
     marginLeft: 250, // Remplace le marginBottom pour laisser la place aux libellés sur la gauche
     x: { 
       label: "Nombre d'établissements", 
