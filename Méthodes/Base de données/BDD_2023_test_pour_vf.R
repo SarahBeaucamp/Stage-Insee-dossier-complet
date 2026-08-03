@@ -367,7 +367,7 @@ print("Entraînement de la forêt aléatoire de base...")
 modele_base <- ranger(
   formula = Y_GAP_ACT_GLOBAL ~ ., 
   data = base_train,
-  num.trees = 500,  # 500 arbres par défaut
+  num.trees = 400,  # 500 arbres par défaut
   mtry = 150,
   min.node.size = 4,
   importance = 'impurity'        # Pour pouvoir analyser l'importance des variables plus tard

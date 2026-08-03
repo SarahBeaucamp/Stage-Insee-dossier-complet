@@ -1,0 +1,83 @@
+ID_TAB,ID_TAB_LABEL
+ACT_G1,Part des salariés de 15 ans ou plus à temps partiel par sexe
+ACT_G2,Part des moyens de transport utilisés pour se rendre au travail
+ACT_T1,Population de 15 ans ou plus ayant un emploi selon le statut
+ACT_T2,Statut et condition d'emploi des 15 ans ou plus selon le sexe
+ACT_T3,"Salariés de 15 à 64 ans par sexe, âge et temps partiel"
+ACT_T4,Lieu de travail des actifs de 15 ans ou plus ayant un emploi qui résident dans la zone
+DEN_G1,Évolution des créations d'entreprises
+DEN_G2,Évolution des créations d'établissements
+DEN_T1,Créations d'entreprises par secteur d'activité et forme légale
+DEN_T2,Créations d'établissements par secteur d'activité
+DEN_T3,Nombre d'unités légales économiquement actives
+DEN_T4,Nombre d'établissements économiquement actifs
+EMP_G1,Population de 15 à 64 ans par type d'activité
+EMP_G2,Taux de chômage (au sens du recensement) des 15-64 ans par diplôme
+EMP_G3,Emplois par groupe socioprofessionnel
+EMP_G4,Taux de féminisation des emplois par statut et secteur d'activité
+EMP_T1,Population de 15 à 64 ans par type d'activité
+EMP_T2,Activité et emploi de la population de 15 à 64 ans par sexe et âge
+EMP_T3,Population active de 15 à 64 ans selon le groupe socioprofessionnel actuel ou antérieur
+EMP_T4,Chômage (au sens du recensement) des 15-64 ans
+EMP_T5,Emploi et activité des 15 ans ou plus
+EMP_T6,Emplois selon le statut professionnel
+EMP_T7,Emplois par groupe socioprofessionnel
+EMP_T8,Emplois selon le secteur d'activité
+EQUIP_T1,Nombre de commerces
+EQUIP_T2,Nombre de professionnels de santé et de pharmacies
+EQUIP_T3,Nombre d'établissements scolaires et de bibliothèques
+FAM_G1,Évolution de la taille des ménages en historique depuis 1968
+FAM_G2,Personnes de 15 ans ou plus vivant seules selon l'âge - population des ménages
+FAM_G3,Personnes de 15 ans ou plus déclarant vivre en couple selon l'âge
+FAM_G4,Statut conjugal des personnes de 15 ans ou plus
+FAM_G5,Ménages selon le groupe socioprofessionnel actuel ou antérieur de la personne de référence
+FAM_T1,Ménages selon leur composition
+FAM_T2,Ménages selon le groupe socioprofessionnel actuel ou antérieur de la personne de référence
+FAM_T3,Composition des familles
+FAM_T3bis,
+FAM_T4,Composition détaillée des familles composées de couples avec enfant(s)
+FOR_G2,Diplôme le plus élevé de la population non scolarisée de 15 ans ou plus (en %)
+FOR_T1,Scolarisation selon l'âge
+FOR_T2,Taux de scolarisation selon le sexe (en %)
+LOG_G1,Résidences principales selon le type de logement et la période d'achèvement
+LOG_T1,Évolution du nombre de logements par catégorie en historique depuis 1968
+LOG_T10D,
+LOG_T1bis,Part des logements selon la catégorie
+LOG_T2,Types de logements
+LOG_T3,Résidences principales selon le nombre de pièces
+LOG_T4,Nombre moyen de pièces des résidences principales
+LOG_T4bis,Indice de peuplement des résidences principales
+LOG_T5,Résidences principales selon la période d'achèvement
+LOG_T6,Ancienneté d'emménagement dans la résidence principale
+LOG_T6bis,
+LOG_T7,Résidences principales selon le statut d'occupation
+LOG_T8D,
+LOG_T8M,Confort des résidences principales : combustible principal de chauffage
+LOG_T9,Équipement automobile des ménages
+LOG_T9bis,Emplacement de stationnement réservé à un usage personnel
+POP_G2,Lieu de résidence antérieure par âge des personnes habitant un autre logement 1 an auparavant
+POP_G3,
+POP_T0,
+POP_T1,Population par grandes tranches d'âges
+POP_T2,Population en historique depuis 1968
+POP_T3,Indicateurs démographiques en historique depuis 1968
+POP_T3bis,
+POP_T4,Population par sexe et âge
+POP_T5,Population par sexe et âge
+POP_T6,Lieu de résidence 1 an auparavant
+RES_G1,Répartition des établissements par secteur d'activité agrégé
+RES_G2,Répartition des établissements par tranche d'effectifs
+RES_T1,Établissements par secteur d'activité agrégé et tranche d'effectifs
+RES_T2,Effectifs salariés par secteur d'activité agrégé et tranche d'effectifs
+RES_T3,Établissements selon les sphères de l'économie
+RES_T5,Particuliers employeurs
+REU,Nombre d'électeurs inscrits sur liste principale par élection
+REV_T1,Niveau de vie médian et taux de pauvreté
+RFD_G1,Naissances et décès domiciliés
+SAL_G1,Salaire net mensuel moyen en EQTP (en euros) selon la catégorie socioprofessionnelle
+SAL_G3,Écart de salaire net mensuel moyen en EQTP entres les femmes et les hommes selon la catégorie socioprofessionnelle
+SAL_G4,Écart de salaire net mensuel moyen en EQTP entre les femmes et les hommes selon l'âge
+SAL_T1,Salaire net mensuel moyen en EQTP (en euros) selon l'âge
+TOU_T1,Nombre et capacité des hôtels au 1er janvier
+TOU_T2,Nombre et capacité des campings au 1er janvier
+TOU_T3,Nombre d'autres hébergements collectifs au 1er janvier

@@ -4,7 +4,8 @@
 
 # Installation des packages manquants si nécessaire
 # install.packages(c("missForest", "VIM", "Metrics"))
-
+install.packages("Metrics")
+install.packages("missForest")
 library(DBI)
 library(duckdb)
 library(dplyr)
