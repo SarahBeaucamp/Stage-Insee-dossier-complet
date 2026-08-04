@@ -50,7 +50,7 @@ viewof selection_type_geo = Inputs.select(
 ```{ojs geo}
 //| output: false
 
-// Liste des territoires disponibles dynamiquement
+// Liste des territoires disponibles
 geo = db.query(`
   SELECT DISTINCT GEO, GEO_LABEL
   FROM read_parquet('${chemin_s3}')
@@ -94,7 +94,7 @@ htl.html`
 ```{ojs result_calc}
 //| output: false
 
-// 1. On récupère TOUTES les données de FAM_T4 pour la zone (zéro risque SQL)
+// 1. On récupère toutes les données de FAM_T4 pour la zone
 equip_brut = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
@@ -106,7 +106,7 @@ equip_brut = isGeoSelected
 `)
 : [];
 
-// 2. On classe avec des mots-clés robustes
+// 2. On classe par mots 
 function classer_enfants(label) {
   if (!label) return null;
   let txt = label.toLowerCase();
@@ -150,13 +150,13 @@ equip = equip_summarise.map(function(d) {
   };
 });
 
-// 5. On force l'ordre logique (comme les 'levels' du factor en R)
+// 5. On force l'ordre 
 ordre_niveaux = ["Aucun enfant", "1 enfant", "2 enfants", "3 enfants", "4 enfants ou plus"];
 equip_trie = equip.sort((a, b) => ordre_niveaux.indexOf(a.enfants) - ordre_niveaux.indexOf(b.enfants));
 ```
 
 ```{ojs result_plot}
-// Construction du camembert D3 sur-mesure
+// Camembert
 camembert = {
   if (!isGeoSelected || total === 0) return htl.html`<div>Sélectionnez un territoire ou aucune donnée disponible pour cette année.</div>`;
   
@@ -198,11 +198,10 @@ camembert = {
     .join("text")
     .attr("transform", d => `translate(${arc.centroid(d)})`)
     .attr("text-anchor", "middle")
-    // Le texte de "Aucun enfant" (clair) sera noir, les autres (foncés) seront blancs
     .attr("fill", d => d.data.enfants === "Aucun enfant" || d.data.enfants === "1 enfant" ? "black" : "white") 
     .attr("font-size", "12px")
     .attr("font-weight", "bold")
-    // Affiche uniquement si c'est assez grand (ex: > 3%)
+    // Affiche uniquement si c'est assez grand
     .text(d => d.data.part_groupe >= 3 ? `${d.data.part_groupe.toFixed(1)}%` : "");
 
   // Légende positionnée à droite
@@ -227,7 +226,7 @@ camembert = {
   return svg.node();
 }
 
-// Emballage HTML avec titre (comme dans ggplot)
+// Emballage HTML avec titre
 htl.html`
   <div style="display: flex; flex-direction: column; align-items: center;">
     <h3 style="margin-bottom: 0px; font-family: sans-serif; font-weight: bold;">Familles selon le nombre d'enfants âgés de moins de 25 ans</h3>
@@ -240,10 +239,9 @@ htl.html`
 ```
 
 ```{ojs result_table}
-// 1. Tri manuellement selon le volume pour le tableau (ou on pourrait garder l'ordre logique, mais restons cohérents avec les tableaux précédents)
+// 1. Tri 
 equip_pour_tableau = {
   let data = equip_trie.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
-  data.push({ enfants: "TOTAL", total_groupe: total });
   return data;
 }
 
@@ -257,18 +255,3 @@ Inputs.table(equip_pour_tableau, {
 })
 ```
 
-# Pour en savoir plus
-
-- Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), le graphique se met à jour en allant piocher dynamiquement dans la base du dossier complet au format Parquet.
-
-```{ojs debug}
-debug_info = db.query(`
-  SELECT count(*) as nb_lignes
-  FROM read_parquet('${chemin_s3}')
-`)
-
-viewof debug_table = Inputs.table(
-  debug_info,
-  { locale: "fr" }
-)
-```
