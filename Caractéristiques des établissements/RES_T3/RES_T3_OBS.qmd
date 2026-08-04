@@ -27,7 +27,7 @@ viewof selection_annee = Inputs.select(
   ],
   {
     label: "Année",
-    value: "2024" // Valeur par défaut correspondant à votre code R
+    value: "2024" 
   }
 )
 ```
@@ -50,7 +50,7 @@ viewof selection_type_geo = Inputs.select(
 ```{ojs geo}
 //| output: false
 
-// Liste des territoires disponibles dynamiquement
+// Liste des territoires disponibles
 geo = db.query(`
   SELECT DISTINCT GEO, GEO_LABEL
   FROM read_parquet('${chemin_s3}')
@@ -96,7 +96,7 @@ htl.html`
 ```{ojs etab_calc}
 //| output: false
 
-// 1. On récupère TOUTES les données de RES_T3 pour la zone et l'année
+// 1. On récupère toutes les données de RES_T3 pour la zone et l'année
 etab_brut = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
@@ -108,7 +108,7 @@ etab_brut = isGeoSelected
 `)
 : [];
 
-// 2. On classe selon les mêmes correspondances que dans le code R (etab_spheres)
+// 2. On classe
 correspondance_etab = new Map([
   ["Établissements – Ensemble hors particuliers employeurs x Établissements appartenant à la sphère productive", "Sphère productive"],
   ["Établissements – Fonction Publique x Établissements appartenant à la sphère présentielle", "Sphère présentielle, domaine public"],
@@ -129,8 +129,7 @@ etab_mutate = etab_brut.map(function(d) {
   };
 }).filter(d => d.type_etab !== null);
 
-// 4. Agrégation des résultats (équivalent group_by + summarise)
-etab_groupes = d3.rollups(
+// 4. Agrégation des résultats
   etab_mutate,
   function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
   function(d) { return d.type_etab; }
@@ -151,19 +150,19 @@ etab_spheres = etab_summarise.map(function(d) {
   };
 });
 
-// 5. Ordre logique des catégories pour l'affichage (ordre du code R)
+// 5. Ordre des catégories
 ordre_etab = Array.from(correspondance_etab.values());
 
 etab_trie = etab_spheres.sort((a, b) => ordre_etab.indexOf(a.type_etab) - ordre_etab.indexOf(b.type_etab));
 ```
 
 ```{ojs etab_plot}
-// Histogramme (équivalent ggplot2 : geom_col + labels tronqués)
+// Histogramme 
 Plot.plot({
   title: isGeoSelected ? `Établissements selon les sphères de l'économie fin ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
   marginBottom: 100,
   x: { 
-    domain: ordre_etab, // Force l'ordre sur l'axe X
+    domain: ordre_etab, // ordre sur l'axe X
     label: null,
     tickFormat: (d) => d.length > 18 ? d.slice(0, 18) + "…" : d
   },
@@ -179,10 +178,9 @@ Plot.plot({
 ```
 
 ```{ojs etab_table}
-// Tri manuellement et ajout de la ligne TOTAL
+// Tri 
 etab_pour_tableau = {
   let data = etab_trie.slice();
-  data.push({ type_etab: "TOTAL", total_groupe: total_etab });
   return data;
 }
 
@@ -211,7 +209,7 @@ htl.html`
 ```{ojs eff_calc}
 //| output: false
 
-// 1. On récupère TOUTES les données de RES_T3 pour la zone et l'année
+// 1. On récupère toutes les données de RES_T3 pour la zone et l'année
 eff_brut = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
@@ -223,7 +221,7 @@ eff_brut = isGeoSelected
 `)
 : [];
 
-// 2. On classe selon les mêmes correspondances que dans le code R (eff_spheres)
+// 2. On classe 
 correspondance_eff = new Map([
   ["Effectifs présents la dernière semaine de décembre – Ensemble hors particuliers employeurs x Établissements appartenant à la sphère productive", "Sphère productive"],
   ["Effectifs présents la dernière semaine de décembre – Fonction Publique x Établissements appartenant à la sphère présentielle", "Sphère présentielle, domaine public"],
@@ -244,7 +242,7 @@ eff_mutate = eff_brut.map(function(d) {
   };
 }).filter(d => d.type_eff !== null);
 
-// 4. Agrégation des résultats (équivalent group_by + summarise)
+// 4. Agrégation des résultats 
 eff_groupes = d3.rollups(
   eff_mutate,
   function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
@@ -266,14 +264,14 @@ eff_spheres = eff_summarise.map(function(d) {
   };
 });
 
-// 5. Ordre logique des catégories pour l'affichage (ordre du code R)
+// 5. Ordre des catégories 
 ordre_eff = Array.from(correspondance_eff.values());
 
 eff_trie = eff_spheres.sort((a, b) => ordre_eff.indexOf(a.type_eff) - ordre_eff.indexOf(b.type_eff));
 ```
 
 ```{ojs eff_plot}
-// Histogramme (équivalent ggplot2 : geom_col + labels tronqués)
+// Histogramme 
 Plot.plot({
   title: isGeoSelected ? `Effectifs selon les sphères de l'économie fin ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
   marginBottom: 100,
@@ -294,10 +292,9 @@ Plot.plot({
 ```
 
 ```{ojs eff_table}
-// Tri manuellement et ajout de la ligne TOTAL
+// Tri 
 eff_pour_tableau = {
   let data = eff_trie.slice();
-  data.push({ type_eff: "TOTAL", total_groupe: total_eff });
   return data;
 }
 
@@ -311,19 +308,3 @@ Inputs.table(eff_pour_tableau, {
 })
 ```
 
-# Pour en savoir plus
-
-- Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), les graphiques se mettent à jour en allant piocher dynamiquement dans la base du dossier complet au format Parquet.
-- Les deux onglets « Établissements » et « Effectifs » partagent la même sélection géographique (territoire, type de zone, année) définie dans la barre latérale.
-
-```{ojs debug}
-debug_info = db.query(`
-  SELECT count(*) as nb_lignes
-  FROM read_parquet('${chemin_s3}')
-`)
-
-viewof debug_table = Inputs.table(
-  debug_info,
-  { locale: "fr" }
-)
-```

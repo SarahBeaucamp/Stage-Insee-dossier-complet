@@ -50,7 +50,7 @@ viewof selection_type_geo = Inputs.select(
 ```{ojs geo}
 //| output: false
 
-// Liste des territoires disponibles dynamiquement basé sur la table RES_G1
+// Liste des territoires disponibles
 geo = db.query(`
   SELECT DISTINCT GEO, GEO_LABEL
   FROM read_parquet('${chemin_s3}')
@@ -150,7 +150,7 @@ eco_act_final = eco_act_summarise.map(function(d) {
   };
 });
 
-// 5. Ordre d'affichage unique (sans les doublons du Map original)
+// 5. Ordre d'affichage unique et evite les doiblons
 ordre_secteur = [
   "Industrie manufacturière, industries extractives et autres",
   "Administration publique, enseignement, santé humaine et action sociale",
@@ -162,7 +162,7 @@ eco_act_trie = eco_act_final.sort((a, b) => ordre_secteur.indexOf(a.secteur_act)
 ```
 
 ```{ojs result_plot}
-// Histogramme (équivalent du rendu ggplot, adapté au format Dashboard)
+// Histogramme 
 Plot.plot({
   title: isGeoSelected ? `Répartition des établissements par secteur d'activité en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
   subtitle: "Source : Recensement Insee",
@@ -170,7 +170,7 @@ Plot.plot({
   x: { 
     domain: ordre_secteur, // Conserve l'ordre logique défini
     label: null,
-    tickFormat: (d) => d.length > 25 ? d.slice(0, 25) + "…" : d // Tronque les longs libellés de secteurs
+    tickFormat: (d) => d.length > 25 ? d.slice(0, 25) + "…" : d // Tronque les longs libellés
   },
   y: { 
     label: "Nombre d'établissements", 
@@ -184,10 +184,9 @@ Plot.plot({
 ```
 
 ```{ojs result_table}
-// Préparation du tableau avec calcul du TOTAL général
+// Tableau
 eco_act_pour_tableau = {
   let data = eco_act_trie.slice();
-  data.push({ secteur_act: "TOTAL", total_groupe: total });
   return data;
 }
 
@@ -199,20 +198,4 @@ Inputs.table(eco_act_pour_tableau, {
     total_groupe: "Nombre d'établissements"
   }
 })
-```
-
-# Pour en savoir plus
-
-- Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), le graphique et le tableau se mettent à jour dynamiquement en exécutant des requêtes SQL DuckDB à la volée sur le fichier Parquet hébergé sur le S3 du SSP Cloud.
-
-```{ojs debug}
-debug_info = db.query(`
-  SELECT count(*) as nb_lignes
-  FROM read_parquet('${chemin_s3}')
-`)
-
-viewof debug_table = Inputs.table(
-  debug_info,
-  { locale: "fr" }
-)
 ```

@@ -27,7 +27,7 @@ viewof selection_annee = Inputs.select(
   ],
   {
     label: "Année",
-    value: "2024" // Valeur par défaut correspondant à votre code R
+    value: "2024" 
   }
 )
 ```
@@ -50,7 +50,7 @@ viewof selection_type_geo = Inputs.select(
 ```{ojs geo}
 //| output: false
 
-// Liste des territoires disponibles dynamiquement
+// Liste des territoires disponibles 
 geo = db.query(`
   SELECT DISTINCT GEO, GEO_LABEL
   FROM read_parquet('${chemin_s3}')
@@ -94,7 +94,7 @@ htl.html`
 ```{ojs result_calc}
 //| output: false
 
-// 1. On récupère TOUTES les données de RES_T5 pour la zone et l'année
+// 1. On récupère toutes les données de RES_T5 pour la zone et l'année
 employeur_brut = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
@@ -106,9 +106,7 @@ employeur_brut = isGeoSelected
 `)
 : [];
 
-// 2. On classe selon les mêmes correspondances que dans le code R
-// (ici la correspondance n'est pas un simple retrait de préfixe, donc on utilise
-//  un dictionnaire explicite comme dans le case_when du code R)
+// 2. On classe 
 correspondance_type = new Map([
   ["Établissements – Accueil de jeunes enfants", "Accueil de jeunes enfants"],
   ["Établissements – Aide à domicile ; Accueil de jeunes enfants ; Activités des ménages en tant qu'employeurs de personnel domestique", "Accueil de jeunes enfants et aide domestique"],
@@ -150,14 +148,14 @@ employeur = employeur_summarise.map(function(d) {
   };
 });
 
-// 5. Ordre logique des catégories pour l'affichage (ordre du code R)
+// 5. Ordre des catégories
 ordre_type = Array.from(correspondance_type.values());
 
 employeur_trie = employeur.sort((a, b) => ordre_type.indexOf(a.type) - ordre_type.indexOf(b.type));
 ```
 
 ```{ojs result_plot}
-// Histogramme (équivalent ggplot2 : geom_col + labels tronqués)
+// Histogramme 
 Plot.plot({
   title: isGeoSelected ? `Particuliers employeurs en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
   marginBottom: 100,
@@ -178,7 +176,7 @@ Plot.plot({
 ```
 
 ```{ojs result_table}
-// Tri manuellement et ajout de la ligne TOTAL
+// Tri 
 employeur_pour_tableau = {
   let data = employeur_trie.slice();
   data.push({ type: "TOTAL", total_groupe: total });
@@ -195,18 +193,3 @@ Inputs.table(employeur_pour_tableau, {
 })
 ```
 
-# Pour en savoir plus
-
-- Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), le graphique se met à jour en allant piocher dynamiquement dans la base du dossier complet au format Parquet.
-
-```{ojs debug}
-debug_info = db.query(`
-  SELECT count(*) as nb_lignes
-  FROM read_parquet('${chemin_s3}')
-`)
-
-viewof debug_table = Inputs.table(
-  debug_info,
-  { locale: "fr" }
-)
-```
