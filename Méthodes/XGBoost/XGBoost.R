@@ -1,5 +1,5 @@
 # ==============================================================================
-# PARTIE 4 : L'EXTREME GRADIENT BOOSTING (XGBOOST)
+# Modèle de l'extreme gradient boosting (XGBoost)
 # ==============================================================================
 
 # Installation du package si nécessaire
@@ -10,14 +10,14 @@ library(rsample)
 library(dplyr)
 
 print("--- 1. SÉPARATION DE LA BASE (TRAIN / TEST) ---")
-# On coupe la base propre et imputée (base_sans_na) en apprentissage (80%) et test (20%)
+# On coupe la base propre et imputée en apprentissage (80%) et test (20%)
 set.seed(42)
 split_final <- initial_split(base_sans_na, prop = 0.80)
 base_train <- training(split_final)
 base_test  <- testing(split_final)
 
 print("--- 2. PRÉPARATION DES MATRICES MATHÉMATIQUES ---")
-# L'algorithme XGBoost exige des matrices (tout comme le Lasso).
+# L'algorithme XGBoost exige des matrices 
 # On sépare la variable cible (Y) des variables explicatives (X)
 
 Y_train <- base_train$Y_GAP_ACT_GLOBAL
@@ -72,7 +72,7 @@ print(paste("-> RMSE du XGBoost (Erreur absolue) :", round(rmse_xgb, 5)))
 print(paste("-> R2 du XGBoost (Score final)      :", round(r2_xgb, 2), "%"))
 
 # ==============================================================================
-# PARTIE 5B (CORRIGÉE) : LES VALEURS SHAP
+# Les valeurs SHAP du modèle XGBoost
 # ==============================================================================
 install.packages("shapviz")
 library(shapviz)
@@ -80,7 +80,7 @@ library(ggplot2)
 
 print("--- CALCUL DES VALEURS SHAP ---")
 
-# Correction : on spécifie à la fois X_data et X_pred pour éviter l'erreur d'argument
+# On spécifie à la fois X_data et X_pred pour éviter l'erreur d'argument
 valeurs_shap <- shapviz(modele_xgb, X_data = X_test, X_pred = X_test)
 
 print("-> Génération du graphique SHAP (Beeswarm) dans l'onglet 'Plots'...")

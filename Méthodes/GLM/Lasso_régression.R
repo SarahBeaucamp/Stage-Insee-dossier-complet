@@ -1,5 +1,5 @@
 # ==============================================================================
-# PARTIE 3 (CORRIGÉE) : LE MODÈLE LINÉAIRE PÉNALISÉ (GLM LASSO) AVEC NORMALISATION
+# Modèle de régression Lasso
 # ==============================================================================
 install.packages("glmnet")
 library(glmnet)
@@ -21,12 +21,11 @@ print(paste("Dimension de la matrice X :", nrow(matrice_X), "lignes et", ncol(ma
 
 print("--- 2. ENTRAÎNEMENT ET VALIDATION CROISÉE INTERNE ---")
 
-# On laisse standardize = FALSE car nous l'avons fait nous-mêmes !
 modele_lasso_cv <- cv.glmnet(
   x = matrice_X, 
   y = vecteur_Y, 
   alpha = 1,            
-  standardize = FALSE,   
+  standardize = FALSE, # Déjà fait  
   nfolds = 5            
 )
 

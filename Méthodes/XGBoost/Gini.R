@@ -1,16 +1,15 @@
 # ==============================================================================
-# PARTIE 5A : L'IMPORTANCE CLASSIQUE (RÉDUCTION D'IMPURETÉ / GAIN)
+# L'importance classique (réduction d'impureté / gain)
 # ==============================================================================
 
-# Le package Ckmeans.1d.dp est souvent recommandé par xgboost pour un meilleur rendu graphique
-install.packages("Ckmeans.1d.dp") 
+install.packages("Ckmeans.1d.dp") # Package pour un meilleur rendu graphique
 library(Ckmeans.1d.dp)
 library(ggplot2)
 
 print("--- CALCUL DE L'IMPORTANCE DES VARIABLES (GAIN) ---")
 
 # Extraction de la matrice d'importance directement depuis le modèle XGBoost
-# On lui fournit les noms des colonnes pour qu'il ne nous affiche pas juste "f1, f2..."
+# On lui fournit les noms des colonnes
 importance_matrice <- xgb.importance(
   feature_names = colnames(X_train), 
   model = modele_xgb
