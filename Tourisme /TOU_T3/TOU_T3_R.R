@@ -23,7 +23,7 @@ URL_STYLE 'path'
 );")
 
 
-# 4. Définir l'adresse de votre fichier sur le S3 du SSP Cloud
+# 4. Définir l'adresse du fichier sur le S3 du SSP Cloud
 chemin_s3 <- "s3://sarahbeaucamp/dossier_complet.parquet"
 
 # Créer une table virtuelle

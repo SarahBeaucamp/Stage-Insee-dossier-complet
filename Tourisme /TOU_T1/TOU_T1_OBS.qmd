@@ -27,7 +27,7 @@ viewof selection_annee = Inputs.select(
   ],
   {
     label: "Année",
-    value: "2026" // Valeur par défaut correspondant à votre code R
+    value: "2026" 
   }
 )
 ```
@@ -50,7 +50,7 @@ viewof selection_type_geo = Inputs.select(
 ```{ojs geo}
 //| output: false
 
-// Liste des territoires disponibles dynamiquement
+// Liste des territoires disponibles 
 geo = db.query(`
   SELECT DISTINCT GEO, GEO_LABEL
   FROM read_parquet('${chemin_s3}')
@@ -94,7 +94,7 @@ htl.html`
 ```{ojs result_calc}
 //| output: false
 
-// 1. On récupère TOUTES les données de TOU_T1 pour la zone
+// 1. On récupère toutes les données de TOU_T1 pour la zone
 equip_brut = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
@@ -106,7 +106,7 @@ equip_brut = isGeoSelected
 `)
 : [];
 
-// 2. On classe avec des mots-clés robustes
+// 2. On classe 
 function classer_hotels(label) {
   if (!label) return null;
   let txt = label.toLowerCase();
@@ -154,7 +154,7 @@ equip = equip_summarise.map(function(d) {
   };
 });
 
-// 5. On force l'ordre logique (comme votre Ordre_h en R)
+// 5. On force l'ordre
 ordre_etoiles = [
   "1 étoile", 
   "2 étoiles", 
@@ -167,12 +167,12 @@ equip_trie = equip.sort((a, b) => ordre_etoiles.indexOf(a.etoiles) - ordre_etoil
 ```
 
 ```{ojs result_plot}
-// Histogramme (équivalent ggplot2)
+// Histogramme 
 Plot.plot({
   title: isGeoSelected ? `Capacité des hôtels au 1er janvier ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
   marginBottom: 50,
   x: { 
-    domain: ordre_etoiles, // Force l'ordre sur l'axe X
+    domain: ordre_etoiles, 
     label: null 
   },
   y: { 
@@ -187,11 +187,9 @@ Plot.plot({
 ```
 
 ```{ojs result_table}
-// Tri manuellement et ajout de la ligne TOTAL
+// Tri manuel
 equip_pour_tableau = {
-  // On garde l'ordre logique des étoiles pour le tableau, c'est plus lisible
   let data = equip_trie.slice(); 
-  data.push({ etoiles: "TOTAL", total_groupe: total });
   return data;
 }
 
@@ -203,20 +201,4 @@ Inputs.table(equip_pour_tableau, {
     total_groupe: "Capacité (nombre de places)"
   }
 })
-```
-
-# Pour en savoir plus
-
-- Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), le graphique se met à jour en allant piocher dynamiquement dans la base du dossier complet au format Parquet.
-
-```{ojs debug}
-debug_info = db.query(`
-  SELECT count(*) as nb_lignes
-  FROM read_parquet('${chemin_s3}')
-`)
-
-viewof debug_table = Inputs.table(
-  debug_info,
-  { locale: "fr" }
-)
 ```

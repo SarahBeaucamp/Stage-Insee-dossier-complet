@@ -27,7 +27,7 @@ viewof selection_annee = Inputs.select(
   ],
   {
     label: "Année",
-    value: "2022" // Valeur par défaut correspondant au code R
+    value: "2022" 
   }
 )
 ```
@@ -50,7 +50,6 @@ viewof selection_type_geo = Inputs.select(
 ```{ojs geo}
 //| output: false
 
-// Liste des territoires disponibles dynamiquement basé sur la table LOG_T3
 geo = db.query(`
   SELECT DISTINCT GEO, GEO_LABEL
   FROM read_parquet('${chemin_s3}')
@@ -106,7 +105,7 @@ taille_log_brut = isGeoSelected
 `)
 : [];
 
-// 2. Dictionnaire pour reproduire le 'case_when' (catégorisation des pièces)
+// 2. On classe
 correspondance_pieces = new Map([
   ["Logements – Résidences principales x 1 pièce", "1 pièce"],
   ["Logements – Résidences principales x 2 pièces", "2 pièces"],
@@ -120,7 +119,7 @@ function classer_pieces(label) {
   return correspondance_pieces.has(label) ? correspondance_pieces.get(label) : null;
 }
 
-// 3. Application du dictionnaire et filtrage
+// 3. Nettoyage et filtrage
 taille_log_mutate = taille_log_brut.map(function(d) {
   return {
     OBS_VALUE: d.OBS_VALUE,
@@ -128,7 +127,7 @@ taille_log_mutate = taille_log_brut.map(function(d) {
   };
 }).filter(d => d.pieces !== null);
 
-// 4. Agrégation des résultats (group_by + summarise)
+// 4. Agrégation des résultats
 taille_log_groupes = d3.rollups(
   taille_log_mutate,
   function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
@@ -150,7 +149,7 @@ taille_log_final = taille_log_summarise.map(function(d) {
   };
 });
 
-// 5. Ordre défini dans le code R (Ordre_pièces)
+// 5. Ordre
 ordre_pieces = [
   "1 pièce",
   "2 pièces",
@@ -159,7 +158,7 @@ ordre_pieces = [
   "5 pièces ou plus"
 ];
 
-// Tri des données pour correspondre à l'ordre imposé (factor levels en R)
+// Tri des données pour correspondre à l'ordre imposé 
 taille_log_trie = taille_log_final.sort((a, b) => ordre_pieces.indexOf(a.pieces) - ordre_pieces.indexOf(b.pieces));
 ```
 
@@ -203,14 +202,12 @@ Plot.plot({
 ```
 
 ```{ojs result_table}
-// Ajout de la ligne TOTAL pour le tableau et formatage
 taille_log_pour_tableau = {
   let data = taille_log_trie.map(d => ({
     pieces: d.pieces,
     total_groupe: d.total_groupe,
     part_groupe_fmt: d.part_groupe.toFixed(2) + " %"
   }));
-  data.push({ pieces: "TOTAL", total_groupe: total, part_groupe_fmt: "100.00 %" });
   return data;
 }
 

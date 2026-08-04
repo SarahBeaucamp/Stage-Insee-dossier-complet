@@ -12,7 +12,7 @@ format:
 db = DuckDBClient.of({})
 
 // 2. Définir l'adresse du fichier sur le S3 du SSP Cloud
-chemin_s3 = '[https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet](https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet)'
+chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'
 ```
 
 # Recherche géographique {.sidebar width="30%"}
@@ -27,7 +27,7 @@ viewof selection_annee = Inputs.select(
   ],
   {
     label: "Année",
-    value: "2022" // Valeur par défaut correspondant au code R
+    value: "2022" 
   }
 )
 ```
@@ -50,7 +50,6 @@ viewof selection_type_geo = Inputs.select(
 ```{ojs geo}
 //| output: false
 
-// Liste des territoires disponibles dynamiquement basé sur la table LOG_T4bis
 geo = db.query(`
   SELECT DISTINCT GEO, GEO_LABEL
   FROM read_parquet('${chemin_s3}')
@@ -106,7 +105,7 @@ taille_occup_brut = isGeoSelected
 `)
 : [];
 
-// 2. Dictionnaire pour reproduire le 'case_when'
+// 2. On classe
 correspondance_occup = new Map([
   ["Logements – Occupation dans la norme", "Occupation dans la norme"],
   ["Logements – Suroccupation modérée", "Suroccupation modérée"],
@@ -121,7 +120,7 @@ function classer_occup(label) {
   return correspondance_occup.has(label) ? correspondance_occup.get(label) : null;
 }
 
-// 3. Application du dictionnaire et filtrage
+// 3. Nettoyage et filtrage
 taille_occup_mutate = taille_occup_brut.map(function(d) {
   return {
     OBS_VALUE: d.OBS_VALUE,
@@ -129,7 +128,7 @@ taille_occup_mutate = taille_occup_brut.map(function(d) {
   };
 }).filter(d => d.occupation !== null);
 
-// 4. Agrégation des résultats (group_by + summarise)
+// 4. Agrégation des résultats 
 taille_occup_groupes = d3.rollups(
   taille_occup_mutate,
   function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
@@ -151,7 +150,7 @@ taille_occup_final = taille_occup_summarise.map(function(d) {
   };
 });
 
-// 5. Ordre défini dans le code R (Ordre_occup)
+// 5. Ordre défini 
 ordre_occup = [
   "Sous-occupation très accentuée",
   "Sous-occupation accentuée",
@@ -161,22 +160,22 @@ ordre_occup = [
   "Suroccupation accentuée"
 ];
 
-// Tri des données pour correspondre à l'ordre imposé (factor levels en R)
+// Tri des données pour correspondre à l'ordre imposé
 taille_occup_trie = taille_occup_final.sort((a, b) => ordre_occup.indexOf(a.occupation) - ordre_occup.indexOf(b.occupation));
 ```
 
 ```{ojs result_plot}
-// Diagramme en barres horizontales (équivalent de coord_flip)
+// Diagramme en barres horizontales
 Plot.plot({
   title: isGeoSelected ? `Indice de peuplement des résidences principales en ${selection_annee}` : "Sélectionnez un territoire",
-  marginLeft: 230, // Espace généreux pour les libellés de l'axe Y
+  marginLeft: 230, 
   marginRight: 40,
   x: { 
     label: "Part (%)", 
     grid: true 
   },
   y: { 
-    domain: ordre_occup, // Conserve l'ordre logique défini
+    domain: ordre_occup, 
     label: null 
   },
   marks: [
@@ -192,14 +191,12 @@ Plot.plot({
 ```
 
 ```{ojs result_table}
-// Ajout de la ligne TOTAL pour le tableau et formatage
 taille_occup_pour_tableau = {
   let data = taille_occup_trie.map(d => ({
     occupation: d.occupation,
     total_groupe: d.total_groupe,
     part_groupe_fmt: d.part_groupe.toFixed(2) + " %"
   }));
-  data.push({ occupation: "TOTAL", total_groupe: total, part_groupe_fmt: "100.00 %" });
   return data;
 }
 
@@ -214,18 +211,3 @@ Inputs.table(taille_occup_pour_tableau, {
 })
 ```
 
-# Pour en savoir plus
-
-- Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), la visualisation interroge directement le fichier Parquet du Dossier Complet Insee avec DuckDB pour extraire dynamiquement les statistiques de l'année sélectionnée.
-
-```{ojs debug}
-debug_info = db.query(`
-  SELECT count(*) as nb_lignes
-  FROM read_parquet('${chemin_s3}')
-`)
-
-viewof debug_table = Inputs.table(
-  debug_info,
-  { locale: "fr" }
-)
-```

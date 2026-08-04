@@ -50,7 +50,7 @@ viewof selection_type_geo = Inputs.select(
 ```{ojs geo}
 //| output: false
 
-// Liste des territoires disponibles dynamiquement
+// Liste des territoires disponibles
 geo = db.query(`
   SELECT DISTINCT GEO, GEO_LABEL
   FROM read_parquet('${chemin_s3}')
@@ -94,7 +94,7 @@ htl.html`
 ```{ojs result_calc}
 //| output: false
 
-// 1. On récupère les données de population pour la zone (en filtrant globalement sur le mot 'Population')
+// 1. On récupère les données
 equip_brut = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
@@ -106,7 +106,7 @@ equip_brut = isGeoSelected
 `)
 : [];
 
-// 2. On classe avec des mots-clés robustes (Sexe + Tranche d'âge)
+// 2. On classe 
 function classer_pop(label) {
   if (!label) return null;
   let txt = label.toLowerCase();
@@ -117,7 +117,7 @@ function classer_pop(label) {
   else if (txt.includes("femme")) sexe = "Femme";
   if (!sexe) return null; // Si on ne trouve ni homme ni femme, on ignore
   
-  // Identifier la tranche d'âge
+  // tranche d'âge
   let tranche = null;
   if (txt.includes("moins de 15 ans")) tranche = "Moins de 15 ans";
   else if (txt.includes("15 à 24 ans")) tranche = "15-24 ans";
@@ -144,7 +144,7 @@ equip_mutate = equip_brut.map(function(d) {
   };
 }).filter(d => d !== null);
 
-// 4. Agrégation des résultats (Somme croisée Sexe x Tranche d'âge)
+// 4. Agrégation des résultats
 equip_groupes = d3.flatRollup(
   equip_mutate,
   v => d3.sum(v, d => d.OBS_VALUE),
@@ -156,7 +156,7 @@ equip_groupes = d3.flatRollup(
   population_exacte: valeur
 }));
 
-// 5. Calcul des parts locales (pourcentage de la tranche d'âge au sein du sexe)
+// 5. Calcul des parts locales 
 total_hommes = d3.sum(equip_groupes.filter(d => d.SEXE === "Homme"), d => d.population_exacte);
 total_femmes = d3.sum(equip_groupes.filter(d => d.SEXE === "Femme"), d => d.population_exacte);
 
@@ -180,20 +180,18 @@ equip_trie = equip.sort((a, b) => ordre_ages.indexOf(a.TRANCHE_AGE) - ordre_ages
 ```
 
 ```{ojs result_plot}
-// Graphique en barres groupées (équivalent geom_col(position = "dodge"))
+// Graphique en barres groupées
 Plot.plot({
   title: isGeoSelected ? `Population par sexe et âge regroupé – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
   subtitle: `Année ${selection_annee}`,
   marginBottom: 60,
   marginLeft: 50,
-  // L'axe X principal est masqué, car les labels sont gérés par le fx (facets)
   x: { axis: null }, 
   y: { 
     label: "Proportion d'hommes et de femmes", 
     tickFormat: "%", 
     grid: true 
   },
-  // Facet X : permet de grouper les barres par tranche d'âge
   fx: { 
     domain: ordre_ages, 
     label: "Tranches d'âge", 
@@ -230,18 +228,3 @@ Inputs.table(equip_trie, {
 })
 ```
 
-# Pour en savoir plus
-
-- Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), le graphique se met à jour en allant piocher dynamiquement dans la base du dossier complet au format Parquet.
-
-```{ojs debug}
-debug_info = db.query(`
-  SELECT count(*) as nb_lignes
-  FROM read_parquet('${chemin_s3}')
-`)
-
-viewof debug_table = Inputs.table(
-  debug_info,
-  { locale: "fr" }
-)
-```

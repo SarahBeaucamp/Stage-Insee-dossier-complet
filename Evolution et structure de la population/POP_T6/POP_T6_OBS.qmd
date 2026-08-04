@@ -50,7 +50,7 @@ viewof selection_type_geo = Inputs.select(
 ```{ojs geo}
 //| output: false
 
-// Liste des territoires disponibles dynamiquement
+// Liste des territoires disponibles
 geo = db.query(`
   SELECT DISTINCT GEO, GEO_LABEL
   FROM read_parquet('${chemin_s3}')
@@ -94,7 +94,7 @@ htl.html`
 ```{ojs result_calc}
 //| output: false
 
-// 1. On récupère TOUTES les données de POP_T4 pour la zone
+// 1. On récupère toutes les données de POP_T4 pour la zone
 equip_brut = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
@@ -106,18 +106,15 @@ equip_brut = isGeoSelected
 `)
 : [];
 
-// 2. On classe avec des mots-clés robustes
+// 2. On classe
 function classer_residence(label) {
   if (!label) return null;
   let txt = label.toLowerCase();
-  
-  // On s'assure qu'on regarde bien la population de "1 an ou plus"
   if (!txt.includes("1 an ou plus")) return null;
 
   if (txt.includes("dans le même logement")) return "Dans le même logement";
   if (txt.includes("autre logement dans la même commune")) return "Dans un autre logement de la même commune";
   
-  // Tout le reste correspond à une autre commune (département, région, DOM, etc.)
   if (txt.includes("autre commune") || 
       txt.includes("hors de la région") || 
       txt.includes("autre département") || 
@@ -158,7 +155,7 @@ equip = equip_summarise.map(function(d) {
   };
 });
 
-// 5. On force l'ordre pour avoir des couleurs cohérentes (comme dans R)
+// 5. On force l'ordre 
 ordre_niveaux = [
   "Dans le même logement", 
   "Dans un autre logement de la même commune", 
@@ -168,7 +165,7 @@ equip_trie = equip.sort((a, b) => ordre_niveaux.indexOf(a.Lieu_de_résidence) - 
 ```
 
 ```{ojs result_plot}
-// Construction du camembert D3 sur-mesure
+// Camembert
 camembert = {
   if (!isGeoSelected || total === 0) return htl.html`<div>Sélectionnez un territoire ou aucune donnée disponible pour cette année.</div>`;
   
@@ -178,7 +175,7 @@ camembert = {
 
   const arc = d3.arc().innerRadius(0).outerRadius(radius);
   
-  // On inverse le sens de rotation (direction = -1 dans ggplot)
+  // On inverse le sens de rotation 
   const pie = d3.pie()
     .value(d => d.total_groupe)
     .sort(null)
@@ -237,7 +234,7 @@ camembert = {
   categories.forEach((cat, i) => {
     const row = legend.append("g").attr("transform", `translate(0, ${i * 25 + 10})`);
     row.append("rect").attr("width", 15).attr("height", 15).attr("fill", color(cat)).attr("rx", 2);
-    // On ajoute un retour à la ligne manuel en SVG pour les textes longs
+    // On ajoute un retour à la ligne
     if(cat === "Dans un autre logement de la même commune") {
         row.append("text").attr("x", 25).attr("y", 10).attr("font-size", "12px").text("Dans un autre logement");
         row.append("text").attr("x", 25).attr("y", 24).attr("font-size", "12px").text("de la même commune");
@@ -261,10 +258,9 @@ htl.html`
 ```
 
 ```{ojs result_table}
-// Tri manuellement et ajout de la ligne TOTAL
+// Tri manuel
 equip_pour_tableau = {
   let data = equip_trie.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
-  data.push({ Lieu_de_résidence: "TOTAL", total_groupe: total });
   return data;
 }
 
@@ -278,18 +274,3 @@ Inputs.table(equip_pour_tableau, {
 })
 ```
 
-# Pour en savoir plus
-
-- Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), le graphique se met à jour en allant piocher dynamiquement dans la base du dossier complet au format Parquet.
-
-```{ojs debug}
-debug_info = db.query(`
-  SELECT count(*) as nb_lignes
-  FROM read_parquet('${chemin_s3}')
-`)
-
-viewof debug_table = Inputs.table(
-  debug_info,
-  { locale: "fr" }
-)
-```

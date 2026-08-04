@@ -27,7 +27,7 @@ viewof selection_annee = Inputs.select(
   ],
   {
     label: "Année",
-    value: "2022" // Par défaut 2022 comme dans votre script R
+    value: "2022" 
   }
 )
 ```
@@ -50,7 +50,6 @@ viewof selection_type_geo = Inputs.select(
 ```{ojs geo}
 //| output: false
 
-// Liste des territoires disponibles dynamiquement
 geo = db.query(`
   SELECT DISTINCT GEO, GEO_LABEL
   FROM read_parquet('${chemin_s3}')
@@ -94,7 +93,7 @@ htl.html`
 ```{ojs result_calc}
 //| output: false
 
-// 1. On récupère TOUTES les données de FAM_T3 (zéro risque de plantage SQL)
+// 1. On récupère toutes les données de FAM_T3 
 equip_brut = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
@@ -106,7 +105,7 @@ equip_brut = isGeoSelected
 `)
 : [];
 
-// 2. On classe avec des mots-clés robustes
+// 2. On classe 
 function classer_familles(label) {
   if (!label) return null;
   let txt = label.toLowerCase();
@@ -150,7 +149,7 @@ equip = equip_summarise.map(function(d) {
 ```
 
 ```{ojs result_plot}
-// Construction du camembert D3 sur-mesure (Reproduction fidèle de votre ggplot)
+// Camembert 
 camembert = {
   if (!isGeoSelected || total === 0) return htl.html`<div>Sélectionnez un territoire ou aucune donnée disponible pour cette année.</div>`;
   
@@ -161,7 +160,7 @@ camembert = {
   const arc = d3.arc().innerRadius(0).outerRadius(radius);
   const pie = d3.pie().value(d => d.total_groupe).sort(null);
 
-  // Palette de couleurs "Blues" de ggplot
+  // Palette de couleurs "Blues"
   const color = d3.scaleOrdinal()
     .domain([
       "Maisons", 
@@ -195,10 +194,10 @@ camembert = {
     .join("text")
     .attr("transform", d => `translate(${arc.centroid(d)})`)
     .attr("text-anchor", "middle")
-    .attr("fill", d => d.data.part_groupe < 15 ? "black" : "white") // Texte noir si tranche très claire/petite
+    .attr("fill", d => d.data.part_groupe < 15 ? "black" : "white") 
     .attr("font-size", "12px")
     .attr("font-weight", "bold")
-    // Affiche uniquement si c'est assez grand pour ne pas baver (ex: > 2%)
+    // Affiche uniquement si c'est assez grand pour ne pas baver
     .text(d => d.data.part_groupe >= 2 ? `${d.data.part_groupe.toFixed(1)}%` : "");
 
   // Légende positionnée à droite
@@ -215,7 +214,7 @@ camembert = {
   return svg.node();
 }
 
-// Emballage HTML avec titre (comme dans ggplot)
+// Emballage HTML avec titre
 htl.html`
   <div style="display: flex; flex-direction: column; align-items: center;">
     <h3 style="margin-bottom: 0px; font-family: sans-serif; font-weight: bold;">Types de logements</h3>
@@ -228,10 +227,9 @@ htl.html`
 ```
 
 ```{ojs result_table}
-// 1. Tri manuellement et ajout de la ligne TOTAL
+// 1. Tri manuel
 equip_pour_tableau = {
   let data = equip.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
-  data.push({ Situation_f: "TOTAL", total_groupe: total });
   return data;
 }
 
@@ -245,18 +243,3 @@ Inputs.table(equip_pour_tableau, {
 })
 ```
 
-# Pour en savoir plus
-
-- Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), le graphique se met à jour en allant piocher dynamiquement dans la base du dossier complet au format Parquet.
-
-```{ojs debug}
-debug_info = db.query(`
-  SELECT count(*) as nb_lignes
-  FROM read_parquet('${chemin_s3}')
-`)
-
-viewof debug_table = Inputs.table(
-  debug_info,
-  { locale: "fr" }
-)
-```
