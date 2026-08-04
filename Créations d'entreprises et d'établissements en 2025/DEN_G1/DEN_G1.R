@@ -22,7 +22,7 @@ ENDPOINT 'minio.lab.sspcloud.fr',
 URL_STYLE 'path'
 );")
 
-# 4. Définir l'adresse de votre fichier sur le S3 du SSP Cloud
+# 4. Définir l'adresse du fichier sur le S3 du SSP Cloud
 chemin_s3 <- "s3://sarahbeaucamp/dossier_complet.parquet"
 
 # Créer une table virtuelle
@@ -75,13 +75,13 @@ View(socie)
 # Graphique 
 library(ggplot2)
 
-# Définition des couleurs basées sur votre image
+# Définition des couleurs 
 couleurs <- c(
-  "Ensemble" = "#003366",              # Bleu foncé
-  "Entrepreneur individuel" = "#ff4d4d", # Rouge
+  "Ensemble" = "#003366",              
+  "Entrepreneur individuel" = "#ff4d4d", 
   "Société à responsabilité limitée" = "gray",
-  "Société par actions simplifiée" = "#3399ff", # Bleu clair
-  "Autres sociétés" = "#990000")     # Rouge foncé
+  "Société par actions simplifiée" = "#3399ff", 
+  "Autres sociétés" = "#990000")     
   
 ggplot(socie, aes(x = as.numeric(TIME_PERIOD), y = total_groupe, color = sociétés)) +
   geom_line(linewidth = 1) +

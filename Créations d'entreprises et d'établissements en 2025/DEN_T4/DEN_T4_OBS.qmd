@@ -27,7 +27,7 @@ viewof selection_annee = Inputs.select(
   ],
   {
     label: "Année",
-    value: "2023" // Valeur par défaut correspondant à votre code R
+    value: "2023"
   }
 )
 ```
@@ -50,7 +50,7 @@ viewof selection_type_geo = Inputs.select(
 ```{ojs geo}
 //| output: false
 
-// Liste des territoires disponibles dynamiquement
+// Liste des territoires disponibles
 geo = db.query(`
   SELECT DISTINCT GEO, GEO_LABEL
   FROM read_parquet('${chemin_s3}')
@@ -94,7 +94,7 @@ htl.html`
 ```{ojs result_calc}
 //| output: false
 
-// 1. On récupère TOUTES les données de DEN_T4 pour la zone et l'année
+// 1. On récupère toutes les données de DEN_T4 pour la zone et l'année
 etab_brut = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
@@ -106,7 +106,7 @@ etab_brut = isGeoSelected
 `)
 : [];
 
-// 2. On classe selon les mêmes libellés que dans le code R
+// 2. On classe 
 secteurs_retenus = [
   "Établissements – Industrie manufacturière, industries extractives et autres",
   "Établissements – Activités immobilières",
@@ -134,7 +134,7 @@ etab_mutate = etab_brut.map(function(d) {
   };
 }).filter(d => d.secteur_act !== null);
 
-// 4. Agrégation des résultats (équivalent group_by + summarise)
+// 4. Agrégation des résultats
 etab_groupes = d3.rollups(
   etab_mutate,
   function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
@@ -156,7 +156,7 @@ etab = etab_summarise.map(function(d) {
   };
 });
 
-// 5. Ordre logique des secteurs pour l'affichage (ordre du code R)
+// 5. Ordre logique
 ordre_secteurs = secteurs_retenus.map(function(s) {
   return s.replace("Établissements – ", "");
 });
@@ -165,7 +165,7 @@ etab_trie = etab.sort((a, b) => ordre_secteurs.indexOf(a.secteur_act) - ordre_se
 ```
 
 ```{ojs result_plot}
-// Histogramme (équivalent ggplot2 : geom_col + labels tronqués)
+// Histogramme 
 Plot.plot({
   title: isGeoSelected ? `Établissements économiquement actifs en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
   marginBottom: 100,
@@ -186,7 +186,7 @@ Plot.plot({
 ```
 
 ```{ojs result_table}
-// Tri manuellement et ajout de la ligne TOTAL
+// Tri manuel
 etab_pour_tableau = {
   let data = etab_trie.slice();
   data.push({ secteur_act: "TOTAL", total_groupe: total });
@@ -203,18 +203,3 @@ Inputs.table(etab_pour_tableau, {
 })
 ```
 
-# Pour en savoir plus
-
-- Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), le graphique se met à jour en allant piocher dynamiquement dans la base du dossier complet au format Parquet.
-
-```{ojs debug}
-debug_info = db.query(`
-  SELECT count(*) as nb_lignes
-  FROM read_parquet('${chemin_s3}')
-`)
-
-viewof debug_table = Inputs.table(
-  debug_info,
-  { locale: "fr" }
-)
-```

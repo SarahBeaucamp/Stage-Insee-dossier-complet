@@ -27,7 +27,7 @@ viewof selection_annee = Inputs.select(
   ],
   {
     label: "Année",
-    value: "2023" // Valeur par défaut correspondant à votre code R
+    value: "2023" 
   }
 )
 ```
@@ -50,7 +50,7 @@ viewof selection_type_geo = Inputs.select(
 ```{ojs geo}
 //| output: false
 
-// Liste des territoires disponibles dynamiquement
+// Liste des territoires disponibles
 geo = db.query(`
   SELECT DISTINCT GEO, GEO_LABEL
   FROM read_parquet('${chemin_s3}')
@@ -94,7 +94,7 @@ htl.html`
 ```{ojs result_calc}
 //| output: false
 
-// 1. On récupère TOUTES les données de DEN_T3 pour la zone et l'année
+// 1. On récupère toutes les données de DEN_T3 pour la zone et l'année
 eco_act_brut = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
@@ -106,7 +106,7 @@ eco_act_brut = isGeoSelected
 `)
 : [];
 
-// 2. On classe selon les mêmes libellés que dans le code R
+// 2. On classe 
 secteurs_retenus = [
   "Nombre d'unités légales – Industrie manufacturière, industries extractives et autres",
   "Nombre d'unités légales – Activités immobilières",
@@ -122,7 +122,6 @@ secteurs_retenus = [
 function classer_secteur(label) {
   if (!label) return null;
   if (!secteurs_retenus.includes(label)) return null;
-  // On retire le préfixe "Nombre d'unités légales – " pour ne garder que le nom du secteur
   return label.replace("Nombre d'unités légales – ", "");
 }
 
@@ -134,7 +133,7 @@ eco_act_mutate = eco_act_brut.map(function(d) {
   };
 }).filter(d => d.secteur_act !== null);
 
-// 4. Agrégation des résultats (équivalent group_by + summarise)
+// 4. Agrégation des résultats 
 eco_act_groupes = d3.rollups(
   eco_act_mutate,
   function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
@@ -156,7 +155,7 @@ eco_act = eco_act_summarise.map(function(d) {
   };
 });
 
-// 5. Ordre logique des secteurs pour l'affichage (ordre du code R)
+// 5. Ordre logique des secteurs
 ordre_secteurs = secteurs_retenus.map(function(s) {
   return s.replace("Nombre d'unités légales – ", "");
 });
@@ -165,7 +164,7 @@ eco_act_trie = eco_act.sort((a, b) => ordre_secteurs.indexOf(a.secteur_act) - or
 ```
 
 ```{ojs result_plot}
-// Histogramme (équivalent ggplot2 : geom_col + labels tronqués)
+// Histogramme
 Plot.plot({
   title: isGeoSelected ? `Unités légales économiquement actives en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
   marginBottom: 100,
@@ -186,10 +185,9 @@ Plot.plot({
 ```
 
 ```{ojs result_table}
-// Tri manuellement et ajout de la ligne TOTAL
+// Tri manuel
 eco_act_pour_tableau = {
   let data = eco_act_trie.slice();
-  data.push({ secteur_act: "TOTAL", total_groupe: total });
   return data;
 }
 
@@ -201,20 +199,4 @@ Inputs.table(eco_act_pour_tableau, {
     total_groupe: "Nombre d'unités légales"
   }
 })
-```
-
-# Pour en savoir plus
-
-- Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), le graphique se met à jour en allant piocher dynamiquement dans la base du dossier complet au format Parquet.
-
-```{ojs debug}
-debug_info = db.query(`
-  SELECT count(*) as nb_lignes
-  FROM read_parquet('${chemin_s3}')
-`)
-
-viewof debug_table = Inputs.table(
-  debug_info,
-  { locale: "fr" }
-)
 ```

@@ -91,12 +91,12 @@ data_plot = data_brute.map(d => ({
 ```
 
 ```{ojs plot_evolution}
-// Graphique en ligne + points (l'équivalent parfait de type = "b" en R)
+// Graphique en ligne + points 
 Plot.plot({
   title: isGeoSelected ? `Évolution – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
   x: { 
     label: "Année", 
-    tickFormat: "d" // Évite les virgules dans les années (ex: 2,020)
+    tickFormat: "d" // Évite les virgules dans les années 
   },
   y: { 
     label: "Valeur (Nombre)", 
