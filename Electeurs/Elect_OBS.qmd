@@ -35,7 +35,7 @@ viewof selection_type_geo = Inputs.select(
 ```{ojs geo}
 //| output: false
 
-// Liste des territoires disponibles mis à jour dynamiquement selon l'aire urbaine choisie
+// Liste des territoires disponibles 
 geo = db.query(`
   SELECT DISTINCT GEO, GEO_LABEL
   FROM read_parquet('${chemin_s3}')
@@ -79,17 +79,6 @@ htl.html`
 ```{ojs result_calc}
 //| output: false
 
-// r <- dossier_complet %>% filter(GEO == "44109", ID_TAB == "EQUIP_T1") %>% distinct(TAB_MEASURE_LABEL) %>% collect()
-// (étape de contrôle en R, non nécessaire pour l'affichage final, donc non reprise ici)
-
-// equip <- dossier_complet %>%
-//   filter(
-//     TIME_PERIOD == "2024",
-//     GEO_OBJECT_LABEL == "Commune",
-//     GEO == "44109",
-//     ID_TAB == "EQUIP_T1",
-//     TAB_MEASURE_LABEL %in% c(...)
-//   )
 elec = isGeoSelected
 ? db.query(`
   SELECT TIME_PERIOD, TAB_MEASURE_LABEL, OBS_VALUE
@@ -109,7 +98,7 @@ Plot.plot({
   marginBottom: 40,
   x: { 
     label: "Année de l'élection", 
-    tickFormat: "d" // Empêche d'afficher les années avec des virgules (ex: 2,022)
+    tickFormat: "d" // Empêche d'afficher les années avec des virgules 
   },
   y: { 
     label: "Nombre d'électeurs", 
@@ -124,13 +113,12 @@ Plot.plot({
       strokeWidth: 2 
     }),
     
-    // 2. Ajoute les points avec une info-bulle au survol
+    // 2. Ajoute les points avec valeur
     Plot.dot(elec, { 
       x: "TIME_PERIOD", 
       y: "OBS_VALUE", 
       fill: "blue", 
       r: 4,
-      // Ajout interactif : affiche les infos quand on passe la souris sur le point
       title: (d) => `${d.TAB_MEASURE_LABEL} (${d.TIME_PERIOD})\nÉlecteurs : ${d.OBS_VALUE}`
     })
   ]
@@ -138,12 +126,12 @@ Plot.plot({
 ```
 
 ```{ojs result_table}
-// 1. On trie les données par ordre chronologique (du plus ancien au plus récent)
+// 1. On trie les données par ordre chronologique
 elec_pour_tableau = {
   return elec.slice().sort((a, b) => d3.ascending(a.TIME_PERIOD, b.TIME_PERIOD));
 }
 
-// 2. Affichage du tableau interactif
+// 2. Affichage
 Inputs.table(elec_pour_tableau, {
   columns: ["TIME_PERIOD", "TAB_MEASURE_LABEL", "OBS_VALUE"],
   header: {
@@ -154,18 +142,3 @@ Inputs.table(elec_pour_tableau, {
 })
 ```
 
-# Pour en savoir plus
-
-- Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), le graphique se met à jour en allant piocher dynamiquement dans la base du dossier complet au format Parquet.
-
-```{ojs debug}
-debug_info = db.query(`
-  SELECT count(*) as nb_lignes
-  FROM read_parquet('${chemin_s3}')
-`)
-
-viewof debug_table = Inputs.table(
-  debug_info,
-  { locale: "fr" }
-)
-```
