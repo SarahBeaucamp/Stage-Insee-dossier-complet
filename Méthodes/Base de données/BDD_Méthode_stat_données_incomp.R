@@ -192,8 +192,6 @@ if(rmse_A < rmse_B) {
 # ÉTAPE 6 : APPLICATION DÉFINITIVE SUR LA BASE COMPLÈTE (Choisir A ou B)
 # ==============================================================================
 
-# DÉCOMMENTE (Enlève le #) DEVANT LES LIGNES DU BLOC GAGNANT POUR L'EXÉCUTER
-
 # ==============================================================================
 # ÉTAPE 6A : IMPUTATION DÉFINITIVE AVEC MISSFOREST
 # ==============================================================================

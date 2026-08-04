@@ -28,7 +28,6 @@ URL_STYLE 'path'
 );")
 
 chemin_s3_2023 <- "s3://sarahbeaucamp/dossier_complet_2023.parquet"
-# CORRECTION : Utilisation de chemin_s3_2023
 dossier_complet_2023 <- tbl(con, paste0("read_parquet('", chemin_s3_2023, "')"))
 
 base_filtree_2023 <- dossier_complet_2023 %>%
@@ -46,7 +45,7 @@ base_filtree_2023 <- dossier_complet_2023 %>%
 print("Étape 1 terminée : Données 2023 extraites.")
 
 # ------------------------------------------------------------------------------
-# ÉTAPE 2 (2023) : PIVOT ET ALIGNEMENT STRICT SUR LA NOMENCLATURE 2022
+# ÉTAPE 2 : PIVOT ET ALIGNEMENT STRICT SUR LA NOMENCLATURE 2022
 # ------------------------------------------------------------------------------
 
 base_large_2023 <- base_filtree_2023 %>%
@@ -59,7 +58,7 @@ base_large_2023 <- base_filtree_2023 %>%
     values_from = OBS_VALUE,
     values_fn = max            
   ) %>%
-  # ==============================================================================
+# ==============================================================================
 # 0. ALIGNEMENT MANUEL SUR LES NOMS BRUTS (POUR LES 75 VARIABLES MODIFIÉES)
 # ==============================================================================
   rename(
@@ -157,18 +156,18 @@ base_large_2023 <- base_filtree_2023 %>%
   "Nombre d'emplois - Non Salariés x Femme x Administration publique, enseignement, santé humaine et action sociale" = "Nombre d’emplois – Femme * Non Salariés * Administration publique, enseignement, santé humaine et action sociale"
 )
 
-# 1. On applique le formatage R classique sur 2023
+# 1. On applique le formatage sur 2023
 names(base_large_2023) <- make.names(names(base_large_2023), unique = TRUE)
 
 # ==============================================================================
 # CORRECTION DE SCHÉMA : FORCER LES NOMS DE 2023 À COPIER CEUX DE 2022
 # ==============================================================================
 
-# 2. On récupère les noms officiels de ta base 2022 (qui doivent être dans ton environnement)
+# 2. On récupère les noms officiels de la base 2022
 noms_2022_ref <- names(base_large) 
 noms_2023_actuels <- names(base_large_2023)
 
-# 3. Fonction pour extraire l'essence du texte (sans point, sans x de liaison, sans casse)
+# 3. Fonction pour extraire l'essence du texte
 nettoyer_texte <- function(noms) {
   noms <- tolower(noms)
   # On retire les 'x' qui servent de croisements dans les noms R (ex: .x.)
@@ -178,11 +177,11 @@ nettoyer_texte <- function(noms) {
   return(noms)
 }
 
-# 4. On crée les dictionnaires nettoyés en coulisses
+# 4. On crée les dictionnaires nettoyés
 noms_2022_propres <- nettoyer_texte(noms_2022_ref)
 noms_2023_propres <- nettoyer_texte(noms_2023_actuels)
 
-# 5. Remplacement conditionnel : on écrase 2023 par le nom strict de 2022 si l'essence matche
+# 5. On écrase 2023 par le nom strict de 2022 si l'essence matche
 for (i in seq_along(noms_2023_actuels)) {
   # On cherche à quelle position dans 2022 correspond le nom nettoyé de 2023
   index_correspondant <- match(noms_2023_propres[i], noms_2022_propres)
@@ -224,7 +223,7 @@ base_prete_rf_2023 <- base_large_2023 %>%
     
     Y_GAP_ACT_GLOBAL = TAUX_H - TAUX_F,
     
-    # CORRECTION : Utilisation de la résidence principale comme base pour les logements
+    #Utilisation de la résidence principale comme base pour les logements
     across(.cols = starts_with("Logements...") | starts_with("Nombre.de.pièces..."), .fns = ~ .x / .data[["Logements...Résidences.principales"]]),
     
     across(.cols = starts_with("Population.des.ménages...") & !matches("^Population.des.ménages$"), .fns = ~ .x / .data[["Population.des.ménages"]]),
@@ -262,7 +261,6 @@ base_pre_filtre_2023 <- base_prete_rf_2023 %>%
   filter(!is.na(Y_GAP_ACT_GLOBAL)) %>%
   select(-GEO, -GEO_LABEL, -Population)     
 
-# CORRECTION : Remplacement de base_pre_filtre par base_pre_filtre_2023 dans le grepl
 colonnes_secret_2023 <- names(base_pre_filtre_2023)[grepl("salaire|pauvret|revenu|niveau.de.vie", names(base_pre_filtre_2023), ignore.case = TRUE)]
 
 print("Colonnes identifiées pour l'imputation mathématique :")
@@ -279,19 +277,17 @@ print(compte_na_2023[compte_na_2023 > 0])
 # ÉTAPE 4B : ALIGNEMENT DES COLONNES DU MODÈLE (RETRAIT DES VARIABLES DISPARUES)
 # ==============================================================================
 
-# 1. On identifie les colonnes communes entre l'entraînement (2022) et la prédiction (2023)
+# 1. On identifie les colonnes communes entre 2022 et 2023
 colonnes_communes <- intersect(names(base_sans_na), names(base_finale_2023))
 
-# 2. On regarde ce qui va être retiré pour ton information
+# 2. On regarde ce qui va être retiré 
 variables_supprimees_du_modele <- setdiff(names(base_sans_na), colonnes_communes)
 print(paste("Nombre de variables retirées du modèle car disparues en 2023 :", length(variables_supprimees_du_modele)))
 print(variables_supprimees_du_modele)
 
-# 3. On filtre définitivement les deux bases pour qu'elles aient EXACTEMENT les mêmes colonnes
+# 3. On filtre définitivement les deux bases pour qu'elles aient exactement les mêmes colonnes
 base_sans_na <- base_sans_na %>% select(all_of(colonnes_communes))
 base_finale_2023 <- base_finale_2023 %>% select(all_of(colonnes_communes))
-
-# (Ton Étape 5 de test de sécurité commence juste en dessous...)
 
 # ==============================================================================
 # ÉTAPE 5 : TEST DE SÉCURITÉ - VÉRIFICATION DES VARIABLES AVANT L'IMPUTATION
@@ -300,12 +296,10 @@ base_finale_2023 <- base_finale_2023 %>% select(all_of(colonnes_communes))
 print("--- LANCEMENT DU TEST DE CORRESPONDANCE DES COLONNES ---")
 
 # 1. On récupère les colonnes de référence de 2022 (à partir de la base d'entraînement)
-# Assure-toi que "base_sans_na" (ta base finale 2022) est bien chargée dans ton environnement
 colonnes_2022 <- names(base_sans_na) 
 
 # 2. On récupère les colonnes actuelles de 2023 (juste avant de lancer missForest)
-# Remplace "base_finale" par le nom de ton objet 2023 si tu l'as renommé (ex: base_finale_2023)
-colonnes_2023 <- names(base_finale) 
+colonnes_2023 <- names(base_finale_2023) 
 
 # 3. Calcul des différences
 variables_manquantes_2023 <- setdiff(colonnes_2022, colonnes_2023)
@@ -355,7 +349,7 @@ print(paste("Nombre total de NAs restants :", sum(is.na(base_2023_sans_na))))
 # ETAPE 7 : VÉRIFICATION DES VARIABLES MANQUANTES
 #===============================================================================
 
-# On suppose que base_sans_na (2022) est toujours dans l'environnement
+# base_sans_na 2022 doit toujours être dans l'environnement
 variables_manquantes <- setdiff(names(base_sans_na), names(base_2023_sans_na))
 print("Variables présentes en 2022 mais absentes en 2023 :")
 print(variables_manquantes)
@@ -399,7 +393,7 @@ print("Entraînement de la forêt aléatoire de base...")
 modele_base <- ranger(
   formula = Y_GAP_ACT_GLOBAL ~ ., 
   data = base_train,
-  num.trees = 500,               # 500 arbres par défaut
+  num.trees = 400,               # 400 arbres par défaut aprés validation seuil
   importance = 'impurity'        # Pour pouvoir analyser l'importance des variables plus tard
 )
 
@@ -408,7 +402,6 @@ modele_base <- ranger(
 predictions_val <- predict(modele_base, data = base_val)
 
 # On calcule l'erreur quadratique moyenne (MSE) sur la validation
-# (En lien avec la perte quadratique de ton cours de régression)
 mse_val <- mean((base_val$Y_GAP_ACT_GLOBAL - predictions_val$predictions)^2)
 rmse_val <- sqrt(mse_val)
 
@@ -446,7 +439,7 @@ print(paste("Erreur RMSE sur 2023 :", round(rmse_2023, 4)))
 
 print("--- 1. NORMALISATION ET PRÉPARATION DE LA MATRICE 2023 ---")
 
-# NORMALISATION : On applique la même règle de centrage/réduction sur 2023
+# Normalisation : On applique la même règle de centrage/réduction sur 2023
 base_normalisee_2023 <- base_2023_sans_na %>%
   mutate(across(-Y_GAP_ACT_GLOBAL, ~ scale(.) %>% as.numeric()))
 

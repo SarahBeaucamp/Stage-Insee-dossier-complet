@@ -1,5 +1,5 @@
 # ==============================================================================
-# PRÉPARATION DE LA BASE DE DONNÉES 2023 ET PROJECTION (DATA DRIFT)
+# PRÉPARATION DE LA BASE DE DONNÉES 2023 ET PROJECTION
 # ==============================================================================
 
 library(DBI)
@@ -30,7 +30,6 @@ URL_STYLE 'path'
 );")
 
 chemin_s3_2023 <- "s3://sarahbeaucamp/dossier_complet_2023.parquet"
-# CORRECTION : Utilisation de chemin_s3_2023
 dossier_complet_2023 <- tbl(con, paste0("read_parquet('", chemin_s3_2023, "')"))
 
 base_filtree_2023 <- dossier_complet_2023 %>%
@@ -48,7 +47,7 @@ base_filtree_2023 <- dossier_complet_2023 %>%
 print("Étape 1 terminée : Données 2023 extraites.")
 
 # ------------------------------------------------------------------------------
-# ÉTAPE 2 (2023) : PIVOT ET ALIGNEMENT STRICT SUR LA NOMENCLATURE 2022
+# ÉTAPE 2 : PIVOT ET ALIGNEMENT STRICT SUR LA NOMENCLATURE 2022
 # ------------------------------------------------------------------------------
 
 base_large_2023 <- base_filtree_2023 %>%
@@ -61,9 +60,7 @@ base_large_2023 <- base_filtree_2023 %>%
     values_from = OBS_VALUE,
     values_fn = max            
   ) %>%
-  # ==============================================================================
-# 0. ALIGNEMENT MANUEL SUR LES NOMS BRUTS (POUR LES 75 VARIABLES MODIFIÉES)
-# ==============================================================================
+  
 rename(
   
   # --- POPULATION, ÂGE ET CSP ---
@@ -90,7 +87,8 @@ rename(
   "Population - De 15 à 24 ans x Ouvriers" = "Population – De 15 à 24 ans * Ouvriers",
   "Population - De 25 à 54 ans x Ouvriers" = "Population – De 25 à 54 ans * Ouvriers",
   "Population - 55 ans ou plus x Ouvriers" = "Population – 55 ans ou plus * Ouvriers",  
-  # --- ÉTAT CIVIL ---
+ 
+   # --- ÉTAT CIVIL ---
   "Population - 15 ans ou plus x Célibataire" = "Population – Célibataire",
   "Population - 15 ans ou plus x Marié" = "Population – Marié",
   "Population - 15 ans ou plus x Pacsé" = "Population – Pacsé",
@@ -159,18 +157,14 @@ rename(
   "Nombre d'emplois - Non Salariés x Femme x Administration publique, enseignement, santé humaine et action sociale" = "Nombre d’emplois – Femme * Non Salariés * Administration publique, enseignement, santé humaine et action sociale"
 )
 
-# 1. On applique le formatage R classique sur 2023
+# 1. On applique le même formatage sur 2023 que sur 2022
 names(base_large_2023) <- make.names(names(base_large_2023), unique = TRUE)
 
-# ==============================================================================
-# CORRECTION DE SCHÉMA : FORCER LES NOMS DE 2023 À COPIER CEUX DE 2022
-# ==============================================================================
-
-# 2. On récupère les noms officiels de ta base 2022 (qui doivent être dans ton environnement)
+# 2. On récupère les noms officiels de la base 2022
 noms_2022_ref <- names(base_large) 
 noms_2023_actuels <- names(base_large_2023)
 
-# 3. Fonction pour extraire l'essence du texte (sans point, sans x de liaison, sans casse)
+# 3. Fonction pour extraire l'essence du texte
 nettoyer_texte <- function(noms) {
   noms <- tolower(noms)
   # On retire les 'x' qui servent de croisements dans les noms R (ex: .x.)
@@ -180,11 +174,11 @@ nettoyer_texte <- function(noms) {
   return(noms)
 }
 
-# 4. On crée les dictionnaires nettoyés en coulisses
+# 4. On crée les dictionnaires des noms nettoyés
 noms_2022_propres <- nettoyer_texte(noms_2022_ref)
 noms_2023_propres <- nettoyer_texte(noms_2023_actuels)
 
-# 5. Remplacement conditionnel : on écrase 2023 par le nom strict de 2022 si l'essence matche
+# 5. On écrase 2023 par le nom strict de 2022
 for (i in seq_along(noms_2023_actuels)) {
   # On cherche à quelle position dans 2022 correspond le nom nettoyé de 2023
   index_correspondant <- match(noms_2023_propres[i], noms_2022_propres)
@@ -196,6 +190,7 @@ for (i in seq_along(noms_2023_actuels)) {
 }
 
 print("Étape 2 terminée : Base pivotée, renommée manuellement, et nomenclatures 2023 rigoureusement alignées sur 2022.")
+
 # ------------------------------------------------------------------------------
 # ÉTAPE 3 : CRÉATION DU Y, DES TAUX ET GRANDE PURGE
 # ------------------------------------------------------------------------------
@@ -226,7 +221,7 @@ base_prete_rf_2023 <- base_large_2023 %>%
     
     Y_GAP_ACT_GLOBAL = TAUX_H - TAUX_F,
     
-    # CORRECTION : Utilisation de la résidence principale comme base pour les logements
+    # ! Utilisation de la résidence principale comme base pour les logements
     across(.cols = starts_with("Logements...") | starts_with("Nombre.de.pièces..."), .fns = ~ .x / .data[["Logements...Résidences.principales"]]),
     
     across(.cols = starts_with("Population.des.ménages...") & !matches("^Population.des.ménages$"), .fns = ~ .x / .data[["Population.des.ménages"]]),
@@ -266,8 +261,6 @@ base_pre_filtre_2023 <- base_prete_rf_2023 %>%
   filter(!is.na(Y_GAP_ACT_GLOBAL)) %>%
   select(-Population)     
 
-
-# CORRECTION : Remplacement de base_pre_filtre par base_pre_filtre_2023 dans le grepl
 colonnes_secret_2023 <- names(base_pre_filtre_2023)[grepl("salaire|pauvret|revenu|niveau.de.vie", names(base_pre_filtre_2023), ignore.case = TRUE)]
 
 print("Colonnes identifiées pour l'imputation mathématique :")
@@ -285,25 +278,23 @@ referentiel_communes_2023 <- base_finale_2023 %>% select(GEO, GEO_LABEL)
 summary(base_finale_2023$Y_GAP_ACT_GLOBAL)
 
 # ==============================================================================
-# ÉTAPE 4B : ALIGNEMENT DES COLONNES DU MODÈLE (RETRAIT DES VARIABLES DISPARUES)
+# ÉTAPE 5 : ALIGNEMENT DES COLONNES DU MODÈLE (RETRAIT DES VARIABLES DISPARUES)
 # ==============================================================================
 
 # 1. On identifie les colonnes communes entre l'entraînement (2022) et la prédiction (2023)
 colonnes_communes <- intersect(names(base_sans_na), names(base_finale_2023))
 
-# 2. On regarde ce qui va être retiré pour ton information
+# 2. On regarde ce qui va être retiré
 variables_supprimees_du_modele <- setdiff(names(base_sans_na), colonnes_communes)
 print(paste("Nombre de variables retirées du modèle car disparues en 2023 :", length(variables_supprimees_du_modele)))
 print(variables_supprimees_du_modele)
 
-# 3. On filtre définitivement les deux bases pour qu'elles aient EXACTEMENT les mêmes colonnes
+# 3. On filtre définitivement les deux bases pour qu'elles aient exactement les mêmes colonnes
 base_sans_na <- base_sans_na %>% select(all_of(colonnes_communes))
 base_finale_2023 <- base_finale_2023 %>% select(all_of(colonnes_communes))
 
-# (Ton Étape 5 de test de sécurité commence juste en dessous...)
-
 # ==============================================================================
-# ÉTAPE 6A : IMPUTATION DÉFINITIVE AVEC MISSFOREST
+# ÉTAPE 6 : IMPUTATION DÉFINITIVE AVEC MISSFOREST
 # ==============================================================================
 
 print("--- 1. CONVERSION STRICTE DU FORMAT ---")
@@ -314,7 +305,7 @@ base_finale_propre_2023 <- base_finale_2023 %>%
 print("--- 2. APPLICATION DE MISSFOREST ---")
 imputation_finale_2023 <- missForest(base_finale_propre_2023, ntree = 50, maxiter = 5)
 
-# CORRECTION : Harmonisation du nom de la base finale
+# Harmonisation du nom de la base finale
 base_2023_sans_na <- imputation_finale_2023$ximp
 
 print(paste("Nombre total de NAs restants :", sum(is.na(base_2023_sans_na))))
@@ -323,7 +314,7 @@ print(paste("Nombre total de NAs restants :", sum(is.na(base_2023_sans_na))))
 # ETAPE 7 : VÉRIFICATION DES VARIABLES MANQUANTES
 #===============================================================================
 
-# On suppose que base_sans_na (2022) est toujours dans l'environnement
+# On suppose que base_sans_na est toujours dans l'environnement
 variables_manquantes <- setdiff(names(base_sans_na), names(base_2023_sans_na))
 print("Variables présentes en 2022 mais absentes en 2023 :")
 print(variables_manquantes)
@@ -367,18 +358,17 @@ print("Entraînement de la forêt aléatoire de base...")
 modele_base <- ranger(
   formula = Y_GAP_ACT_GLOBAL ~ ., 
   data = base_train,
-  num.trees = 400,  # 500 arbres par défaut
+  num.trees = 400,  # 400 arbres après analyse seuil puis 150 et 4 par validation croisée
   mtry = 150,
   min.node.size = 4,
   importance = 'impurity'        # Pour pouvoir analyser l'importance des variables plus tard
 )
 
-# --- 2. ÉVALUATION SUR L'ÉCHANTILLON DE VALIDATION (`base_val`) ---
+# --- 2. ÉVALUATION SUR L'ÉCHANTILLON DE VALIDATION ---
 # On prédit les valeurs pour l'échantillon de validation
 predictions_val <- predict(modele_base, data = base_val)
 
 # On calcule l'erreur quadratique moyenne (MSE) sur la validation
-# (En lien avec la perte quadratique de ton cours de régression)
 mse_val <- mean((base_val$Y_GAP_ACT_GLOBAL - predictions_val$predictions)^2)
 rmse_val <- sqrt(mse_val)
 
@@ -429,15 +419,15 @@ if(length(index_commune) > 0) {
   nom_commune <- referentiel_communes_2023$GEO_LABEL[index_commune]
   print(paste("--- COMMUNE TROUVÉE :", nom_commune, "---"))
   
-  # A. Extraction de la ligne pour Nantes (uniquement Nantes !)
+  # A. Extraction de la ligne pour Nantes
   X_2023_features <- base_2023_sans_na %>% select(-Y_GAP_ACT_GLOBAL)
   X_nantes_rf <- X_2023_features[index_commune, , drop = FALSE]
   
-  # B. PRÉDICTION RANDOM FOREST POUR NANTES
+  # B. Prédiction Random Forest pour Nantes
   prediction_nantes_rf <- predict(modele_base, data = X_nantes_rf)$predictions
   print(paste("=> L'écart d'activité prédit par le Random Forest pour", nom_commune, "est de :", round(prediction_nantes_rf, 4)))
   
-  # C. CALCUL SHAP ULTRA-ALLÉGÉ (20 lignes de fond pour éliminer tout risque de crash)
+  # C. Calcul SHAP allégé (20 lignes de fond pour éliminer tout risque de crash)
   set.seed(42)
   bg_rf <- base_train %>% select(-Y_GAP_ACT_GLOBAL) %>% sample_n(20)
   
@@ -452,7 +442,7 @@ if(length(index_commune) > 0) {
     pred_fun = predict_ranger_simple
   )
   
-  # D. AFFICHAGE DU GRAPHIQUE WATERFALL POUR NANTES
+  # D. Affichage du graphique Watterfall pour Nantes
   sv_nantes_rf <- shapviz(shap_nantes_rf)
   
   graphique_cascade_rf <- sv_waterfall(sv_nantes_rf, max_display = 15) +
@@ -466,7 +456,7 @@ if(length(index_commune) > 0) {
 }
 
 # ==============================================================================
-# PARTIE 11 : PRÉDICTION SUR 2023 AVEC LE MODÈLE LASSO (INFERENCE)
+# PARTIE 11 : PRÉDICTION SUR 2023 AVEC LE MODÈLE LASSO
 # ==============================================================================
 
 print("--- 1. NORMALISATION ET PRÉPARATION DE LA MATRICE 2023 ---")
@@ -532,7 +522,6 @@ if(length(index_commune) > 0) {
   print(paste("=> L'écart d'activité prédit par le Lasso pour", nom_commune, "est de :", round(as.numeric(prediction_nantes_lasso), 4)))
   
   # C. CALCUL DES SHAP VALUES POUR LE MODÈLE LINÉAIRE (LASSO)
-  # Pour un modèle linéaire, kernelshap marche à la perfection et sans aucun risque de saturation
   set.seed(42)
   bg_lasso <- matrice_X[sample(nrow(matrice_X), 50), ] # Petit échantillon de référence
   
@@ -561,7 +550,7 @@ if(length(index_commune) > 0) {
 }
 
 # ==============================================================================
-# ETAPE 14 : MODÉLISATION XGBOOST ET SHAP VALUES EXTRÊMEMENT RAPIDES (2023)
+# ETAPE 14 : MODÉLISATION XGBOOST ET SHAP VALUES EXTRÊMEMENT RAPIDES
 # ==============================================================================
 install.packages("kernelshap")
 install.packages("xgboost")
@@ -614,7 +603,7 @@ library(ggplot2)
 code_insee_cible <- "44109" 
 
 # ==============================================================================
-# 2. EXTRACTION, PRÉDICTION ET SHAP VALUES (100% NATIF & GGPLOT2)
+# 2. EXTRACTION, PRÉDICTION ET SHAP VALUES
 # ==============================================================================
 
 library(dplyr)

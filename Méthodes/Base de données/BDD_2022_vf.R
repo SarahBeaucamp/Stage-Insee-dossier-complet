@@ -1,5 +1,5 @@
 # ==============================================================================
-# PRÉPARATION DE LA BASE DE DONNÉES ET GESTION EXPERTE DES VALEURS MANQUANTES
+# PRÉPARATION DE LA BASE DE DONNÉES ET GESTION DES VALEURS MANQUANTES
 # ==============================================================================
 
 install.packages("Metrics")
@@ -116,7 +116,6 @@ base_pre_filtre <- base_prete_rf %>%
   select(-GEO, -GEO_LABEL, -Population)      
 
 # 1. Identifier les colonnes soumises au secret statistique (Revenus, Salaires, Pauvreté)
-# Le grepl va chercher tous les mots clés liés à l'argent, peu importe la casse
 colonnes_secret <- names(base_pre_filtre)[grepl("salaire|pauvret|revenu|niveau.de.vie", names(base_pre_filtre), ignore.case = TRUE)]
 
 print("Colonnes identifiées pour l'imputation mathématique (Secret Statistique) :")
@@ -132,7 +131,7 @@ print("--- BILAN DES NAs APRÈS MISE À ZÉRO DES ÉQUIPEMENTS ---")
 print(compte_na[compte_na > 0])
 
 # ==============================================================================
-# ÉTAPE 6A : IMPUTATION DÉFINITIVE AVEC MISSFOREST
+# ÉTAPE 5 : IMPUTATION DÉFINITIVE AVEC MISSFOREST
 # ==============================================================================
 
 print("--- 1. CONVERSION STRICTE DU FORMAT ---")
