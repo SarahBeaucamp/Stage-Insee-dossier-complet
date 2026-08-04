@@ -205,10 +205,10 @@ include-in-header:
 ```{ojs config}
 //| output: false
 
-// 1. Créer ou ouvrir une connexion DuckDB (équivalent dbConnect(duckdb(), ...) en R)
+// 1. Créer ou ouvrir une connexion DuckDB
 db = DuckDBClient.of({})
 
-// 4. Définir l'adresse de votre fichier sur le S3 du SSP Cloud (équivalent chemin_s3 en R)
+// 4. Définir l'adresse de votre fichier sur le S3 du SSP Cloud
 chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'
 ```
 
@@ -245,16 +245,7 @@ viewof selection_type_geo = Inputs.select(
 ```
 
 ```{ojs geo}
-// Liste des territoires disponibles :
-// la recherche de tous les territoires du parquet étant un peu longue
-// on la précalcule dans un fichier CSV stocké (cf. preparer_conf_geo.R)
-// Plutôt que faire une requête sur le .parquet à chaque fois (très long)
-// geo = db.query(`
-//   SELECT DISTINCT GEO, GEO_LABEL
-//   FROM read_parquet('${chemin_s3}')
-//   WHERE ID_TAB = 'RFD_G1' AND GEO_OBJECT_LABEL = '${selection_type_geo}'
-//   ORDER BY GEO_LABEL
-// `)
+// Liste des territoires disponibles
 
 viewof search_geo = Inputs.search(
   await FileAttachment("input/geo.csv").csv(), {
@@ -344,7 +335,7 @@ equip1 = equip_summarise1.map(function(d) {
 
 ```{ojs result_plot}
 mon_graphique_final16 = {
-  // 1. Construction du camembert D3
+  // 1. Construction du camembert
   const camembert1 = (() => {
     if (!isGeoSelected || total1 === 0) return htl.html`<div>Sélectionnez un territoire ou aucune donnée disponible pour cette année.</div>`;
     
@@ -354,7 +345,7 @@ mon_graphique_final16 = {
 
     const arc = d3.arc().innerRadius(0).outerRadius(radius);
     
-    // C'est ici que l'on inverse le sens de rotation (gauche vers droite)
+    // on inverse le sens de rotation
     const pie = d3.pie()
       .value(d => d.total_groupe)
       .sort(null)
@@ -413,7 +404,7 @@ mon_graphique_final16 = {
     return svg.node();
   })();
 
-  // 2. Assemblage du graphique avec son titre dans un conteneur au fond blanc
+  // 2. Assemblage du graphique
   const conteneur_graphe = htl.html`
     <div style="display: flex; flex-direction: column; align-items: center; background: white; padding: 20px;">
       <h3 style="margin-bottom: 0px; font-family: sans-serif; font-weight: bold;">Composition des familles</h3>
@@ -452,7 +443,7 @@ mon_graphique_final16 = {
 ```
 
 ```{ojs result_table}
-// 1. Préparation des données (j'ai renommé la variable pour éviter tout conflit avec vos précédents blocs)
+// 1. Tableau
 equip_pour_tableau16 = {
   let data1 = equip1.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
   return data1;
@@ -566,13 +557,13 @@ equip_trie = equip.sort((a, b) => ordre_niveaux.indexOf(a.enfants) - ordre_nivea
 ```
 
 ```{ojs result_palette}
-// 1. Palette de couleurs partagée (déclarée globalement pour servir au treemap ensuite)
+// 1. Palette de couleurs
 color_enfants = d3.scaleOrdinal()
   .domain(ordre_niveaux)
   .range(["#eff3ff", "#bdd7e7", "#6baed6", "#3182bd", "#08519c"])
   
 mon_graphique_final17 = {
-  // 2. Construction du camembert D3
+  // 2. Construction du camembert
   const camembert = (() => {
     if (!isGeoSelected || total === 0) return htl.html`<div>Sélectionnez un territoire ou aucune donnée disponible pour cette année.</div>`;
     
@@ -632,7 +623,7 @@ mon_graphique_final17 = {
     return svg.node();
   })();
 
-  // 3. Emballage HTML (fond blanc pour le PDF)
+  // 3. Emballage HTML
   const conteneur_graphe = htl.html`
     <div style="display: flex; flex-direction: column; align-items: center; background: white; padding: 20px;">
       <h3 style="margin-bottom: 0px; font-family: sans-serif; font-weight: bold;">Familles selon le nombre d'enfants âgés de moins de 25 ans</h3>
@@ -665,7 +656,7 @@ mon_graphique_final17 = {
 
 ```{ojs result_treemap}
 mon_graphique_final18 = {
-  // 1. Construction du treemap D3
+  // 1. Construction du treemap
   const treemap_chart = (() => {
     if (!isGeoSelected || total === 0) return htl.html`<div>Sélectionnez un territoire ou aucune donnée disponible pour cette année.</div>`;
 
@@ -720,7 +711,7 @@ mon_graphique_final18 = {
     return svg.node();
   })();
 
-  // 2. Emballage HTML (fond blanc)
+  // 2. Emballage HTML
   const conteneur_graphe = htl.html`
     <div style="display: flex; flex-direction: column; align-items: center; background: white; padding: 20px;">
       <h3 style="margin-bottom: 0px; font-family: sans-serif; font-weight: bold;">Répartition des familles par nombre d'enfants (treemap)</h3>

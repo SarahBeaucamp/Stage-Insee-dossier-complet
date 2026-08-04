@@ -245,16 +245,6 @@ viewof selection_type_geo = Inputs.select(
 ```
 
 ```{ojs geo}
-// Liste des territoires disponibles :
-// la recherche de tous les territoires du parquet étant un peu longue
-// on la précalcule dans un fichier CSV stocké (cf. preparer_conf_geo.R)
-// Plutôt que faire une requête sur le .parquet à chaque fois (très long)
-// geo = db.query(`
-//   SELECT DISTINCT GEO, GEO_LABEL
-//   FROM read_parquet('${chemin_s3}')
-//   WHERE ID_TAB = 'RFD_G1' AND GEO_OBJECT_LABEL = '${selection_type_geo}'
-//   ORDER BY GEO_LABEL
-// `)
 
 viewof search_geo = Inputs.search(
   await FileAttachment("input/geo.csv").csv(), {

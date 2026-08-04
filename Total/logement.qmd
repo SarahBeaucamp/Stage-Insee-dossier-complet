@@ -205,10 +205,10 @@ include-in-header:
 ```{ojs config}
 //| output: false
 
-// 1. Créer ou ouvrir une connexion DuckDB (équivalent dbConnect(duckdb(), ...) en R)
+// 1. Créer ou ouvrir une connexion DuckDB
 db = DuckDBClient.of({})
 
-// 4. Définir l'adresse de votre fichier sur le S3 du SSP Cloud (équivalent chemin_s3 en R)
+// 4. Définir l'adresse de votre fichier sur le S3 du SSP Cloud 
 chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'
 ```
 
@@ -245,16 +245,6 @@ viewof selection_type_geo = Inputs.select(
 ```
 
 ```{ojs geo}
-// Liste des territoires disponibles :
-// la recherche de tous les territoires du parquet étant un peu longue
-// on la précalcule dans un fichier CSV stocké (cf. preparer_conf_geo.R)
-// Plutôt que faire une requête sur le .parquet à chaque fois (très long)
-// geo = db.query(`
-//   SELECT DISTINCT GEO, GEO_LABEL
-//   FROM read_parquet('${chemin_s3}')
-//   WHERE ID_TAB = 'RFD_G1' AND GEO_OBJECT_LABEL = '${selection_type_geo}'
-//   ORDER BY GEO_LABEL
-// `)
 
 viewof search_geo = Inputs.search(
   await FileAttachment("input/geo.csv").csv(), {
@@ -420,7 +410,6 @@ mon_graphique_final20 = {
 ```
 
 ```{ojs result_table}
-// 1. Ajout de la ligne TOTAL
 taille_log_pour_tableau = {
   let data2 = taille_log_trie.map(d => ({
     pieces: d.pieces,
@@ -604,7 +593,6 @@ mon_graphique_final21 = {
 ```
 
 ```{ojs result_table}
-// 1. Préparation des données avec la ligne TOTAL
 taille_occup_pour_tableau = {
   let data3 = taille_occup_trie.map(d => ({
     occupation: d.occupation,
@@ -789,7 +777,6 @@ mon_graphique_final22 = {
 ```
 
 ```{ojs result_table}
-// 1. Préparation des données avec la ligne TOTAL
 date_resi_pour_tableau = {
   let data = date_resi_trie.map(d => ({
     date: d.date,
