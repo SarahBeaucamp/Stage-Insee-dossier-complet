@@ -8,10 +8,10 @@ format:
 ```{ojs config}
 //| output: false
 
-// 1. Créer ou ouvrir une connexion DuckDB (équivalent dbConnect(duckdb(), ...) en R)
+// 1. Créer ou ouvrir une connexion DuckDB 
 db = DuckDBClient.of({})
 
-// 4. Définir l'adresse de votre fichier sur le S3 du SSP Cloud (équivalent chemin_s3 en R)
+// 4. Définir l'adresse de votre fichier sur le S3 du SSP Cloud 
 chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'
 ```
 
@@ -52,7 +52,7 @@ viewof selection_type_geo = Inputs.select(
 ```{ojs geo}
 //| output: false
 
-// Liste des territoires disponibles mis à jour dynamiquement selon l'aire urbaine choisie
+// Liste des territoires disponibles 
 geo = db.query(`
   SELECT DISTINCT GEO, GEO_LABEL
   FROM read_parquet('${chemin_s3}')
@@ -96,17 +96,6 @@ htl.html`
 ```{ojs result_calc}
 //| output: false
 
-// r <- dossier_complet %>% filter(GEO == "44109", ID_TAB == "EQUIP_T1") %>% distinct(TAB_MEASURE_LABEL) %>% collect()
-// (étape de contrôle en R, non nécessaire pour l'affichage final, donc non reprise ici)
-
-// equip <- dossier_complet %>%
-//   filter(
-//     TIME_PERIOD == "2024",
-//     GEO_OBJECT_LABEL == "Commune",
-//     GEO == "44109",
-//     ID_TAB == "EQUIP_T1",
-//     TAB_MEASURE_LABEL %in% c(...)
-//   )
 equip_filtre = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
@@ -126,16 +115,6 @@ equip_filtre = isGeoSelected
 `)
 : [];
 
-// mutate(
-//    équipements = case_when(
-//      TAB_MEASURE_LABEL == "Nombre d'équipements – Station-service" ~ "Station-service",
-//      TAB_MEASURE_LABEL == "Nombre d'équipements – Station de recharge de véhicules électriques" ~ "Station de recharge de véhicules électriques",
-//      TAB_MEASURE_LABEL == "Nombre d'équipements – Boulangerie-pâtisserie" ~ "Boulangerie-pâtisserie",
-//      TAB_MEASURE_LABEL %in% c("Nombre d'équipements – Supérette", "Nombre d'équipements – Épicerie") ~ "Epicerie, Supérette",
-//      TAB_MEASURE_LABEL %in% c("Nombre d'équipements – Hypermarché et grand magasin", "Nombre d'équipements – Supermarché et magasin multi-commerce") ~ "Grande Surface",
-//      TAB_MEASURE_LABEL == "Nombre d'équipements – Coiffure" ~ "Coiffure"
-//    )
-// )
 function case_when_equipements(TAB_MEASURE_LABEL) {
   if (TAB_MEASURE_LABEL === "Nombre d'équipements – Infirmier") return "Infirmier";
   if (TAB_MEASURE_LABEL === "Nombre d'équipements – Psychologue") return "Psychologue";
@@ -154,7 +133,7 @@ equip_mutate = equip_filtre.map(function(d) {
   };
 });
 
-// group_by(équipements) %>% summarise(total_groupe = sum(OBS_VALUE, na.rm = TRUE)) %>% collect()
+
 equip_groupes = d3.rollups(
   equip_mutate,
   function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
@@ -165,7 +144,6 @@ equip_summarise = equip_groupes.map(function(g) {
   return { équipements: g[0], total_groupe: g[1] };
 });
 
-// mutate(total = sum(total_groupe), part_groupe = (total_groupe / total) * 100)
 total = d3.sum(equip_summarise, function(d) { return d.total_groupe; });
 
 equip = equip_summarise.map(function(d) {
@@ -179,7 +157,7 @@ equip = equip_summarise.map(function(d) {
 ```
 
 ```{ojs result_plot}
-// Histogramme (équivalent ggplot2)
+// Histogramme 
 Plot.plot({
   title: isGeoSelected ? `Nombre de professionnels de santé et de pharmacies en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
   marginBottom: 60,
@@ -193,11 +171,9 @@ Plot.plot({
 ```
 
 ```{ojs result_table}
-// 1. On trie les données manuellement (du plus grand au plus petit)
-// 2. On ajoute la ligne "TOTAL" à la fin du tableau
+// 1. On trie 
 equip_pour_tableau = {
   let data = equip.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
-  data.push({ équipements: "TOTAL", total_groupe: total });
   return data;
 }
 
@@ -209,20 +185,4 @@ Inputs.table(equip_pour_tableau, {
     total_groupe: "Nombre"
   }
 })
-```
-
-# Pour en savoir plus
-
-- Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), le graphique se met à jour en allant piocher dynamiquement dans la base du dossier complet au format Parquet.
-
-```{ojs debug}
-debug_info = db.query(`
-  SELECT count(*) as nb_lignes
-  FROM read_parquet('${chemin_s3}')
-`)
-
-viewof debug_table = Inputs.table(
-  debug_info,
-  { locale: "fr" }
-)
 ```

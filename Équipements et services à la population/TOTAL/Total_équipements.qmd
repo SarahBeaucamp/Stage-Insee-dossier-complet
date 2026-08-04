@@ -8,10 +8,10 @@ format:
 ```{ojs config}
 //| output: false
 
-// 1. Créer ou ouvrir une connexion DuckDB (équivalent dbConnect(duckdb(), ...) en R)
+// 1. Créer ou ouvrir une connexion DuckDB 
 db = DuckDBClient.of({})
 
-// 4. Définir l'adresse de votre fichier sur le S3 du SSP Cloud (équivalent chemin_s3 en R)
+// 4. Définir l'adresse de votre fichier sur le S3 du SSP Cloud 
 chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'
 ```
 
@@ -50,7 +50,7 @@ viewof selection_type_geo = Inputs.select(
 ```{ojs geo}
 //| output: false
 
-// Liste des territoires disponibles mis à jour dynamiquement selon l'aire urbaine choisie
+// Liste des territoires disponibles 
 geo = db.query(`
   SELECT DISTINCT GEO, GEO_LABEL
   FROM read_parquet('${chemin_s3}')
@@ -94,17 +94,6 @@ htl.html`
 ```{ojs result_calc}
 //| output: false
 
-// r <- dossier_complet %>% filter(GEO == "44109", ID_TAB == "EQUIP_T1") %>% distinct(TAB_MEASURE_LABEL) %>% collect()
-// (étape de contrôle en R, non nécessaire pour l'affichage final, donc non reprise ici)
-
-// equip <- dossier_complet %>%
-//   filter(
-//     TIME_PERIOD == "2024",
-//     GEO_OBJECT_LABEL == "Commune",
-//     GEO == "44109",
-//     ID_TAB == "EQUIP_T1",
-//     TAB_MEASURE_LABEL %in% c(...)
-//   )
 equip_filtre1 = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
@@ -126,16 +115,7 @@ equip_filtre1 = isGeoSelected
 `)
 : [];
 
-// mutate(
-//    équipements = case_when(
-//      TAB_MEASURE_LABEL == "Nombre d'équipements – Station-service" ~ "Station-service",
-//      TAB_MEASURE_LABEL == "Nombre d'équipements – Station de recharge de véhicules électriques" ~ "Station de recharge de véhicules électriques",
-//      TAB_MEASURE_LABEL == "Nombre d'équipements – Boulangerie-pâtisserie" ~ "Boulangerie-pâtisserie",
-//      TAB_MEASURE_LABEL %in% c("Nombre d'équipements – Supérette", "Nombre d'équipements – Épicerie") ~ "Epicerie, Supérette",
-//      TAB_MEASURE_LABEL %in% c("Nombre d'équipements – Hypermarché et grand magasin", "Nombre d'équipements – Supermarché et magasin multi-commerce") ~ "Grande Surface",
-//      TAB_MEASURE_LABEL == "Nombre d'équipements – Coiffure" ~ "Coiffure"
-//    )
-// )
+
 function case_when_equipements(TAB_MEASURE_LABEL) {
   if (TAB_MEASURE_LABEL === "Nombre d'équipements – Station-service") return "Station-service";
   if (TAB_MEASURE_LABEL === "Nombre d'équipements – Station de recharge de véhicules électriques") return "Station de recharge de véhicules électriques";
@@ -154,7 +134,7 @@ equip_mutate1 = equip_filtre1.map(function(d) {
   };
 });
 
-// group_by(équipements) %>% summarise(total_groupe = sum(OBS_VALUE, na.rm = TRUE)) %>% collect()
+
 equip_groupes1 = d3.rollups(
   equip_mutate1,
   function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
@@ -165,7 +145,6 @@ equip_summarise1 = equip_groupes1.map(function(g) {
   return { équipements: g[0], total_groupe: g[1] };
 });
 
-// mutate(total = sum(total_groupe), part_groupe = (total_groupe / total) * 100)
 total1 = d3.sum(equip_summarise1, function(d) { return d.total_groupe; });
 
 equip1 = equip_summarise1.map(function(d) {
@@ -179,7 +158,7 @@ equip1 = equip_summarise1.map(function(d) {
 ```
 
 ```{ojs result_plot}
-// Histogramme (équivalent ggplot2)
+// Histogramme
 Plot.plot({
   title: isGeoSelected ? `Nombre de commerces en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
   marginBottom: 60,
@@ -193,11 +172,9 @@ Plot.plot({
 ```
 
 ```{ojs result_table}
-// 1. On trie les données manuellement (du plus grand au plus petit)
-// 2. On ajoute la ligne "TOTAL" à la fin du tableau
+// 1. On trie 
 equip_pour_tableau1 = {
   let data = equip1.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
-  data.push({ équipements: "TOTAL", total_groupe: total1 });
   return data;
 }
 
@@ -227,17 +204,6 @@ htl.html`
 ```{ojs result_calc}
 //| output: false
 
-// r <- dossier_complet %>% filter(GEO == "44109", ID_TAB == "EQUIP_T1") %>% distinct(TAB_MEASURE_LABEL) %>% collect()
-// (étape de contrôle en R, non nécessaire pour l'affichage final, donc non reprise ici)
-
-// equip <- dossier_complet %>%
-//   filter(
-//     TIME_PERIOD == "2024",
-//     GEO_OBJECT_LABEL == "Commune",
-//     GEO == "44109",
-//     ID_TAB == "EQUIP_T1",
-//     TAB_MEASURE_LABEL %in% c(...)
-//   )
 equip_filtre2 = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
@@ -257,16 +223,7 @@ equip_filtre2 = isGeoSelected
 `)
 : [];
 
-// mutate(
-//    équipements = case_when(
-//      TAB_MEASURE_LABEL == "Nombre d'équipements – Station-service" ~ "Station-service",
-//      TAB_MEASURE_LABEL == "Nombre d'équipements – Station de recharge de véhicules électriques" ~ "Station de recharge de véhicules électriques",
-//      TAB_MEASURE_LABEL == "Nombre d'équipements – Boulangerie-pâtisserie" ~ "Boulangerie-pâtisserie",
-//      TAB_MEASURE_LABEL %in% c("Nombre d'équipements – Supérette", "Nombre d'équipements – Épicerie") ~ "Epicerie, Supérette",
-//      TAB_MEASURE_LABEL %in% c("Nombre d'équipements – Hypermarché et grand magasin", "Nombre d'équipements – Supermarché et magasin multi-commerce") ~ "Grande Surface",
-//      TAB_MEASURE_LABEL == "Nombre d'équipements – Coiffure" ~ "Coiffure"
-//    )
-// )
+
 function case_when_equipements2(TAB_MEASURE_LABEL) {
   if (TAB_MEASURE_LABEL === "Nombre d'équipements – Infirmier") return "Infirmier";
   if (TAB_MEASURE_LABEL === "Nombre d'équipements – Psychologue") return "Psychologue";
@@ -285,7 +242,7 @@ equip_mutate2 = equip_filtre2.map(function(d) {
   };
 });
 
-// group_by(équipements) %>% summarise(total_groupe = sum(OBS_VALUE, na.rm = TRUE)) %>% collect()
+
 equip_groupes2 = d3.rollups(
   equip_mutate2,
   function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
@@ -296,7 +253,6 @@ equip_summarise2 = equip_groupes2.map(function(g) {
   return { équipements: g[0], total_groupe: g[1] };
 });
 
-// mutate(total = sum(total_groupe), part_groupe = (total_groupe / total) * 100)
 total2 = d3.sum(equip_summarise2, function(d) { return d.total_groupe; });
 
 equip2 = equip_summarise2.map(function(d) {
@@ -310,7 +266,7 @@ equip2 = equip_summarise2.map(function(d) {
 ```
 
 ```{ojs result_plot}
-// Histogramme (équivalent ggplot2)
+// Histogramme 
 Plot.plot({
   title: isGeoSelected ? `Nombre de professionnels de santé et de pharmacies en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
   marginBottom: 60,
@@ -324,8 +280,7 @@ Plot.plot({
 ```
 
 ```{ojs result_table}
-// 1. On trie les données manuellement (du plus grand au plus petit)
-// 2. On ajoute la ligne "TOTAL" à la fin du tableau
+// 1. On trie 
 equip_pour_tableau2 = {
   let data = equip2.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
   data.push({ équipements: "TOTAL", total_groupe: total2 });
@@ -358,8 +313,6 @@ htl.html`
 ```{ojs result_calc}
 //| output: false
 
-// 1. On récupère TOUS les équipements de type T3 sans lister les phrases exactes.
-// Fini les plantages liés aux apostrophes dans la requête SQL !
 equip_brut3 = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
@@ -417,7 +370,7 @@ equip3 = equip_summarise3.map(function(d) {
 ```
 
 ```{ojs result_plot}
-// Histogramme (équivalent ggplot2)
+// Histogramme
 Plot.plot({
   title: isGeoSelected ? `Nombre d'établissements scolaires et de bibliothèques en  ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
   marginBottom: 60,
@@ -431,8 +384,7 @@ Plot.plot({
 ```
 
 ```{ojs result_table}
-// 1. On trie les données manuellement (du plus grand au plus petit)
-// 2. On ajoute la ligne "TOTAL" à la fin du tableau
+// 1. On trie 
 equip_pour_tableau3 = {
   let data = equip3.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
   data.push({ équipements: "TOTAL", total_groupe: total3 });
@@ -448,20 +400,3 @@ Inputs.table(equip_pour_tableau3, {
   }
 })
 ```
-
-# Pour en savoir plus
-
-- Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/), le graphique se met à jour en allant piocher dynamiquement dans la base du dossier complet au format Parquet.
-
-```{ojs debug}
-debug_info = db.query(`
-  SELECT count(*) as nb_lignes
-  FROM read_parquet('${chemin_s3}')
-`)
-
-viewof debug_table = Inputs.table(
-  debug_info,
-  { locale: "fr" }
-)
-```
-
