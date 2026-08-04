@@ -94,11 +94,7 @@ isGeoSelected = (selection_geo !== null);
 resultat_commune = isGeoSelected ? 
   db.queryRow(`
     SELECT Y_OBSERVE, Y_PREDIT_XGB, 
-<<<<<<< HEAD:Méthodes/Observable_xg/Boost + Shap.qmd
-           VAR_1, VAL_1, SHAP_1, VAR_2, VAL_2, SHAP_2, VAR_3, VAL_3, SHAP_3, VAR_4, VAL_4, SHAP_4, VAR_5, VAL_5, SHAP_5
-=======
-           VAR_1, SHAP_1, VAR_2, SHAP_2, VAR_3, SHAP_3, VAR_4, SHAP_4, VAR_5, SHAP_5
->>>>>>> 084d4cdc2ed01622c11712ed54f717850fbba9b2:Méthodes/Observable/Boost + Shap.qmd
+           VAR_1, VAL_1, SHAP_1, VAR_2, VAL_2, SHAP_2, VAR_3, VAL_3, SHAP_3, VAR_4, VAL_4 SHAP_4, VAR_5, VAL_5, SHAP_5
     FROM read_parquet('${chemin_s3}')
     WHERE GEO = '${selection_geo.GEO}'
   `) : null;

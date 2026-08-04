@@ -1,0 +1,450 @@
+---
+title: "Prédiction de l'Écart d'Activité en 2023 (XGB sp)"
+format: 
+  dashboard:
+    nav-buttons: []
+include-in-header:
+  - text: |
+      <style>
+        /* ===== Menus et navigation ===== */
+        #quarto-pages-dropdown .dropdown-menu { max-height: 70vh; overflow-y: auto; }
+        #quarto-pages-dropdown .dropdown-menu .dropdown-item { color: #212529 !important; }
+        #quarto-pages-dropdown .dropdown-menu .dropdown-item:hover,
+        #quarto-pages-dropdown .dropdown-menu .dropdown-item:focus { color: #212529 !important; background-color: rgba(0,0,0,0.06); }
+        #quarto-dashboard-header .navbar-nav > li.nav-item > a.nav-link.onglet-fixe { color: rgba(255,255,255,0.85); }
+        #quarto-dashboard-header .navbar-nav > li.nav-item > a.nav-link.onglet-fixe:hover,
+        #quarto-dashboard-header .navbar-nav > li.nav-item > a.nav-link.onglet-fixe.active { color: #ffffff; }
+        
+        /* ===== Styles pour les KPIs (Chiffres clés) ===== */
+        .kpi-container { display: flex; gap: 15px; margin-top: 5px; margin-bottom: 10px; }
+        .kpi-card { flex: 1; padding: 12px; border-radius: 8px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .kpi-title { margin: 0; font-size: 1em; font-weight: 600; color: #2c3e50; }
+        .kpi-value { font-size: 1.8em; font-weight: bold; margin: 8px 0 0 0; }
+        .obs-card { background: #fdf2e9; border-top: 4px solid #e67e22; }
+        .pred-card { background: #ebf5fb; border-top: 4px solid #2980b9; }
+        .obs-value { color: #d35400; }
+        .pred-value { color: #21618c; }
+        
+        /* ===== Ajustement des Curseurs du Simulateur ===== */
+        form {
+          max-width: 100% !important; /* Casse la limite de largeur native d'Observable */
+          width: 100% !important;     /* Force à prendre toute la largeur de l'encart */
+          --label-width: 320px !important; /* On donne encore plus de place au texte */
+        }
+        
+        .oi-label {
+          white-space: normal !important; 
+          line-height: 1.2 !important;    
+          padding-right: 15px !important; 
+          font-size: 0.9em !important;   
+        }
+
+        /* Ces lignes forcent la barre bleue (le curseur) à s'étirer jusqu'au bord droit */
+        form > div {
+          flex-grow: 1 !important; 
+        }
+        
+        input[type="range"] {
+          width: 100% !important;
+          max-width: 100% !important;
+        }
+      </style>
+---
+
+```{ojs config}
+//| output: false
+
+// 1. Initialisation de DuckDB
+db = DuckDBClient.of({})
+
+// 2. Connexion à la base 2023 contenant tes prédictions ET tes SHAP values
+chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/predictions_rf_2023.parquet'
+```
+
+# Recherche géographique {.sidebar width="30%"}
+
+```{ojs geo}
+// Barre de recherche à partir du fichier CSV des communes
+viewof search_geo = Inputs.search(
+  await FileAttachment("input/geo.csv").csv(), {
+    width: "100%",
+    label: "Territoire (Commune)",
+    placeholder: "Rechercher une commune...",
+  })
+
+viewof selection_geo = Inputs.table(
+  search_geo, {
+    multiple: false,
+    value: search_geo.length > 0 ? search_geo[0] : null,
+    rows: 15,
+    columns: ["GEO_LABEL", "GEO"]
+  }
+)
+```
+
+# Résultats du Modèle Random Forest 2023
+
+## Comparaison Réel vs Prédiction {height="30%"}
+
+```{ojs calculs_resultats}
+//| output: false
+isGeoSelected = (selection_geo !== null);
+
+// Requête DuckDB MODIFIÉE : On extrait Y_OBSERVE, Y_PREDIT et le Top 5 SHAP
+resultat_commune = isGeoSelected ? 
+  db.queryRow(`
+    SELECT Y_OBSERVE, Y_PREDIT_RF, 
+           VAR_1, VAL_1, SHAP_1, VAR_2, VAL_2, SHAP_2, VAR_3, VAL_3, SHAP_3, VAR_4, VAL_4, SHAP_4, VAR_5, VAL_5, SHAP_5
+    FROM read_parquet('${chemin_s3}')
+    WHERE GEO = '${selection_geo.GEO}'
+  `) : null;
+```
+
+```{ojs affichage_kpi}
+// Création d'encarts HTML dynamiques (KPIs)
+htl.html`
+  ${isGeoSelected && resultat_commune ? htl.html`
+    <div class="kpi-container">
+      <div class="kpi-card obs-card">
+        <p class="kpi-title">Valeur Réelle Observée (2023)</p>
+        <p class="kpi-value obs-value">${(resultat_commune.Y_OBSERVE * 100).toFixed(2)} %</p>
+      </div>
+      
+      <div class="kpi-card pred-card">
+        <p class="kpi-title">Prédiction du Modèle XGBoost</p>
+        <p class="kpi-value pred-value">${(resultat_commune.Y_PREDIT_RF * 100).toFixed(2)} %</p>
+      </div>
+    </div>
+  ` : htl.html`<p style="color: gray; font-style: italic;">"Par souci de significativité statistique, les résultats ne sont pas présentés pour les communes de moins de 500 habitants."</p>`}
+`
+```
+
+## Explication du modèle (Valeurs SHAP) {height="60%"}
+
+```{ojs affichage_shap}
+
+// Fonction miracle qui remplace les points par des espaces et supprime les espaces en trop
+nettoyerNom = (nom) => nom ? String(nom).replace(/\./g, ' ').replace(/\s+/g, ' ').trim() : "";
+
+// 1. On déclare data_shap de manière GLOBALE pour que le simulateur y ait accès !
+data_shap = (isGeoSelected && resultat_commune && resultat_commune.VAR_1) ? [
+  { variable: nettoyerNom(resultat_commune.VAR_1), impact: Number(resultat_commune.SHAP_1) },
+  { variable: nettoyerNom(resultat_commune.VAR_2), impact: Number(resultat_commune.SHAP_2) },
+  { variable: nettoyerNom(resultat_commune.VAR_3), impact: Number(resultat_commune.SHAP_3) },
+  { variable: nettoyerNom(resultat_commune.VAR_4), impact: Number(resultat_commune.SHAP_4) },
+  { variable: nettoyerNom(resultat_commune.VAR_5), impact: Number(resultat_commune.SHAP_5) }
+] : [];
+
+// 2. Affichage réactif du graphique
+affichage_graphique_shap = {
+  // Si aucune commune sélectionnée ou données manquantes
+  if (!isGeoSelected || !resultat_commune) {
+    return htl.html`<div style="color: gray; font-style: italic; padding: 20px;">Par souci de significativité statistique, les résultats ne sont pas présentés pour les communes de moins de 500 habitants.</div>`;
+  }
+
+  // Si la commune n'a pas de données SHAP
+  if (data_shap.length === 0) {
+    return htl.html`<div style="color: gray; font-style: italic; padding: 20px;">Par souci de significativité statistique, les résultats détaillés ne sont pas présentés pour cette commune.</div>`;
+  }
+
+// Création du graphique avec largeur fixe (width: 800) pour éviter la disparition
+  return Plot.plot({
+    title: `Top 5 des variables expliquant la prédiction (en points)`,
+    height: 190,          // <--- ICI : Hauteur réduite
+    width: 800,
+    marginLeft: 220,
+    x: { 
+      label: "Impact (Valeur SHAP)", 
+      grid: true 
+    },
+    y: { 
+      label: null,
+      domain: data_shap.map(d => d.variable).reverse()
+    },
+    marks: [
+      Plot.barX(data_shap, {
+        x: "impact",
+        y: "variable",
+        fill: d => d.impact > 0 ? "Pousse vers les Hommes (+)" : "Pousse vers les Femmes (-)",
+        rx: 3
+      }),
+      Plot.ruleX([0], { stroke: "#2c3e50", strokeWidth: 2 })
+    ],
+    color: { 
+      domain: ["Pousse vers les Hommes (+)", "Pousse vers les Femmes (-)"], 
+      range: ["#e67e22", "#2980b9"],
+      legend: true 
+    }
+  });
+}
+```
+
+# Cartographie (Réel vs Prédit)
+
+## Comparaison nationale {height="100%"}
+
+```{r, warning=FALSE, message=FALSE}
+#| echo: false
+#| out-width: "100%"
+
+library(DBI)
+library(duckdb)
+library(dplyr)
+library(ggplot2)
+library(plotly)
+
+# --- Connexion DuckDB ---
+con <- dbConnect(duckdb(), dbdir = "base.duckdb")
+
+# On ajoute invisible() pour cacher les [1] 0 et [1] 1
+invisible(dbExecute(con, "INSTALL httpfs; LOAD httpfs; INSTALL aws; LOAD aws;"))
+invisible(dbExecute(con, "CREATE OR REPLACE SECRET (
+  TYPE S3,
+  PROVIDER CREDENTIAL_CHAIN,
+  ENDPOINT 'minio.lab.sspcloud.fr',
+  URL_STYLE 'path'
+);"))
+
+chemin_communes <- "s3://sarahbeaucamp/communes_france_2023.parquet"
+communes_raw <- tbl(con, paste0("read_parquet('", chemin_communes, "')"))
+
+communes_geo <- communes_raw %>%
+  select(
+    GEO = code_insee,
+    lat = latitude_centre,
+    lon = longitude_centre,
+    population = population
+  ) %>%
+  filter(!substr(GEO, 1, 2) %in% c("97", "98")) %>%
+  collect()
+
+
+chemin_xgb <- "s3://sarahbeaucamp/predictions_rf_2023.parquet"
+preds_xgb <- tbl(con, paste0("read_parquet('", chemin_xgb, "')")) %>%
+  collect()
+
+
+df_carte <- preds_xgb %>%
+  inner_join(communes_geo, by = "GEO") %>%
+  filter(!is.na(lat) & !is.na(lon)) %>%
+  filter(population >= 500)
+
+
+min_val <- min(c(df_carte$Y_OBSERVE, df_carte$Y_PREDIT_RF), na.rm = TRUE)
+max_val <- max(c(df_carte$Y_OBSERVE, df_carte$Y_PREDIT_RF), na.rm = TRUE)
+
+
+p1 <- ggplot(df_carte, aes(x = lon, y = lat, 
+                           size = population, 
+                           color = Y_OBSERVE,
+                           text = paste0("<b>", GEO_LABEL, "</b><br>",
+                                         "Réel : ", round(Y_OBSERVE * 100, 1), "%<br>",
+                                         "Pop : ", population))) +
+  geom_point(alpha = 0.6, stroke = 0) +
+  scale_size_continuous(range = c(0.2, 3), guide = "none") + 
+  scale_color_viridis_c(option = "plasma", limits = c(min_val, max_val), name = "Taux") +
+  coord_quickmap() + 
+  theme_void() +
+  labs(title = "Valeur Réelle Observée") +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+
+
+p2 <- ggplot(df_carte, aes(x = lon, y = lat, 
+                           size = population, 
+                           color = Y_PREDIT_RF,
+                           text = paste0("<b>", GEO_LABEL, "</b><br>",
+                                         "Prédit : ", round(Y_PREDIT_RF * 100, 1), "%<br>",
+                                         "Pop : ", population))) +
+  geom_point(alpha = 0.6, stroke = 0) +
+  scale_size_continuous(range = c(0.2, 3), guide = "none") +
+  scale_color_viridis_c(option = "plasma", limits = c(min_val, max_val), name = "Taux") +
+  coord_quickmap() +
+  theme_void() +
+  labs(title = "Prédiction Random Forest") +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+
+
+subplot(
+  ggplotly(p1, tooltip = "text"),
+  ggplotly(p2, tooltip = "text"),
+  nrows = 1,
+  shareX = TRUE,
+  shareY = TRUE,
+  titleX = FALSE,
+  titleY = FALSE
+) %>% 
+  layout(title = "Comparaison de l'Écart d'Activité : Réel vs Prédit")
+```
+
+# Simulateur
+
+## Estimations {height="35%"}
+
+```{ojs estimations}
+// --- Parseur robuste : gère number, "0,37", "0.37", null, undefined, "" ---
+val = (col) => {
+  if (!resultat_commune) return 0;
+  const raw = resultat_commune[col];
+  if (raw === null || raw === undefined || raw === "") return 0;
+  const n = Number(String(raw).replace(',', '.'));
+  return Number.isFinite(n) ? n : 0;
+}
+
+// --- Calculs réactifs ---
+pred_orig = resultat_commune ? val('Y_PREDIT_RF') * 100 : 0;
+somme_orig = (val('SHAP_1') + val('SHAP_2') + val('SHAP_3') + val('SHAP_4') + val('SHAP_5')) * 100;
+
+calc_impact = (v_init, i_init, v_slider) => {
+  if (v_init === 0) return i_init;
+  return i_init * (v_slider / v_init);
+}
+
+somme_simulee = calc_impact(val('VAL_1'), val('SHAP_1') * 100, s1) + 
+                calc_impact(val('VAL_2'), val('SHAP_2') * 100, s2) + 
+                calc_impact(val('VAL_3'), val('SHAP_3') * 100, s3) + 
+                calc_impact(val('VAL_4'), val('SHAP_4') * 100, s4) + 
+                calc_impact(val('VAL_5'), val('SHAP_5') * 100, s5);
+
+pred_sim = pred_orig - somme_orig + somme_simulee;
+ecart = pred_sim - pred_orig;
+
+// --- Affichage ---
+htl.html`
+  ${(!isGeoSelected || !resultat_commune) ? htl.html`<div style="color: gray; font-style: italic; padding: 20px;">Sélectionnez une commune valide pour accéder au simulateur.</div>` : 
+  htl.html`
+  <div class="kpi-container">
+    <div class="kpi-card pred-card">
+      <p class="kpi-title">Prédiction Initiale</p>
+      <p class="kpi-value pred-value">${pred_orig.toFixed(2)} %</p>
+    </div>
+    
+    <div class="kpi-card" style="background: ${ecart > 0 ? '#fdedec' : (ecart < 0 ? '#e8f8f5' : '#f8f9fa')}; border-top: 4px solid ${ecart > 0 ? '#e74c3c' : (ecart < 0 ? '#1abc9c' : '#bdc3c7')}; transition: 0.3s;">
+      <p class="kpi-title">Prédiction Simulée</p>
+      <p class="kpi-value" style="color: ${ecart > 0 ? '#c0392b' : (ecart < 0 ? '#16a085' : '#7f8c8d')};">${pred_sim.toFixed(2)} %</p>
+      <p style="margin:0; font-size: 1.1em; font-weight: bold; color: ${ecart > 0 ? '#c0392b' : (ecart < 0 ? '#16a085' : 'gray')};">
+        ${ecart > 0 ? '▲ +' : (ecart < 0 ? '▼ ' : '')}${ecart !== 0 ? ecart.toFixed(2) + ' pts' : 'Aucun changement'}
+      </p>
+    </div>
+  </div>
+  `}
+`
+```
+
+## Ajustements des variables {height="65%"}
+
+```{ojs curseurs}
+// --- Curseurs : initialisés sur les valeurs réelles VAL_1...VAL_5 ---
+viewof s1 = Inputs.range([0, 1], { value: val('VAL_1'), label: nettoyerNom(resultat_commune?.VAR_1) || "Var 1", step: 0.01 })
+viewof s2 = Inputs.range([0, 1], { value: val('VAL_2'), label: nettoyerNom(resultat_commune?.VAR_2) || "Var 2", step: 0.01 })
+viewof s3 = Inputs.range([0, 1], { value: val('VAL_3'), label: nettoyerNom(resultat_commune?.VAR_3) || "Var 3", step: 0.01 })
+viewof s4 = Inputs.range([0, 1], { value: val('VAL_4'), label: nettoyerNom(resultat_commune?.VAR_4) || "Var 4", step: 0.01 })
+viewof s5 = Inputs.range([0, 1], { value: val('VAL_5'), label: nettoyerNom(resultat_commune?.VAR_5) || "Var 5", step: 0.01 })
+```
+
+# Cartographie (Réel vs Prédit)
+
+## Carte du département {height="100%"}
+
+```{ojs carto_interactive}
+// 1. On déduit le département depuis le code INSEE
+code_dep = isGeoSelected ? selection_geo.GEO.substring(0, 2) : null;
+
+// 2. Requête DuckDB brute
+data_dep_brute = code_dep ? db.query(`
+  SELECT 
+    p.GEO, 
+    p.GEO_LABEL,
+    c.latitude_centre AS lat, 
+    c.longitude_centre AS lon, 
+    c.population, 
+    p.Y_OBSERVE, 
+    p.Y_PREDIT_RF
+FROM read_parquet('https://minio.lab.sspcloud.fr/sarahbeaucamp/predictions_rf_2023.parquet') p
+  JOIN read_parquet('https://minio.lab.sspcloud.fr/sarahbeaucamp/communes_france_2023.parquet') c
+    ON p.GEO = c.code_insee
+  WHERE SUBSTR(p.GEO, 1, 2) = '${code_dep}'
+    AND c.population >= 500
+    AND c.latitude_centre IS NOT NULL
+`) : [];
+
+// 3. Nettoyage absolu des coordonnées (au cas où il y aurait des virgules)
+data_dep = data_dep_brute.map(d => ({
+  ...d,
+  lat: Number(String(d.lat).replace(',', '.')),
+  lon: Number(String(d.lon).replace(',', '.')),
+  Y_OBSERVE: Number(d.Y_OBSERVE),
+  Y_PREDIT_RF: Number(d.Y_PREDIT_RF)
+}));
+
+// 4. Min et max global du département
+dep_min = data_dep.length > 0 ? d3.min(data_dep, d => Math.min(d.Y_OBSERVE, d.Y_PREDIT_RF)) : 0;
+dep_max = data_dep.length > 0 ? d3.max(data_dep, d => Math.max(d.Y_OBSERVE, d.Y_PREDIT_RF)) : 1;
+
+// 5. Affichage
+htl.html`
+  ${(!isGeoSelected) ? htl.html`<div style="color: gray; font-style: italic; padding: 20px;">Sélectionnez une commune dans le menu pour afficher la cartographie de son département.</div>` : 
+  
+  htl.html`
+    <h3 style="text-align: center; margin-bottom: 20px;">Comparaison Réel vs Prédit pour le département ${code_dep}</h3>
+    <div style="display: flex; justify-content: space-around; gap: 20px; flex-wrap: wrap;">
+      
+      <!-- Carte : Valeur Réelle -->
+      <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h4 style="text-align: center; color: #2c3e50;">Valeur Réelle Observée</h4>
+        ${Plot.plot({
+          width: 350,
+          height: 300,
+          axis: null, // MAGIE : Supprime complètement le quadrillage et les axes (X et Y)
+          x: { inset: 20 }, // Ajoute une marge pour que les points ne touchent pas les bords
+          y: { inset: 20 },
+          r: { range: [3, 15] },
+          color: { scheme: "plasma", legend: true, domain: [dep_min, dep_max], tickFormat: x => (x * 100).toFixed(0) + "%" },
+          marks: [
+            Plot.dot(data_dep, {
+              x: "lon", y: "lat", r: "population", fill: "Y_OBSERVE",
+              stroke: "lightgray", strokeWidth: 0.5, // Ajoute un petit contour pour détacher les bulles
+              title: d => `${d.GEO_LABEL}\nRéel : ${(d.Y_OBSERVE * 100).toFixed(2)} %\nPop : ${d.population}`,
+              tip: true
+            }),
+            Plot.dot(data_dep.filter(d => d.GEO === selection_geo.GEO), {
+              x: "lon", y: "lat", r: 18, stroke: "red", strokeWidth: 3, fill: "none"
+            }),
+            Plot.text(data_dep.filter(d => d.GEO === selection_geo.GEO), {
+              x: "lon", y: "lat", text: "GEO_LABEL", dy: -25, fontWeight: "bold", fill: "red", fontSize: 14
+            })
+          ]
+        })}
+      </div>
+
+      <!-- Carte : Prédiction Random Forest -->
+      <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h4 style="text-align: center; color: #2c3e50;">Prédiction XGBoost</h4>
+        ${Plot.plot({
+          width: 350,
+          height: 300,
+          axis: null, // Supprime le quadrillage
+          x: { inset: 20 },
+          y: { inset: 20 },
+          r: { range: [3, 15] },
+          color: { scheme: "plasma", legend: true, domain: [dep_min, dep_max], tickFormat: x => (x * 100).toFixed(0) + "%" },
+          marks: [
+            Plot.dot(data_dep, {
+              x: "lon", y: "lat", r: "population", fill: "Y_PREDIT_RF",
+              stroke: "lightgray", strokeWidth: 0.5,
+              title: d => `${d.GEO_LABEL}\nPrédit : ${(d.Y_PREDIT_RF * 100).toFixed(2)} %\nPop : ${d.population}`,
+              tip: true
+            }),
+            Plot.dot(data_dep.filter(d => d.GEO === selection_geo.GEO), {
+              x: "lon", y: "lat", r: 18, stroke: "red", strokeWidth: 3, fill: "none"
+            }),
+            Plot.text(data_dep.filter(d => d.GEO === selection_geo.GEO), {
+              x: "lon", y: "lat", text: "GEO_LABEL", dy: -25, fontWeight: "bold", fill: "red", fontSize: 14
+            })
+          ]
+        })}
+      </div>
+      
+    </div>
+  `}
+`
+```

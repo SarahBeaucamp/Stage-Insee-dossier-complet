@@ -2,8 +2,6 @@
 # PRÉPARATION DE LA BASE DE DONNÉES ET GESTION EXPERTE DES VALEURS MANQUANTES
 # ==============================================================================
 
-# Installation des packages manquants si nécessaire
-# install.packages(c("missForest", "VIM", "Metrics"))
 install.packages("Metrics")
 install.packages("missForest")
 library(DBI)

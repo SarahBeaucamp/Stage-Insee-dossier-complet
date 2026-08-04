@@ -221,7 +221,7 @@ communes_geo <- communes_raw %>%
   collect()
 
 
-chemin_xgb <- "s3://sarahbeaucamp/predictions_xgboost.parquet"
+chemin_xgb <- "s3://sarahbeaucamp/predictions_xgb_sp_2023.parquet"
 preds_xgb <- tbl(con, paste0("read_parquet('", chemin_xgb, "')")) %>%
   collect()
 
@@ -361,7 +361,7 @@ data_dep_brute = code_dep ? db.query(`
     c.population, 
     p.Y_OBSERVE, 
     p.Y_PREDIT_XGB
-FROM read_parquet('https://minio.lab.sspcloud.fr/sarahbeaucamp/predictions_xgboost_2023.parquet') p
+FROM read_parquet('https://minio.lab.sspcloud.fr/sarahbeaucamp/predictions_xgb_sp_2023.parquet') p
   JOIN read_parquet('https://minio.lab.sspcloud.fr/sarahbeaucamp/communes_france_2023.parquet') c
     ON p.GEO = c.code_insee
   WHERE SUBSTR(p.GEO, 1, 2) = '${code_dep}'
