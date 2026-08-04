@@ -16,7 +16,7 @@ resultats_rf <- data.frame(
   R2 = numeric()
 )
 
-# La liste des arbres que tu souhaites tester
+# La liste des arbres à tester
 liste_arbres <- c(100, 200, 300, 400, 500)
 
 print("--- 2. ENTRAÎNEMENT ET ÉVALUATION EN BOUCLE ---")

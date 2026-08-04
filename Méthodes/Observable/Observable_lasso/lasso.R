@@ -1,6 +1,7 @@
 # ==============================================================================
 # PARTIE 3 (CORRIGÉE) : LE MODÈLE LINÉAIRE PÉNALISÉ (GLM LASSO) AVEC NORMALISATION
 # ==============================================================================
+install.packages("plotly")
 install.packages("glmnet")
 library(glmnet)
 library(dplyr)

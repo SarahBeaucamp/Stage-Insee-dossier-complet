@@ -23,7 +23,7 @@ ENDPOINT 'minio.lab.sspcloud.fr',
 URL_STYLE 'path'
 );")
 
-# 4. Définir l'adresse de votre fichier sur le S3 du SSP Cloud
+# 4. Définir l'adresse du fichier sur le S3 du SSP Cloud
 chemin_s3 <- "s3://sarahbeaucamp/dossier_complet.parquet"
 
 # Créer une table virtuelle
@@ -133,7 +133,7 @@ base_prete_rf <- base_large %>%
   # On supprime les taux isolés pour que le modèle ne triche pas et se concentre sur l'écart
   select(-TAUX_F, -TAUX_H, -POP_HOMME, -POP_FEMME, -POP_ACT)
 
-# Vérification finale de ta cible
+# Vérification finale de la cible
 summary(base_prete_rf$Y_GAP_ACT_GLOBAL)
 
 base_finale <- base_prete_rf %>%

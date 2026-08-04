@@ -23,7 +23,7 @@ ENDPOINT 'minio.lab.sspcloud.fr',
 URL_STYLE 'path'
 );")
 
-# 4. Définir l'adresse de votre fichier sur le S3 du SSP Cloud
+# 4. Définir l'adresse du fichier sur le S3 du SSP Cloud
 chemin_s3 <- "s3://sarahbeaucamp/dossier_complet.parquet"
 
 # Créer une table virtuelle
@@ -234,7 +234,6 @@ modele_base <- ranger(
 predictions_val <- predict(modele_base, data = base_val)
 
 # On calcule l'erreur quadratique moyenne (MSE) sur la validation
-# (En lien avec la perte quadratique de ton cours de régression)
 mse_val <- mean((base_val$Y_GAP_ACT_GLOBAL - predictions_val$predictions)^2)
 rmse_val <- sqrt(mse_val)
 

@@ -23,7 +23,7 @@ ENDPOINT 'minio.lab.sspcloud.fr',
 URL_STYLE 'path'
 );")
 
-# 4. Définir l'adresse de votre fichier sur le S3 du SSP Cloud
+# 4. Définir l'adresse du fichier sur le S3 du SSP Cloud
 chemin_s3 <- "s3://sarahbeaucamp/dossier_complet.parquet"
 
 # Créer une table virtuelle
@@ -140,7 +140,6 @@ base_prete_rf <- base_large %>%
     -contains("Élève", ignore.case = TRUE),
     
     # 2. Le piège des dénominateurs (Uniquement la démographie par sexe)
-    # L'utilisation de matches() avec "^Population" protège tes variables de Salaires !
     -matches("^Population.*Femme", ignore.case = TRUE),
     -matches("^Population.*Homme", ignore.case = TRUE)
   )

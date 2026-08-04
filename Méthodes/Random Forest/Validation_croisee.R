@@ -1,5 +1,5 @@
 # ==============================================================================
-# PRÉPARATION DE LA BASE DE DONNÉES ET GESTION EXPERTE DES VALEURS MANQUANTES
+# PRÉPARATION DE LA BASE DE DONNÉES ET GESTION DES VALEURS MANQUANTES
 # ==============================================================================
 library(DBI)
 library(duckdb)
@@ -128,7 +128,7 @@ print("--- BILAN DES NAs APRÈS MISE À ZÉRO DES ÉQUIPEMENTS ---")
 print(compte_na[compte_na > 0])
 
 # ==============================================================================
-# ÉTAPE 6A : IMPUTATION DÉFINITIVE AVEC MISSFOREST
+# ÉTAPE 5 : IMPUTATION DÉFINITIVE AVEC MISSFOREST
 # ==============================================================================
 
 print("--- 1. CONVERSION STRICTE DU FORMAT ---")
@@ -147,7 +147,7 @@ print(paste("Nombre total de NAs restants :", sum(is.na(base_sans_na))))
 
 
 # ------------------------------------------------------------------------------
-# ÉTAPE 5 : ÉCHANTILLONNAGE ET PRÉPARATION K-FOLD
+# ÉTAPE 6 : ÉCHANTILLONNAGE ET PRÉPARATION K-FOLD
 # ------------------------------------------------------------------------------
 
 # 1. Mise à l'écart du Test set (20%)
@@ -164,7 +164,7 @@ set.seed(42)
 plis_cv <- vfold_cv(base_train_val, v = 5)
 
 # ------------------------------------------------------------------------------
-# ÉTAPE 6 : OPTIMISATION DES HYPERPARAMÈTRES (VALIDATION CROISÉE)
+# ÉTAPE 7 : OPTIMISATION DES HYPERPARAMÈTRES (VALIDATION CROISÉE)
 # ------------------------------------------------------------------------------
 # Avant validation croisée, les modèles par défaut ont 17 et 5 
 grille <- expand.grid(
@@ -226,7 +226,7 @@ for(i in 1:total_modeles) {
     R2_CV_Moyen = round(r2_moyen, 2)
   ))
   
-  # --- SÉCURITÉS NOCTURNES ---
+  # --- SÉCURITÉS ---
   write.csv(resultats_cv, "sauvegarde_secours_cv.csv", row.names = FALSE) # Sauvegarde sur le disque
   gc() # Nettoyage de la RAM pour éviter le crash
   
