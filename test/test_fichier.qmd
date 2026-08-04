@@ -10,10 +10,10 @@ resources:
 ```{ojs config}
 //| output: false
 
-// 1. Créer ou ouvrir une connexion DuckDB (équivalent dbConnect(duckdb(), ...) en R)
+// 1. Créer ou ouvrir une connexion DuckDB
 db = DuckDBClient.of({})
 
-// 4. Définir l'adresse de votre fichier sur le S3 du SSP Cloud (équivalent chemin_s3 en R)
+// 4. Définir l'adresse de votre fichier sur le S3 du SSP Cloud 
 chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet'
 ```
 
@@ -52,14 +52,8 @@ viewof selection_type_geo = Inputs.select(
 ```{ojs geo}
 //| output: false
 
-// On ne va plus chercher les territoires disponibles dans le parquet à chaque
-// changement de type de zone (requête DISTINCT coûteuse) : on charge une bonne
-// fois pour toutes le fichier CSV précalculé (cf. votre script de préparation,
-// sur le même principe que preparer_conf_geo.R), qui doit contenir au moins
-// les colonnes GEO, GEO_LABEL et GEO_OBJECT_LABEL pour ID_TAB = 'EQUIP_T1'.
 geo_complet = await FileAttachment("geo.csv").csv()
 
-// Filtrage local (rapide, en JS) selon le type de zone sélectionné
 geo = geo_complet.filter(d => d.GEO_OBJECT_LABEL === selection_type_geo)
 ```
 
@@ -98,10 +92,6 @@ htl.html`
 ```{ojs result_calc}
 //| output: false
 
-// Cette requête reste "en direct" sur le parquet : contrairement à la liste
-// des territoires (fixe), les valeurs des équipements dépendent de la
-// combinaison année / type de zone / territoire choisie par l'utilisateur,
-// donc on ne peut pas la précalculer une fois pour toutes.
 equip_filtre1 = isGeoSelected
 ? db.query(`
   SELECT TAB_MEASURE_LABEL, OBS_VALUE
@@ -164,7 +154,7 @@ equip1 = equip_summarise1.map(function(d) {
 ```
 
 ```{ojs result_plot}
-// Histogramme (équivalent ggplot2)
+// Histogramme 
 Plot.plot({
   title: isGeoSelected ? `Nombre de commerces en ${selection_annee} – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
   marginBottom: 60,
@@ -180,7 +170,6 @@ Plot.plot({
 ```{ojs result_table}
 equip_pour_tableau1 = {
   let data = equip1.slice().sort((a, b) => d3.descending(a.total_groupe, b.total_groupe));
-  data.push({ équipements: "TOTAL", total_groupe: total1 });
   return data;
 }
 
@@ -193,18 +182,3 @@ Inputs.table(equip_pour_tableau1, {
 })
 ```
 
-# Pour en savoir plus
-
-- Cette page utilise [Quarto et Observable JS](https://quarto.org/docs/interactive/ojs/) : la liste des territoires est chargée une seule fois depuis un fichier CSV précalculé (`input/geo.csv`), tandis que le graphique et le tableau vont piocher dynamiquement dans la base du dossier complet au format Parquet uniquement pour le territoire sélectionné.
-
-```{ojs debug}
-debug_info = db.query(`
-  SELECT count(*) as nb_lignes
-  FROM read_parquet('${chemin_s3}')
-`)
-
-viewof debug_table = Inputs.table(
-  debug_info,
-  { locale: "fr" }
-)
-```
