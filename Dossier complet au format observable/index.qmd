@@ -214,6 +214,31 @@ chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet
 
 # Recherche géographique {.sidebar width="30%"}
 
+```{ojs memoire_locale}
+//| output: false
+
+// 1. Lecture des valeurs en mémoire
+saved_type_geo = localStorage.getItem("dash_type_geo") || "Commune";
+saved_geo_code = localStorage.getItem("dash_geo_code") || null;
+
+// 2. Préparation du territoire par défaut
+default_geo = {
+  if (saved_geo_code && search_geo.length > 0) {
+    let match = search_geo.find(d => d.GEO === saved_geo_code);
+    if (match) return match;
+  }
+  return search_geo.length > 0 ? search_geo[0] : null;
+}
+
+// 3. Sauvegarde automatique à chaque changement
+_save_type_geo = localStorage.setItem("dash_type_geo", selection_type_geo);
+_save_geo = { 
+  if (selection_geo) {
+    localStorage.setItem("dash_geo_code", selection_geo.GEO); 
+  }
+}
+```
+
 ```{ojs type_geo}
 viewof selection_type_geo = Inputs.select(
   [
@@ -224,7 +249,7 @@ viewof selection_type_geo = Inputs.select(
   ],
   {
     label: "Type de zone",
-    value: "Commune"
+    value: saved_type_geo
   }
 )
 ```
@@ -240,7 +265,7 @@ viewof search_geo = Inputs.search(
 viewof selection_geo = Inputs.table(
   search_geo, {
     multiple: false,
-    value: search_geo.length > 0 ? search_geo[0] : null,
+    value: default_geo,
     rows: 15,
     columns: ["GEO_LABEL", "GEO"]
   }
@@ -597,3 +622,69 @@ Plot.plot({
 })
 ```
 :::
+
+```{ojs bouton_export_page_entiere}
+//| output: false
+
+bouton_export_global = {
+  // 1. Création du bouton flottant
+  const btn = htl.html`<button style="
+    position: fixed;
+    top: 70px;
+    right: 30px;
+    background: #174695;
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 12px 20px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: bold;
+    z-index: 9999;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    transition: transform 0.2s;
+  ">📥 Télécharger la page en PDF</button>`;
+
+  btn.onmouseover = () => btn.style.transform = "scale(1.05)";
+  btn.onmouseout = () => btn.style.transform = "scale(1)";
+
+  // 2. Action lors du clic
+  btn.onclick = async () => {
+    btn.style.display = "none"; // On cache le bouton sur le PDF
+
+    // On capture toute la page telle quelle
+    const element = document.body;
+
+    const html2pdf = await require("html2pdf.js");
+
+    // 3. Configuration format A3 Paysage
+    const opt = {
+      margin:       5,
+      filename:     `Chiffres_Cles_${selection_geo?.GEO_LABEL || 'Territoire'}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { 
+        scale: 2, 
+        useCORS: true,
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight
+      },
+      jsPDF: { 
+        unit: 'mm', 
+        format: 'a3', 
+        orientation: 'landscape' 
+      }
+    };
+
+    await html2pdf().set(opt).from(element).save();
+
+    btn.style.display = "flex"; // On réaffiche le bouton
+  };
+
+  // 3. On attache le bouton à la page
+  document.body.appendChild(btn);
+  
+  return true;
+}
+```

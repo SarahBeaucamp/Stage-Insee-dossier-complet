@@ -214,6 +214,31 @@ chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet
 
 # Recherche géographique {.sidebar width="30%"}
 
+```{ojs memoire_locale}
+//| output: false
+
+// 1. Lecture des valeurs en mémoire
+saved_type_geo = localStorage.getItem("dash_type_geo") || "Commune";
+saved_geo_code = localStorage.getItem("dash_geo_code") || null;
+
+// 2. Préparation du territoire par défaut
+default_geo = {
+  if (saved_geo_code && search_geo.length > 0) {
+    let match = search_geo.find(d => d.GEO === saved_geo_code);
+    if (match) return match;
+  }
+  return search_geo.length > 0 ? search_geo[0] : null;
+}
+
+// 3. Sauvegarde automatique à chaque changement
+_save_type_geo = localStorage.setItem("dash_type_geo", selection_type_geo);
+_save_geo = { 
+  if (selection_geo) {
+    localStorage.setItem("dash_geo_code", selection_geo.GEO); 
+  }
+}
+```
+
 ```{ojs annee}
 viewof selection_annee = Inputs.select(
   [
@@ -239,13 +264,12 @@ viewof selection_type_geo = Inputs.select(
   ],
   {
     label: "Type de zone",
-    value: "Commune"
+    value: saved_type_geo
   }
 )
 ```
 
 ```{ojs geo}
-
 viewof search_geo = Inputs.search(
   await FileAttachment("input/geo.csv").csv(), {
     width: "60%",
@@ -256,7 +280,7 @@ viewof search_geo = Inputs.search(
 viewof selection_geo = Inputs.table(
   search_geo, {
     multiple: false,
-    value: search_geo.length > 0 ? search_geo[0] : null,
+    value: default_geo,
     rows: 15,
     columns: ["GEO_LABEL", "GEO"]
   }

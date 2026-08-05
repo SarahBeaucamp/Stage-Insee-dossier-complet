@@ -214,6 +214,31 @@ chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet
 
 # Recherche géographique {.sidebar width="30%"}
 
+```{ojs memoire_locale}
+//| output: false
+
+// 1. Lecture des valeurs en mémoire
+saved_type_geo = localStorage.getItem("dash_type_geo") || "Commune";
+saved_geo_code = localStorage.getItem("dash_geo_code") || null;
+
+// 2. Préparation du territoire par défaut
+default_geo = {
+  if (saved_geo_code && search_geo.length > 0) {
+    let match = search_geo.find(d => d.GEO === saved_geo_code);
+    if (match) return match;
+  }
+  return search_geo.length > 0 ? search_geo[0] : null;
+}
+
+// 3. Sauvegarde automatique à chaque changement
+_save_type_geo = localStorage.setItem("dash_type_geo", selection_type_geo);
+_save_geo = { 
+  if (selection_geo) {
+    localStorage.setItem("dash_geo_code", selection_geo.GEO); 
+  }
+}
+```
+
 ```{ojs annee}
 viewof selection_annee = Inputs.select(
   [
@@ -239,13 +264,12 @@ viewof selection_type_geo = Inputs.select(
   ],
   {
     label: "Type de zone",
-    value: "Commune"
+    value: saved_type_geo
   }
 )
 ```
 
 ```{ojs geo}
-
 viewof search_geo = Inputs.search(
   await FileAttachment("input/geo.csv").csv(), {
     width: "60%",
@@ -256,12 +280,13 @@ viewof search_geo = Inputs.search(
 viewof selection_geo = Inputs.table(
   search_geo, {
     multiple: false,
-    value: search_geo.length > 0 ? search_geo[0] : null,
+    value: default_geo,
     rows: 15,
     columns: ["GEO_LABEL", "GEO"]
   }
 )
 ```
+
 
 # Population par sexe et âge regroupé en 2022
 
@@ -448,7 +473,7 @@ mon_graphique_final25 = {
     subtitle: `Année ${selection_annee}`,
     marginLeft: 60,
     marginRight: 20,
-    height: 400,
+    height: 300,
     x: {
       label: "Effectif",
       domain: [-max_effectif * 1.05, max_effectif * 1.05],
@@ -742,3 +767,77 @@ html`
 `
 ```
 
+# Cartographie de la densité de population
+
+## Carte du département {height="100%"}
+
+```{ojs carto_interactive}
+// 1. On déduit le département depuis le code INSEE
+code_dep = isGeoSelected ? selection_geo.GEO.substring(0, 2) : null;
+
+// 2. Requête
+data_dep_brute = code_dep ? db.query(`
+  SELECT 
+    p.GEO, 
+    p.GEO_LABEL,
+    c.latitude_centre AS lat, 
+    c.longitude_centre AS lon, 
+    p.population, 
+    p.superficie, 
+    p.densite
+  FROM read_parquet('https://minio.lab.sspcloud.fr/sarahbeaucamp/densite_communes_km2.parquet') p
+  JOIN read_parquet('https://minio.lab.sspcloud.fr/sarahbeaucamp/communes_france_2023.parquet') c
+    ON p.GEO = c.code_insee
+  WHERE SUBSTR(p.GEO, 1, 2) = '${code_dep}'
+    AND c.latitude_centre IS NOT NULL
+`) : [];
+
+// 3. Nettoyage des coordonnées
+data_dep = data_dep_brute.map(d => ({
+  ...d,
+  lat: Number(String(d.lat).replace(',', '.')),
+  lon: Number(String(d.lon).replace(',', '.')),
+}));
+
+// 4. Min et max global du département
+dep_min = data_dep.length > 0 ? d3.min(data_dep, d => d.densite) : 0;
+dep_max = data_dep.length > 0 ? d3.max(data_dep, d => d.densite) : 1;
+
+// 5. Affichage
+htl.html`
+  ${(!isGeoSelected) ? htl.html`<div style="color: gray; font-style: italic; padding: 20px;">Sélectionnez une commune dans le menu pour afficher la cartographie de son département.</div>` : 
+  
+  htl.html`
+    <h3 style="text-align: center; margin-bottom: 20px;"> Densité de population ${code_dep}</h3>
+
+      <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h4 style="text-align: center; color: #2c3e50;">Densité (habitants / km²)</h4>
+        ${Plot.plot({
+          width: 700,
+          height: 600,
+          axis: null, 
+          x: { inset: 20 }, 
+          y: { inset: 20 },
+          r: { range: [3, 15] },
+          // CORRECTION 1 : On a enlevé le tickFormat abusif ici
+          color: { scheme: "plasma", legend: true, domain: [dep_min, dep_max] },
+          marks: [
+            Plot.dot(data_dep, {
+              x: "lon", y: "lat", r: "population", fill: "densite",
+              stroke: "lightgray", strokeWidth: 0.5, 
+              // CORRECTION 2 : L'infobulle utilise maintenant d.densite au lieu de d.Y_OBSERVE
+              title: d => `${d.GEO_LABEL}\nDensité : ${Math.round(d.densite)} hab/km²\nPop : ${d.population}`,
+              tip: true
+            }),
+            Plot.dot(data_dep.filter(d => d.GEO === selection_geo.GEO), {
+              x: "lon", y: "lat", r: 18, stroke: "red", strokeWidth: 3, fill: "none"
+            }),
+            Plot.text(data_dep.filter(d => d.GEO === selection_geo.GEO), {
+              x: "lon", y: "lat", text: "GEO_LABEL", dy: -25, fontWeight: "bold", fill: "red", fontSize: 14
+            })
+          ]
+        })}
+      </div>
+  `}
+`
+```
