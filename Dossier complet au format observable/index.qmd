@@ -569,7 +569,7 @@ Plot.plot({
   title: '',
   marginLeft: 60,
   marginRight: 20,
-  height: 400,
+  height: 300,
   x: {
     label: "Effectif",
     domain: [-max_effectif * 1.05, max_effectif * 1.05],
