@@ -50,7 +50,6 @@ base_filtree <- dossier_complet %>%
   select(GEO, GEO_LABEL, ID_TAB, TAB_MEASURE_LABEL, OBS_VALUE) %>%
   collect()
 
-# Petite vérification du volume récupéré
 print(paste("Nombre de lignes récupérées :", nrow(base_filtree)))
 print(paste("Nombre de variables distinctes :", length(unique(base_filtree$TAB_MEASURE_LABEL))))
 
@@ -60,12 +59,10 @@ print(paste("Nombre de variables distinctes :", length(unique(base_filtree$TAB_M
 # ------------------------------------------------------------------------------
 
 base_large <- base_filtree %>%
-  # 1. On force un seul nom de ville par code INSEE
   group_by(GEO) %>%
   mutate(GEO_LABEL = first(GEO_LABEL)) %>%
   ungroup() %>%
   
-  # 2. Le pivot sécurisé avec les libellés en clair
   pivot_wider(
     id_cols = c(GEO, GEO_LABEL), 
     names_from = TAB_MEASURE_LABEL, 
@@ -76,7 +73,6 @@ base_large <- base_filtree %>%
 # On remplace les espaces, accents et caractères spéciaux par des points
 names(base_large) <- make.names(names(base_large), unique = TRUE)
 
-# Vérification des dimensions
 print(paste("Nombre de communes :", nrow(base_large)))
 print(paste("Nombre de colonnes :", ncol(base_large)))
 
@@ -85,7 +81,6 @@ print(paste("Nombre de colonnes :", ncol(base_large)))
 # ÉTAPE 3 : CRÉATION DU Y, DES TAUX ET GRANDE PURGE
 # ------------------------------------------------------------------------------
 
-# On conserve la variable "Population" ici pour pouvoir filtrer juste après
 base_prete_rf <- base_large %>%
   mutate(
     # --- 1. CRÉATION DU Y ET AJUSTEMENTS D'ÉCHELLE ---
@@ -218,10 +213,8 @@ for(i in 1:total_modeles) {
   param_mtry <- grille$mtry[i]
   param_node <- grille$min.node.size[i]
   
-  # Affichage de l'avancement avant le début du calcul
   print(paste("-> [", i, "/", total_modeles, "] En cours : mtry =", param_mtry, "| min.node.size =", param_node, "..."))
   
-  # Entraînement avec la combinaison [i]
   modele_grid <- ranger(
     formula = Y_GAP_ACT_GLOBAL ~ ., 
     data = base_train,
@@ -231,7 +224,6 @@ for(i in 1:total_modeles) {
     seed = 42 
   )
   
-  # Prédiction sur la base de validation
   preds <- predict(modele_grid, data = base_val)$predictions
   
   # Calcul des erreurs
@@ -251,11 +243,10 @@ for(i in 1:total_modeles) {
     R2_Estime_Pct = round(r2_val, 2)
   ))
   
-  # Affichage du résultat de cette étape
   print(paste("   Terminé ! R2 obtenu :", round(r2_val, 2), "%"))
 }
 
-# 3. Tri des résultats pour afficher les meilleurs en haut
+# Tri des résultats pour afficher les meilleurs en haut
 resultats_grille <- resultats_grille %>% arrange(desc(R2_Estime_Pct))
 
 print("--- FIN DE L'OPTIMISATION : TOP 10 DES MEILLEURS PARAMÈTRES ---")
