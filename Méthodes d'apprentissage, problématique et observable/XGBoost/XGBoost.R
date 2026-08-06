@@ -89,3 +89,38 @@ print("-> Génération du graphique SHAP (Beeswarm) dans l'onglet 'Plots'...")
 sv_importance(valeurs_shap, kind = "beeswarm", max_display = 15) +
   ggtitle("Impact SHAP des 15 variables principales sur l'écart d'activité") +
   theme_minimal()
+
+# ==============================================================================
+# ANALYSE DES INTERACTIONS : SHAP DEPENDENCE PLOT
+# ==============================================================================
+library(shapviz)
+library(ggplot2)
+
+print("--- GÉNÉRATION DES GRAPHIQUES D'INTERACTION SHAP ---")
+
+# 1. Interaction : Pauvreté croisée avec les Familles Nombreuses
+# L'axe X sera le niveau de pauvreté, l'axe Y l'impact SHAP, et la couleur le % de familles nombreuses
+plot_interact_1 <- sv_dependence(
+  valeurs_shap, 
+  v = "Taux.de.pauvreté..en....au.seuil.de.60...de.la.médiane.du.niveau.de.vie", 
+  color_var = "Nombre.de.famille...4.enfants.ou.plus.de.moins.de.24.ans"
+) +
+  ggtitle("Effet croisé : Pauvreté & Familles Nombreuses") +
+  theme_minimal()
+
+# Affichage du premier graphique
+print(plot_interact_1)
+
+
+# 2. Interaction : Pauvreté croisée avec la Structure Ouvrière
+# L'axe X sera le niveau de pauvreté, et la couleur la proportion d'ouvriers
+plot_interact_2 <- sv_dependence(
+  valeurs_shap, 
+  v = "Taux.de.pauvreté..en....au.seuil.de.60...de.la.médiane.du.niveau.de.vie", 
+  color_var = "Population...De.25.à.54.ans.x.Ouvriers"
+) +
+  ggtitle("Effet croisé : Pauvreté & Structure Ouvrière") +
+  theme_minimal()
+
+# Affichage du second graphique (tu pourras naviguer entre les deux dans l'onglet Plots)
+print(plot_interact_2)
