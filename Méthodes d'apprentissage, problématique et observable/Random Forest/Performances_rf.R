@@ -29,3 +29,27 @@ plot(valeurs_reelles, predictions_valeurs,
 
 # Ajout de la bissectrice parfaite (ligne y = x)
 abline(0, 1, col = "red", lwd = 2)
+
+# On peut entraîner rapidement un modèle pour voir la stabilisation de l'erreur
+# (Ranger calcule l'erreur OOB arbre par arbre)
+plot(modele_base$predictions) # ou l'analyse de convergence
+
+library(dplyr)
+library(ggplot2)
+
+# On reprend ton tableau d'importance et on garde le Top 15 pour un beau graphique
+top_15 <- top_variables_rf %>%
+  head(15) %>%
+  mutate(Variable = reorder(Variable, Importance))
+
+# Tracé avec ggplot2
+ggplot(top_15, aes(x = Importance, y = Variable)) +
+  geom_col(fill = "steelblue") +
+  theme_minimal() +
+  labs(
+    title = "Top 15 des variables les plus importantes (Random Forest)",
+    subtitle = "Mesure par l'impureté (Variance)",
+    x = "Importance (Decrease in Node Impurity)",
+    y = ""
+  ) +
+  theme(axis.text.y = element_text(size = 8))
