@@ -100,3 +100,62 @@ print(paste("Score BIC du modèle complet (sans sélection) :", round(bic_comple
 
 print(paste("Gain d'AIC grâce au Lasso :", round(aic_complet - aic_valeur, 2)))
 print(paste("Gain de BIC grâce au Lasso :", round(bic_complet - bic_valeur, 2)))
+
+# ==============================================================================
+# 1. ÉVOLUTION DE L'ERREUR (VALIDATION CROISÉE LASSO)
+# ==============================================================================
+
+# Ce graphique trace la courbe de l'erreur en fonction du paramètre Lambda
+plot(modele_lasso_cv)
+title("Validation croisée : Choix du paramètre de pénalité (Lambda)", line = 3)
+
+# ==============================================================================
+# 2, 3, 4. DIAGNOSTICS DU MODÈLE POST-LASSO (RÉGRESSION LINÉAIRE)
+# ==============================================================================
+
+# On divise la fenêtre graphique en 4 (2 lignes, 2 colonnes) pour tout voir d'un coup
+par(mfrow = c(2, 2))
+
+# On génère les 4 graphiques de diagnostic
+plot(modele_post_lasso)
+
+# On remet la fenêtre graphique à la normale
+par(mfrow = c(1, 1))
+
+
+# ==============================================================================
+# TEST DE MORAN : AUTOCORRÉLATION SPATIALE DES RÉSIDUS ( si je m'ennuie et que je charge un fonc de carte avec le tracé des communes)
+# ==============================================================================
+install.packages("sf")
+install.packages("spdep")
+library(sf)
+library(spdep)
+library(dplyr)
+
+print("--- 1. PRÉPARATION DES DONNÉES SPATIALES ---")
+# On extrait les résidus de ton modèle Post-Lasso
+# (Assure-toi que base_normalisee contient bien la colonne GEO / Code Commune)
+base_residus <- data.frame(
+  GEO = base_normalisee$GEO, 
+  Residus = residuals(modele_post_lasso)
+)
+
+# /!\ REMPLACE 'carte_communes' par le nom de ton vrai objet spatial dans R
+# On fusionne la géométrie avec les résidus de notre modèle
+carte_analyse <- carte_communes %>%
+  inner_join(base_residus, by = "GEO")
+
+print("--- 2. CRÉATION DE LA MATRICE DE VOISINAGE ---")
+# On identifie les voisins de chaque commune (contiguïté : elles partagent une frontière)
+voisins <- poly2nb(carte_analyse)
+
+# On transforme ces voisinages en matrice de poids mathématiques
+# (zero.policy = TRUE permet d'éviter que le code plante sur les îles comme Ouessant ou la Corse)
+poids_spatiaux <- nb2listw(voisins, style = "W", zero.policy = TRUE)
+
+print("--- 3. LE TEST DE MORAN SUR LE MODÈLE ---")
+# On lance le test mathématique global
+test_moran <- lm.morantest(modele_post_lasso, listw = poids_spatiaux, zero.policy = TRUE)
+
+# Affichage du résultat
+print(test_moran)
