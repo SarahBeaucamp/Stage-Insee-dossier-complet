@@ -111,3 +111,60 @@ modele_causal_pauvrete <- lm(residus_Y_pauvrete ~ residus_T_pauvrete)
 
 # Affichage des résultats purs
 summary(modele_causal_pauvrete)
+
+# ==============================================================================
+# ETAPE 9-C : DOUBLE MACHINE LEARNING (FAMILLES NOMBREUSES & SALAIRES HOMMES)
+# ==============================================================================
+library(ranger)
+library(dplyr)
+
+print("--- PRÉPARATION DES VARIABLES ---")
+var_cible <- "Y_GAP_ACT_GLOBAL"
+
+# Nos deux nouveaux "Traitements"
+var_traitement_1 <- "Nombre.de.famille...4.enfants.ou.plus.de.moins.de.24.ans"
+var_traitement_2 <- "Salaire.net.EQTP.mensuel.moyen...Homme.x.De.25.à.39.ans"
+
+# ==============================================================================
+# TEST 1 : L'EFFET DES FAMILLES DE 4 ENFANTS OU PLUS
+# ==============================================================================
+print("--- TEST 1 : ENTRAÎNEMENT DML SUR LES FAMILLES NOMBREUSES ---")
+
+variables_X_1 <- setdiff(names(base_train), c(var_cible, var_traitement_1))
+formule_Y_1 <- as.formula(paste(var_cible, "~", paste(variables_X_1, collapse = " + ")))
+formule_T_1 <- as.formula(paste(var_traitement_1, "~", paste(variables_X_1, collapse = " + ")))
+
+# Utilisation de 200 arbres pour optimiser le temps de calcul
+rf_Y_1 <- ranger(formula = formule_Y_1, data = base_train, num.trees = 200, mtry = 150, min.node.size = 4)
+rf_T_1 <- ranger(formula = formule_T_1, data = base_train, num.trees = 200, mtry = 150, min.node.size = 4)
+
+residus_Y_1 <- base_val[[var_cible]] - predict(rf_Y_1, data = base_val)$predictions
+residus_T_1 <- base_val[[var_traitement_1]] - predict(rf_T_1, data = base_val)$predictions
+
+modele_causal_1 <- lm(residus_Y_1 ~ residus_T_1)
+
+# ==============================================================================
+# TEST 2 : L'EFFET DU SALAIRE "MONSIEUR GAGNE-PAIN"
+# ==============================================================================
+print("--- TEST 2 : ENTRAÎNEMENT DML SUR LE SALAIRE MASCULIN (25-39 ANS) ---")
+
+variables_X_2 <- setdiff(names(base_train), c(var_cible, var_traitement_2))
+formule_Y_2 <- as.formula(paste(var_cible, "~", paste(variables_X_2, collapse = " + ")))
+formule_T_2 <- as.formula(paste(var_traitement_2, "~", paste(variables_X_2, collapse = " + ")))
+
+rf_Y_2 <- ranger(formula = formule_Y_2, data = base_train, num.trees = 200, mtry = 150, min.node.size = 4)
+rf_T_2 <- ranger(formula = formule_T_2, data = base_train, num.trees = 200, mtry = 150, min.node.size = 4)
+
+residus_Y_2 <- base_val[[var_cible]] - predict(rf_Y_2, data = base_val)$predictions
+residus_T_2 <- base_val[[var_traitement_2]] - predict(rf_T_2, data = base_val)$predictions
+
+modele_causal_2 <- lm(residus_Y_2 ~ residus_T_2)
+
+# ==============================================================================
+# RÉSULTATS FINAUX
+# ==============================================================================
+print("====== RÉSULTAT CAUSAL 1 : FAMILLES DE 4 ENFANTS OU PLUS ======")
+print(summary(modele_causal_1))
+
+print("====== RÉSULTAT CAUSAL 2 : SALAIRE MASCULIN (25-39 ans) ======")
+print(summary(modele_causal_2))
