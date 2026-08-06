@@ -2,8 +2,7 @@
 # PRÉPARATION DE LA BASE DE DONNÉES ET GESTION EXPERTE DES VALEURS MANQUANTES
 # ==============================================================================
 
-# Installation des packages manquants si nécessaire
-# install.packages(c("missForest", "VIM", "Metrics"))
+install.packages(c("missForest", "VIM", "Metrics"))
 
 library(DBI)
 library(duckdb)
@@ -11,11 +10,11 @@ library(dplyr)
 library(stringr)
 library(tidyr)
 install.packages("missForest")
-library(missForest) # Pour l'Option A
+library(missForest)
 install.packages("VIM")
-library(VIM)        # Pour l'Option B
+library(VIM)        
 install.packages("Metrics")
-library(Metrics)    # Pour le calcul de la RMSE
+library(Metrics)   
 
 # ------------------------------------------------------------------------------
 # ÉTAPE 1 : CONNEXION ET EXTRACTION DES DONNÉES
@@ -125,7 +124,7 @@ print(colonnes_secret)
 
 # 2. Le traitement hybride : 0 pour les équipements, NA pour l'argent
 base_finale <- base_pre_filtre %>%
-  # On remplace par 0 TOUTES les colonnes SAUF celles identifiées dans colonnes_secret
+  # On remplace par 0 toutes les colonnes sauf celles identifiées dans colonnes_secret
   mutate(across(-all_of(colonnes_secret), ~ replace_na(., 0)))
 
 compte_na <- colSums(is.na(base_finale))
@@ -138,11 +137,10 @@ print(compte_na[compte_na > 0])
 # ------------------------------------------------------------------------------
 print("--- DÉBUT DU BENCHMARK D'IMPUTATION ---")
 
-# 1. Isoler une sous-base parfaite et FORCER LE FORMAT NUMÉRIQUE (Correction du bug)
 base_parfaite <- base_finale %>% 
   drop_na() %>%
-  mutate(across(everything(), as.numeric)) %>% # On force tout en chiffres
-  as.data.frame()                              # On retire le format "tibble" pour missForest
+  mutate(across(everything(), as.numeric)) %>% 
+  as.data.frame()                              
 
 # 2. Échantillon de 2000 communes pour la rapidité du test
 set.seed(42)
@@ -189,10 +187,6 @@ if(rmse_A < rmse_B) {
 }
 
 # ==============================================================================
-# ÉTAPE 6 : APPLICATION DÉFINITIVE SUR LA BASE COMPLÈTE (Choisir A ou B)
-# ==============================================================================
-
-# ==============================================================================
 # ÉTAPE 6A : IMPUTATION DÉFINITIVE AVEC MISSFOREST
 # ==============================================================================
 
@@ -211,7 +205,7 @@ base_sans_na <- imputation_finale$ximp
 print(paste("Nombre total de NAs restants :", sum(is.na(base_sans_na))))
 
 # ------------------------------------------------------------------------------
-# 6.B SI K-NN A GAGNÉ (Exécution plus rapide)
+# 6.B Si Knn avait gagné
 # ------------------------------------------------------------------------------
 # print("--- APPLICATION DE K-NN SUR LA BASE COMPLÈTE ---")
 # base_sans_na_propre <- kNN(base_finale, k = 5, imp_var = FALSE)

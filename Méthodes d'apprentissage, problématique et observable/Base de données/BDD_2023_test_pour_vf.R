@@ -385,7 +385,7 @@ print(modele_base)
 
 print("--- 1. PRÉDICTION SUR LE JEU DE DONNÉES 2023 ---")
 
-# On applique le modèle entraîné (modele_base) sur les nouvelles données 2023
+# On applique le modèle entraîné sur les nouvelles données 2023
 predictions_2023 <- predict(modele_base, data = base_2023_sans_na)$predictions 
 
 print("--- 2. ÉVALUATION DE LA ROBUSTESSE (DATA DRIFT) ---")
@@ -514,7 +514,7 @@ if(length(index_commune) > 0) {
   # On s'assure d'avoir exactement les mêmes colonnes que la matrice d'entraînement du Lasso
   colonnes_lasso <- colnames(matrice_X)
   
-  # On ajuste les colonnes de Nantes sur celles du modèle Lasso (au cas où il y aurait un décalage)
+  # On ajuste les colonnes de Nantes sur celles du modèle Lasso 
   X_nantes_lasso <- matrice_X_2023[index_commune, , drop = FALSE]
   
   # B. PRÉDICTION LASSO POUR NANTES
@@ -562,7 +562,7 @@ library(Metrics)
 
 print("--- 1. PRÉPARATION DES MATRICES POUR XGBOOST ---")
 
-# XGBoost a besoin de matrices pures (identiques au Lasso)
+# XGBoost a besoin de matrices
 X_train_xgb <- model.matrix(Y_GAP_ACT_GLOBAL ~ . - 1, data = base_train)
 Y_train_xgb <- base_train$Y_GAP_ACT_GLOBAL
 
@@ -579,7 +579,7 @@ modele_xgb <- xgboost(
   max_depth = 6,                # Profondeur des arbres
   eta = 0.1,                    # Taux d'apprentissage
   objective = "reg:squarederror", # Pour de la régression (RMSE)
-  verbose = 0                   # Pour ne pas polluer ta console
+  verbose = 0                   # Pour ne pas polluer la console
 )
 
 print("--- 3. PRÉDICTION ET ÉVALUATION SUR 2023 ---")
@@ -591,134 +591,3 @@ rmse_2023_xgb <- rmse(Y_2023_xgb, predictions_2023_xgb)
 
 print(paste("Performance R2 XGBoost sur 2023 :", round(r2_2023_xgb, 4)))
 print(paste("Erreur RMSE XGBoost sur 2023 :", round(rmse_2023_xgb, 4)))
-
-
-library(kernelshap)
-library(shapviz)
-library(ggplot2)
-
-# ==============================================================================
-# 1. PARAMÉTRAGE DE LA COMMUNE CHOISIE (Exemple : Nantes = 44109)
-# ==============================================================================
-code_insee_cible <- "44109" 
-
-# ==============================================================================
-# 2. EXTRACTION, PRÉDICTION ET SHAP VALUES
-# ==============================================================================
-
-library(dplyr)
-library(ggplot2)
-library(xgboost)
-
-index_commune <- which(referentiel_communes_2023$GEO == code_insee_cible)
-
-if(length(index_commune) > 0) {
-  
-  nom_commune <- referentiel_communes_2023$GEO_LABEL[index_commune]
-  print(paste("--- ANALYSE CIBLÉE POUR :", nom_commune, "(", code_insee_cible, ") ---"))
-  
-  valeur_reelle_Y <- base_2023_sans_na$Y_GAP_ACT_GLOBAL[index_commune]  
-  colonnes_entrainement <- colnames(X_train_xgb)
-  X_ciblé <- X_2023_xgb[index_commune, colonnes_entrainement, drop = FALSE]
-  
-  # ============================================================================
-  # LE DÉBLOCAGE EST ICI : On force R à utiliser le moteur Booster pur
-  # ============================================================================
-  modele_pur <- modele_xgb
-  class(modele_pur) <- "xgb.Booster"
-  
-  matrice_cible_dmatrix <- xgb.DMatrix(data = as.matrix(X_ciblé))
-  
-  # B. Prédiction classique (sur le modèle pur)
-  prediction_commune <- predict(modele_pur, newdata = matrice_cible_dmatrix)
-  
-  print(paste("=> Valeur RÉELLE observée en 2023 :", round(valeur_reelle_Y, 4)))
-  print(paste("=> Valeur PRÉDITE par le modèle     :", round(prediction_commune, 4)))
-  print(paste("=> Écart (Erreur de prédiction)      :", round(prediction_commune - valeur_reelle_Y, 4)))  
-  
-  # C. CALCUL SHAP NATIF (Sans erreur de dimension, le moteur pur accepte tout)
-  shap_brut <- predict(modele_pur, newdata = matrice_cible_dmatrix, predcontrib = TRUE)
-  
-  shap_vecteur <- shap_brut[1, ]
-  
-  biais_base <- shap_vecteur[length(shap_vecteur)]
-  shap_vars <- shap_vecteur[-length(shap_vecteur)]
-  
-  df_shap <- data.frame(
-    Variable = colonnes_entrainement,
-    Impact = as.numeric(shap_vars)
-  )
-  
-  df_shap_top <- df_shap %>%
-    mutate(Abs_Impact = abs(Impact)) %>%
-    arrange(desc(Abs_Impact)) %>%
-    head(15) %>%
-    mutate(
-      Sens = ifelse(Impact > 0, "Pousse vers les Hommes (+)", "Pousse vers les Femmes (-)"),
-      Variable = reorder(Variable, abs(Impact))
-    )
-  
-  # D. CRÉATION DU GRAPHIQUE
-  graphique_shap <- ggplot(df_shap_top, aes(x = Impact, y = Variable, fill = Sens)) +
-    geom_col(color = "black", alpha = 0.8) +
-    scale_fill_manual(values = c("Pousse vers les Hommes (+)" = "#27ae60", 
-                                 "Pousse vers les Femmes (-)" = "#c0392b")) +
-    labs(
-      title = paste("Top 15 des impacts locaux (SHAP) sur", nom_commune),
-      subtitle = paste("Base :", round(biais_base, 4), "| Prédiction :", round(prediction_commune, 4)),
-      x = "Impact de la variable sur l'écart d'activité (en points)",
-      y = NULL,
-      fill = "Effet de la variable"
-    ) +
-    theme_minimal() +
-    theme(
-      legend.position = "bottom",
-      plot.title = element_text(face = "bold", size = 14),
-      axis.text.y = element_text(size = 9)
-    )
-  
-  print(graphique_shap)
-  
-} else {
-  print("❌ La commune n'a pas été trouvée dans le référentiel. Vérifie le code INSEE.")
-}
-# ==============================================================================
-# DÉCOMPOSITION D'OAXACA-BLINDER (GROUPES COMPARATIFS CORRIGÉS)
-# ==============================================================================
-
-library(oaxaca)
-library(dplyr)
-
-print("--- 1. CRÉATION DES GROUPES POUR OAXACA ---")
-
-# On définit un critère de comparaison pertinent pour ton mémoire.
-# Par exemple : Comparer Nantes et les grandes communes (> 100 000 habitants, si tu as la population) 
-# OU simplement faire un groupe arbitraire (ex: 1 si code INSEE commence par un département spécifique ou une condition).
-# Ici, pour l'exemple, on recrée proprement la variable de groupe dans base_oaxaca :
-base_oaxaca <- base_oaxaca %>%
-  mutate(
-    # Exemple de séparation : Groupe 1 = Nantes (ou un ensemble de grandes villes), Groupe 2 = Le reste
-    # (Tu peux adapter la condition selon ce que tu veux comparer)
-    groupe_oaxaca = ifelse(GEO == "44109", 1, 0) 
-  )
-
-print(paste("Effectif Groupe 1 :", sum(base_oaxaca$groupe_oaxaca == 1)))
-print(paste("Effectif Groupe 2 :", sum(base_oaxaca$groupe_oaxaca == 0)))
-
-print("--- 2. LANCEMENT DU MODÈLE OAXACA ---")
-
-# Note : Si tu veux comparer deux groupes de taille substantielle (ex: Région A vs Région B), 
-# remplace "groupe_oaxaca" par ta variable binaire contenant de vrais effectifs des deux côtés.
-modele_oaxaca <- oaxaca(
-  formula = Y_GAP_ACT_GLOBAL ~ Taux.de.pauvreté..en....au.seuil.de.60...de.la.médiane.du.niveau.de.vie + 
-    `Population...15.ans.ou.plus.x.Célibataire` + 
-    `Nombre.de.famille` | groupe_oaxaca, 
-  data = base_oaxaca,
-  R = NULL 
-)
-
-print("--- 3. RÉSULTATS DE LA DÉCOMPOSITION ---")
-print(summary(modele_oaxaca))
-
-# Affichage du graphique de décomposition
-plot(modele_oaxaca)
