@@ -74,3 +74,29 @@ modele_post_lasso <- lm(formule_post_lasso, data = base_normalisee)
 
 # 4. Affichage du résumé complet (Coefficients, Erreurs types, t-value et p-values !)
 summary(modele_post_lasso)
+
+# ==============================================================================
+# CRITÈRES D'INFORMATION : AIC ET BIC
+# ==============================================================================
+
+print("--- 5. CALCUL DE L'AIC ET DU BIC ---")
+
+# L'AIC et le BIC se calculent très facilement sur le modèle OLS final (modele_post_lasso)
+aic_valeur <- AIC(modele_post_lasso)
+bic_valeur <- BIC(modele_post_lasso)
+
+print(paste("Score AIC du modèle Post-Lasso :", round(aic_valeur, 2)))
+print(paste("Score BIC du modèle Post-Lasso :", round(bic_valeur, 2)))
+
+# Pour que l'analyse soit utile, il faut les comparer au modèle OLS "complet" (avec toutes les variables)
+# On crée rapidement un modèle classique sans sélection Lasso pour comparer :
+modele_complet_ols <- lm(Y_GAP_ACT_GLOBAL ~ ., data = base_normalisee)
+
+aic_complet <- AIC(modele_complet_ols)
+bic_complet <- BIC(modele_complet_ols)
+
+print(paste("Score AIC du modèle complet (sans sélection) :", round(aic_complet, 2)))
+print(paste("Score BIC du modèle complet (sans sélection) :", round(bic_complet, 2)))
+
+print(paste("Gain d'AIC grâce au Lasso :", round(aic_complet - aic_valeur, 2)))
+print(paste("Gain de BIC grâce au Lasso :", round(bic_complet - bic_valeur, 2)))
