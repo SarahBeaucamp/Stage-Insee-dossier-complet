@@ -41,7 +41,6 @@ base_filtree <- dossier_complet %>%
   select(GEO, GEO_LABEL, ID_TAB, TAB_MEASURE_LABEL, OBS_VALUE) %>%
   collect()
 
-# Petite vérification du volume récupéré
 print(paste("Nombre de lignes récupérées :", nrow(base_filtree)))
 print(paste("Nombre de variables distinctes :", length(unique(base_filtree$TAB_MEASURE_LABEL))))
 
@@ -65,7 +64,6 @@ base_large <- base_filtree %>%
 # On remplace les espaces, accents et caractères spéciaux par des points
 names(base_large) <- make.names(names(base_large), unique = TRUE)
 
-# Vérification des dimensions
 print(paste("Nombre de communes :", nrow(base_large)))
 print(paste("Nombre de colonnes :", ncol(base_large)))
 
@@ -266,7 +264,6 @@ print(paste("RMSE naïf sur validation :", round(rmse_naif, 5)))
 library(ggplot2)
 
 # --- 1. EXTRACTION DE L'IMPORTANCE DES VARIABLES ---
-# On récupère les scores d'importance stockés dans le modèle
 importance_donnees <- data.frame(
   Variable = names(modele_base$variable.importance),
   Importance = modele_base$variable.importance
@@ -280,7 +277,7 @@ importance_top15 <- importance_donnees %>%
 # --- 3. CRÉATION DU GRAPHIQUE ---
 ggplot(importance_top15, aes(x = reorder(Variable, Importance), y = Importance)) +
   geom_col(fill = "#2c3e50") +
-  coord_flip() + # On tourne le graphique pour pouvoir lire les noms des variables
+  coord_flip() + 
   theme_minimal() +
   labs(
     title = "Top 15 des variables expliquant l'écart d'activité Hommes/Femmes",
@@ -288,11 +285,10 @@ ggplot(importance_top15, aes(x = reorder(Variable, Importance), y = Importance))
     x = "",
     y = "Score d'importance"
   ) +
-  theme(axis.text.y = element_text(size = 9)) # Ajustement de la taille du texte
+  theme(axis.text.y = element_text(size = 9)) 
 
 #_______________Seuil sur les petites communes___________________
 
-# POUR CE CODE IL FAUT UNE AUTRE BASE_RF CAR ON DOIT GARDER POPULATION POUR LE FILTRE
 base_prete_rf <- base_large %>%
   mutate(
     # --- 1. CRÉATION DU Y ET AJUSTEMENTS D'ÉCHELLE ---
@@ -330,7 +326,7 @@ base_prete_rf <- base_large %>%
       .fns = ~ .x / .data[["Population...Actif"]]
     ),
     
-    # --- 6. POPULATION TOTALE (Correction du "s" à Nombre.de.place) ---
+    # --- 6. POPULATION TOTALE ---
     across(
       .cols = (starts_with("Population...") | starts_with("Établissements...") | starts_with("Nombre.de.place") | starts_with("Nombre.d.équipements...") | starts_with("Nombre.de.nouvelles") | starts_with("Nombre.de.personnes.seules...") | starts_with("Nombre.de.famille")) & 
         !matches("^Population$|^Population.des.ménages$|^Population...Actif$|^Population...Actif."),
@@ -346,7 +342,6 @@ base_prete_rf <- base_large %>%
     -TAUX_F, -TAUX_H, -POP_FEMME, -POP_HOMME,
     -Logements, -Population.des.ménages, -Population...Actif, -Nombre.d.emplois,
     
-    # 1. Le piège de la soustraction (Statuts liés à l'activité)
     -contains("Actif", ignore.case = TRUE),
     -contains("Chômeur", ignore.case = TRUE),
     -contains("inactif", ignore.case = TRUE),
@@ -354,8 +349,6 @@ base_prete_rf <- base_large %>%
     -contains("Retraité", ignore.case = TRUE),
     -contains("Élève", ignore.case = TRUE),
     
-    # 2. Le piège des dénominateurs (Uniquement la démographie par sexe)
-    # L'utilisation de matches() avec "^Population" protège tes variables de Salaires !
     -matches("^Population.*Femme", ignore.case = TRUE),
     -matches("^Population.*Homme", ignore.case = TRUE)
   )

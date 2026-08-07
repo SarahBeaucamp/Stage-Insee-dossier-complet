@@ -8,8 +8,9 @@ library(dplyr)
 library(ggplot2)
 library(stringr)
 library(tidyr)
+install.packages("rsample")
 library(rsample)
-library(ranger) # Ajout pour la forêt aléatoire
+library(ranger) 
 
 # ------------------------------------------------------------------------------
 # ÉTAPE 1 : CONNEXION ET EXTRACTION DES DONNÉES
@@ -65,7 +66,7 @@ base_large <- base_filtree %>%
   mutate(GEO_LABEL = first(GEO_LABEL)) %>%
   ungroup() %>%
   
-  # 2. Le pivot sécurisé avec les libellés en clair
+  # 2. Le pivot 
   pivot_wider(
     id_cols = c(GEO, GEO_LABEL), 
     names_from = TAB_MEASURE_LABEL, 
@@ -76,7 +77,6 @@ base_large <- base_filtree %>%
 # On remplace les espaces, accents et caractères spéciaux par des points
 names(base_large) <- make.names(names(base_large), unique = TRUE)
 
-# Vérification des dimensions
 print(paste("Nombre de communes :", nrow(base_large)))
 print(paste("Nombre de colonnes :", ncol(base_large)))
 
@@ -111,7 +111,7 @@ base_prete_rf <- base_large %>%
     # --- 5. POPULATION ACTIVE ---
     across(.cols = starts_with("Population...Actif.") & !matches("^Population...Actif$"), .fns = ~ .x / .data[["Population...Actif"]]),
     
-    # --- 6. POPULATION TOTALE (Correction du "s" à Nombre.de.place) ---
+    # --- 6. POPULATION TOTALE ---
     across(
       .cols = (starts_with("Population...") | starts_with("Établissements...") | starts_with("Nombre.de.place") | starts_with("Nombre.d.équipements...") | starts_with("Nombre.de.nouvelles") | starts_with("Nombre.de.personnes.seules...") | starts_with("Nombre.de.famille")) & 
         !matches("^Population$|^Population.des.ménages$|^Population...Actif$|^Population...Actif."),
@@ -127,7 +127,6 @@ base_prete_rf <- base_large %>%
     -TAUX_F, -TAUX_H, -POP_FEMME, -POP_HOMME,
     -Logements, -Population.des.ménages, -Population...Actif, -Nombre.d.emplois,
     
-    # 1. Le piège de la soustraction (Statuts liés à l'activité)
     -contains("Actif", ignore.case = TRUE),
     -contains("Chômeur", ignore.case = TRUE),
     -contains("inactif", ignore.case = TRUE),
@@ -135,7 +134,6 @@ base_prete_rf <- base_large %>%
     -contains("Retraité", ignore.case = TRUE),
     -contains("Élève", ignore.case = TRUE),
     
-    # 2. Le piège des dénominateurs
     -matches("^Population.*Femme", ignore.case = TRUE),
     -matches("^Population.*Homme", ignore.case = TRUE)
   )
@@ -145,13 +143,11 @@ base_prete_rf <- base_large %>%
 # ÉTAPE 4 : APPLICATION DU SEUIL (430) ET GESTION DES NAs
 # ------------------------------------------------------------------------------
 
-# --- LE FILTRE FINAL ET SEUIL À 430 ---
 base_finale <- base_prete_rf %>%
-  filter(Population >= 430) %>%              # Filtrage ciblé sur ton seuil de 430
+  filter(Population >= 430) %>%              
   filter(!is.na(Y_GAP_ACT_GLOBAL)) %>%
-  select(-GEO, -GEO_LABEL, -Population)      # On supprime la Population pour le modèle
+  select(-GEO, -GEO_LABEL, -Population)      
 
-# --- DIAGNOSTIC DES VALEURS MANQUANTES (NAs) ---
 compte_na <- colSums(is.na(base_finale))
 valeurs_manquantes <- compte_na[compte_na > 0]
 print("--- BILAN DES NAs RESTANTS ---")
@@ -167,7 +163,7 @@ colonnes_suspectes <- colonnes_suspectes[!grepl("revenu|salaire|densit.", colonn
 
 print(paste("Nombre de variables suspectes détectées :", length(colonnes_suspectes)))
 
-# --- LE BOUCHAGE DES TROUS (Remplacement des NAs par 0) ---
+# Tout avec des 0
 base_sans_na <- base_finale %>%
   mutate(across(everything(), ~ replace_na(., 0)))
 
@@ -218,10 +214,8 @@ for(i in 1:total_modeles) {
   param_mtry <- grille$mtry[i]
   param_node <- grille$min.node.size[i]
   
-  # Affichage de l'avancement avant le début du calcul
   print(paste("-> [", i, "/", total_modeles, "] En cours : mtry =", param_mtry, "| min.node.size =", param_node, "..."))
   
-  # Entraînement avec la combinaison [i]
   modele_grid <- ranger(
     formula = Y_GAP_ACT_GLOBAL ~ ., 
     data = base_train,
@@ -231,18 +225,14 @@ for(i in 1:total_modeles) {
     seed = 42 
   )
   
-  # Prédiction sur la base de validation
   preds <- predict(modele_grid, data = base_val)$predictions
   
-  # Calcul des erreurs
   rmse_val <- sqrt(mean((base_val$Y_GAP_ACT_GLOBAL - preds)^2))
   moy_train <- mean(base_train$Y_GAP_ACT_GLOBAL, na.rm = TRUE)
   rmse_naif <- sqrt(mean((base_val$Y_GAP_ACT_GLOBAL - moy_train)^2))
   
-  # Calcul du R2
   r2_val <- (1 - (rmse_val^2 / rmse_naif^2)) * 100
   
-  # Sauvegarde
   resultats_grille <- rbind(resultats_grille, data.frame(
     Modele_ID = i,
     mtry = param_mtry,
@@ -251,11 +241,9 @@ for(i in 1:total_modeles) {
     R2_Estime_Pct = round(r2_val, 2)
   ))
   
-  # Affichage du résultat de cette étape
   print(paste("   Terminé ! R2 obtenu :", round(r2_val, 2), "%"))
 }
 
-# 3. Tri des résultats pour afficher les meilleurs en haut
 resultats_grille <- resultats_grille %>% arrange(desc(R2_Estime_Pct))
 
 print("--- FIN DE L'OPTIMISATION : TOP 10 DES MEILLEURS PARAMÈTRES ---")
@@ -293,9 +281,9 @@ for (i in seq_along(nombre_arbres_seq)) {
     formula = Y_GAP_ACT_GLOBAL ~ ., 
     data = base_train,
     num.trees = nb_arbres,
-    mtry = 150,                 # Ton hyperparamètre optimal trouvé à l'étape 2
-    min.node.size = 4,          # Ton hyperparamètre optimal trouvé à l'étape 2
-    importance = 'none'         # On désactive pour aller plus vite dans la boucle
+    mtry = 150,                 
+    min.node.size = 4,          
+    importance = 'none'         
   )
   
   # Prédiction sur l'échantillon de validation
@@ -305,21 +293,17 @@ for (i in seq_along(nombre_arbres_seq)) {
   rmse_par_arbre[i] <- sqrt(mean((base_val$Y_GAP_ACT_GLOBAL - preds_temp)^2))
 }
 
-# Création d'un tableau propre pour ggplot2
 data_courbe <- data.frame(
   Nombre_Arbres = nombre_arbres_seq,
   RMSE = rmse_par_arbre
 )
 
-print("--- 2. GÉNÉRATION DU GRAPHIQUE ÉLÉGANT (COURBE D'APPRENTISSAGE) ---")
+print("--- 2. GÉNÉRATION COURBE D'APPRENTISSAGE ---")
 
 ggplot(data_courbe, aes(x = Nombre_Arbres, y = RMSE)) +
-  # Ligne principale fluide et esthétique
   geom_line(color = "#2c3e50", linewidth = 1.2) +
   geom_point(color = "#e74c3c", size = 1.5) +
-  # Zone ombragée pour mettre en valeur la courbe
   geom_ribbon(aes(ymin = min(RMSE), ymax = RMSE), fill = "#3498db", alpha = 0.1) +
-  # Personnalisation des axes et du thème (parfait pour un mémoire)
   theme_minimal(base_size = 13) +
   labs(
     title = "Courbe d'apprentissage de la Forêt Aléatoire",

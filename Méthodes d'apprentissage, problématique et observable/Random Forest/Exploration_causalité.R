@@ -2,31 +2,22 @@
 # PARTIE 6 : OUVERTURE CAUSALE - DOUBLE MACHINE LEARNING (DML)
 # ==============================================================================
 
-# Installation des packages nécessaires (décommente si besoin)
 install.packages("DoubleML")
 install.packages("VIM")
 install.packages("mlr3")
 install.packages("mlr3learners")
-# install.packages("mlr3")         # Commenté car déjà installé
-# install.packages("mlr3learners") # Commenté car déjà installé
 
-# 1. On charge D'ABORD les dépendances profondes
 library(mlr3)
 library(mlr3learners)
 library(xgboost)
 library(VIM)
-
-# 2. On charge ENSUITE l'algorithme causal
 library(DoubleML)
 
 print("--- 1. PRÉPARATION DES DONNÉES POUR LE DOUBLE ML ---")
 
-# On définit notre variable cible (Y) et notre variable de "traitement" (D)
-# Le traitement est la variable dont on veut isoler l'effet causal (ex: le Taux de pauvreté)
 variable_cible <- "Y_GAP_ACT_GLOBAL"
 variable_traitement <- "Taux.de.pauvreté..en....au.seuil.de.60...de.la.médiane.du.niveau.de.vie"
 
-# Configuration de l'objet de données DML
 dml_data <- DoubleMLData$new(
   data = base_sans_na,
   y_col = variable_cible,
@@ -51,8 +42,8 @@ dml_plr = DoubleMLPLR$new(
   n_folds = 5 # Validation croisée pour éviter le surapprentissage
 )
 
-# Lancement du calcul (peut prendre quelques minutes)
+# Lancement du calcul
 dml_plr$fit()
 
-print("--- VERDICT CAUSAL ---")
+print("--- Résultats ---")
 print(dml_plr$summary())
