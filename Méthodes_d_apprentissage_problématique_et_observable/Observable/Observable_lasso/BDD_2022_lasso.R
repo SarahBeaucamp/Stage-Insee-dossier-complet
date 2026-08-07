@@ -10,9 +10,9 @@ library(dplyr)
 library(stringr)
 library(tidyr)
 install.packages("missForest")
-library(missForest) # Pour l'Option A
+library(missForest) 
 install.packages("Metrics")
-library(Metrics)    # Pour le calcul de la RMSE
+library(Metrics)    
 
 # ------------------------------------------------------------------------------
 # ÉTAPE 1 : CONNEXION ET EXTRACTION DES DONNÉES

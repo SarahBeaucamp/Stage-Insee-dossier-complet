@@ -167,9 +167,7 @@ noms_2023_actuels <- names(base_large_2023)
 # 3. Fonction pour extraire l'essence du texte
 nettoyer_texte <- function(noms) {
   noms <- tolower(noms)
-  # On retire les 'x' qui servent de croisements dans les noms R (ex: .x.)
   noms <- gsub("\\.x\\.", "", noms)
-  # On retire absolument toute la ponctuation et les espaces
   noms <- gsub("[^a-z0-9éèàâêîôû]", "", noms)
   return(noms)
 }
