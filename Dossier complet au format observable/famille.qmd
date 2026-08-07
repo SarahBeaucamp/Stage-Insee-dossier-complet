@@ -409,7 +409,7 @@ mon_graphique_final16 = {
       .join("text")
       .attr("transform", d => `translate(${arc.centroid(d)})`)
       .attr("text-anchor", "middle")
-      .attr("fill", d => d.data.part_groupe < 15 ? "black" : "white")
+      .attr("fill", d => d.data.part_groupe < 15 ? "white" : "black")
       .attr("font-size", "12px")
       .attr("font-weight", "bold")
       .text(d => d.data.part_groupe >= 2 ? `${d.data.part_groupe.toFixed(1)}%` : "");

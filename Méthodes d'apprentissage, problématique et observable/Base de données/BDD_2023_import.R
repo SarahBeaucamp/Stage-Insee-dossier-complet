@@ -170,7 +170,7 @@ noms_2023_actuels <- names(base_large_2023)
 # 3. Fonction pour extraire l'essence du texte
 nettoyer_texte <- function(noms) {
   noms <- tolower(noms)
-  # On retire les 'x' qui servent de croisements dans les noms R (ex: .x.)
+  # On retire les 'x' qui servent de croisements dans les noms R 
   noms <- gsub("\\.x\\.", "", noms)
   # On retire absolument toute la ponctuation et les espaces
   noms <- gsub("[^a-z0-9éèàâêîôû]", "", noms)
@@ -181,13 +181,11 @@ nettoyer_texte <- function(noms) {
 noms_2022_propres <- nettoyer_texte(noms_2022_ref)
 noms_2023_propres <- nettoyer_texte(noms_2023_actuels)
 
-# 5. On écrase 2023 par le nom strict de 2022 si l'essence matche
+# 5. On écrase 2023 par le nom de 2022
 for (i in seq_along(noms_2023_actuels)) {
-  # On cherche à quelle position dans 2022 correspond le nom nettoyé de 2023
   index_correspondant <- match(noms_2023_propres[i], noms_2022_propres)
   
   if (!is.na(index_correspondant)) {
-    # Si correspondance trouvée, on remplace le nom 2023 par le nom officiel 2022
     names(base_large_2023)[i] <- noms_2022_ref[index_correspondant]
   }
 }
@@ -201,7 +199,7 @@ base_prete_rf_2023 <- base_large_2023 %>%
   mutate(
     Taux.de.pauvreté..en....au.seuil.de.60...de.la.médiane.du.niveau.de.vie = .data[["Taux.de.pauvreté..en....au.seuil.de.60...de.la.médiane.du.niveau.de.vie"]] / 100,
     
-    # 1. Somme des tranches d'âge pour la population totale (15-64 ans)
+    # 1. Somme des tranches d'âge pour la population totale 
     POP_FEMME = (.data[["Population...Femme...De.15.à.24.ans"]] + 
                    .data[["Population...Femme...De.25.à.39.ans"]] + 
                    .data[["Population...Femme...De.40.à.54.ans"]] + 
@@ -305,7 +303,7 @@ colonnes_2023 <- names(base_finale_2023)
 variables_manquantes_2023 <- setdiff(colonnes_2022, colonnes_2023)
 variables_en_trop_2023 <- setdiff(colonnes_2023, colonnes_2022)
 
-# 4. Affichage du bilan express
+# 4. Affichage du bilan
 cat("Variables attendues par le modèle (2022) :", length(colonnes_2022), "\n")
 cat("Variables présentes dans la base (2023) :", length(colonnes_2023), "\n\n")
 
@@ -340,7 +338,6 @@ base_finale_propre_2023 <- base_finale_2023 %>%
 print("--- 2. APPLICATION DE MISSFOREST ---")
 imputation_finale_2023 <- missForest(base_finale_propre_2023, ntree = 50, maxiter = 5)
 
-# CORRECTION : Harmonisation du nom de la base finale
 base_2023_sans_na <- imputation_finale_2023$ximp
 
 print(paste("Nombre total de NAs restants :", sum(is.na(base_2023_sans_na))))
@@ -349,7 +346,6 @@ print(paste("Nombre total de NAs restants :", sum(is.na(base_2023_sans_na))))
 # ETAPE 7 : VÉRIFICATION DES VARIABLES MANQUANTES
 #===============================================================================
 
-# base_sans_na 2022 doit toujours être dans l'environnement
 variables_manquantes <- setdiff(names(base_sans_na), names(base_2023_sans_na))
 print("Variables présentes en 2022 mais absentes en 2023 :")
 print(variables_manquantes)
@@ -384,7 +380,7 @@ print(paste("Taille Test :", nrow(base_test)))
 
 #_______________ RANDOM FOREST SIMPLE _____________________
 
-#install.packages("ranger")
+install.packages("ranger")
 library(ranger)
 
 # --- 1. ENTRAÎNEMENT DU MODÈLE DE BASE SUR `base_train` ---
@@ -418,7 +414,7 @@ print(modele_base)
 
 print("--- 1. PRÉDICTION SUR LE JEU DE DONNÉES 2023 ---")
 
-# On applique le modèle entraîné (modele_base) sur les nouvelles données 2023
+# On applique le modèle entraîné sur les nouvelles données 2023
 predictions_2023 <- predict(modele_base, data = base_2023_sans_na)$predictions 
 
 print("--- 2. ÉVALUATION DE LA ROBUSTESSE (DATA DRIFT) ---")
@@ -439,28 +435,27 @@ print(paste("Erreur RMSE sur 2023 :", round(rmse_2023, 4)))
 
 print("--- 1. NORMALISATION ET PRÉPARATION DE LA MATRICE 2023 ---")
 
-# Normalisation : On applique la même règle de centrage/réduction sur 2023
+# Normalisation sur 2023
 base_normalisee_2023 <- base_2023_sans_na %>%
   mutate(across(-Y_GAP_ACT_GLOBAL, ~ scale(.) %>% as.numeric()))
 
-# Séparation de la cible 2023
+# Séparation de Y 2023
 vecteur_Y_2023 <- base_normalisee_2023$Y_GAP_ACT_GLOBAL
 
-# Transformation en matrice (doit avoir exactement les mêmes colonnes que matrice_X)
+# Transformation en matrice 
 matrice_X_2023 <- model.matrix(Y_GAP_ACT_GLOBAL ~ . - 1, data = base_normalisee_2023)
 
 print("--- 2. PRÉDICTION SUR LE JEU DE DONNÉES 2023 ---")
 
-# On applique le modèle Lasso (qui a le meilleur lambda) sur la matrice 2023
+# On applique le modèle Lasso sur la matrice 2023
 predictions_2023_lasso <- predict(modele_lasso_cv, s = meilleur_lambda, newx = matrice_X_2023)
 
 print("--- 3. ÉVALUATION DE LA ROBUSTESSE (DATA DRIFT) ---")
 
-# Calcul du R2 sur les données de 2023
-# (On utilise as.vector pour s'assurer que c'est un format compatible avec cor())
+# Calcul du R2 de 2023
 r2_2023_lasso <- cor(as.vector(predictions_2023_lasso), vecteur_Y_2023)^2
 
-# Calcul de la RMSE sur 2023
+# Calcul de la RMSE de 2023
 rmse_2023_lasso <- rmse(vecteur_Y_2023, as.vector(predictions_2023_lasso))
 
 print(paste("Performance R2 Lasso sur 2023 :", round(r2_2023_lasso, 4)))

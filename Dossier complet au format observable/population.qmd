@@ -819,13 +819,12 @@ htl.html`
           x: { inset: 20 }, 
           y: { inset: 20 },
           r: { range: [3, 15] },
-          // CORRECTION 1 : On a enlevé le tickFormat abusif ici
           color: { scheme: "plasma", legend: true, domain: [dep_min, dep_max] },
           marks: [
             Plot.dot(data_dep, {
               x: "lon", y: "lat", r: "population", fill: "densite",
               stroke: "lightgray", strokeWidth: 0.5, 
-              // CORRECTION 2 : L'infobulle utilise maintenant d.densite au lieu de d.Y_OBSERVE
+
               title: d => `${d.GEO_LABEL}\nDensité : ${Math.round(d.densite)} hab/km²\nPop : ${d.population}`,
               tip: true
             }),
