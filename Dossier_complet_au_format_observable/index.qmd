@@ -518,7 +518,7 @@ Plot.plot({
   title: '',
   marginLeft: 60,
   marginRight: 20,
-  height: 300,
+  height:400,
   x: {
     label: "Effectif",
     domain: [-max_effectif * 1.05, max_effectif * 1.05],
@@ -618,34 +618,15 @@ Inputs.table(equip3, {
 
 ### {width="50%"}
 
-::: {.card title="Cartographie du taux de pauvreté"}
-
+::: {.card title="Taux de pauvreté / Carto"}
 
 ```{ojs carto_pauvrete_interactive}
-// 1. Calcul d'une échelle commune (Sécurisé sans comparaison de texte)
-stats_france_pauvrete_brutes = db.query(`
-  SELECT 
-    MIN(TRY_CAST(REPLACE(CAST(OBS_VALUE AS VARCHAR), ',', '.') AS DOUBLE)) AS min_global, 
-    quantile_cont(TRY_CAST(REPLACE(CAST(OBS_VALUE AS VARCHAR), ',', '.') AS DOUBLE), 0.98) AS plafond
-  FROM read_parquet('https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet')
-  WHERE TIME_PERIOD = '2023'
-    AND GEO_OBJECT_LABEL = 'Commune'
-    AND ID_TAB = 'REV_T1'
-    AND TAB_MEASURE_LABEL LIKE 'Taux de pauvreté%'
-    AND OBS_VALUE IS NOT NULL
-`);
-
-// Valeurs par défaut si le calcul échoue (5% à 25% est la norme en France)
-stats_france_pauvrete = stats_france_pauvrete_brutes[0] || { min_global: 5, plafond: 25 };
-
-
-// 2. Préparation des données locales (Extraction brute)
+// 1. Préparation des données
 geo_communes_p = d3.json("https://minio.lab.sspcloud.fr/sarahbeaucamp/geo_communes_obs.geojson")
 geo_deps_p = d3.json("https://minio.lab.sspcloud.fr/sarahbeaucamp/geo_deps_obs.geojson")
 
 code_dep_pauvrete = isGeoSelected ? selection_geo.GEO.substring(0, 2) : null;
 
-// Requête simplifiée au maximum pour éviter les plantages DuckDB
 data_dep_pauvrete_brute = code_dep_pauvrete ? db.query(`
   SELECT 
     GEO AS code_insee, 
@@ -659,18 +640,17 @@ data_dep_pauvrete_brute = code_dep_pauvrete ? db.query(`
     AND TAB_MEASURE_LABEL LIKE 'Taux de pauvreté%'
 `) : [];
 
-// NETTOYAGE EN JAVASCRIPT (Beaucoup plus robuste !)
+
 data_dep_pauvrete = data_dep_pauvrete_brute.map(d => {
-  // On remplace la virgule par un point et on force en nombre
   let val = parseFloat(String(d.OBS_VALUE).replace(',', '.')); 
   return {
     code_insee: d.code_insee,
     nom_commune: d.nom_commune,
-    taux_pauvrete: isNaN(val) ? null : val // Si c'est "NA", ça devient null proprement
+    taux_pauvrete: isNaN(val) ? null : val
   };
 });
 
-// On ne garde dans le Map QUE les communes qui ont un vrai chiffre
+
 map_pauvrete = new Map(
   data_dep_pauvrete
     .filter(d => d.taux_pauvrete !== null)
@@ -695,13 +675,13 @@ data_centroides_pauvrete = geo_communes_dep_pauvrete ? geo_communes_dep_pauvrete
   return {
     code: code, x: centre[0], y: centre[1],
     nom: map_nom_pauvrete.get(code) || code, 
-    taux_pauvrete: map_pauvrete.get(code) // Sera undefined si pas dans le Map
+    taux_pauvrete: map_pauvrete.get(code)
   };
 }).filter(d => !isNaN(d.x) && !isNaN(d.y)) : [];
 
 
-// 3. Création de la carte
-ma_carte_geo_pauvrete = Plot.plot({
+// 2. Création de la carte 
+ma_carte_geo_pauvrete = geo_communes_dep_pauvrete ? Plot.plot({
   width: 700,
   height: 600,
   projection: { 
@@ -711,19 +691,18 @@ ma_carte_geo_pauvrete = Plot.plot({
   color: { 
     range: ["#fff7bc", "#fec44f", "#d95f0e"], 
     legend: true, 
-    domain: [stats_france_pauvrete.min_global, stats_france_pauvrete.plafond], 
-    clamp: true,
+    domain: [0, 30], 
+    clamp: true, 
     label: "Taux de pauvreté (%)"
   },
   marks: [
-    // Fond gris (communes avec donnée manquante ou secrète)
+    // Fond gris (communes avec données secrètes)
     Plot.geo(geo_communes_dep_pauvrete, {
       fill: "#e0e0e0", 
       stroke: "white",
       strokeWidth: 0.5
     }),
     
-    // Couleur UNIQUEMENT pour les communes qui ont une donnée valide
     Plot.geo(geo_communes_dep_pauvrete, {
       filter: d => map_pauvrete.has(d.properties.code),
       fill: d => map_pauvrete.get(d.properties.code),
@@ -731,7 +710,7 @@ ma_carte_geo_pauvrete = Plot.plot({
       strokeWidth: 0.5
     }),
 
-    // Contour noir du département
+
     Plot.geo(geo_contour_dep_pauvrete, {
       stroke: "black",
       strokeWidth: 2,
@@ -739,7 +718,6 @@ ma_carte_geo_pauvrete = Plot.plot({
       pointerEvents: "none"
     }),
 
-    // Surbrillance rouge
     Plot.geo(geo_communes_dep_pauvrete, {
       filter: d => d.properties.code === selection_geo.GEO,
       stroke: "red",
@@ -748,16 +726,15 @@ ma_carte_geo_pauvrete = Plot.plot({
       pointerEvents: "none"
     }),
 
-    // Infobulles
     Plot.dot(data_centroides_pauvrete, {
       x: "x", y: "y", r: 10, fill: "transparent", stroke: "none", tip: true, 
       title: d => `${d.nom}\nTaux de pauvreté : ${d.taux_pauvrete !== undefined ? d.taux_pauvrete.toFixed(1) + ' %' : 'ND (Secret stat.)'}`
     })
   ]
-});
+}) : htl.html`<div style="padding: 20px; color: gray;">Chargement des fonds de carte...</div>`;
 
 
-// 4. Affichage final direct
+// 3. Affichage final direct
 htl.html`
   ${(!isGeoSelected) ? 
     htl.html`<div style="color: gray; font-style: italic; padding: 20px;">Sélectionnez une commune dans le menu pour afficher la cartographie de son département.</div>` 
@@ -765,8 +742,7 @@ htl.html`
     htl.html`
       <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 20px;">
         <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-          <h4 style="text-align: center; color: #2c3e50; margin-bottom: 15px;">Taux de pauvreté (en %) - Département ${code_dep_pauvrete}</h4>
-          ${ma_carte_geo_pauvrete}
+          <h4 style="text-align: center; color: #2c3e50; margin-bottom: 15px;">Taux de pauvreté (en %) - Département ${code_dep_pauvrete}</h4>${ma_carte_geo_pauvrete}
         </div>
       </div>
     `
