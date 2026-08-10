@@ -409,8 +409,9 @@ htl.html`
 `
 ```
 :::
-##
+## Ligne des graphiques détaillés et cartes
 
+### Colonne de gauche {width="50%"}
 ::: {.card title="Pyramide des âges"}
 
 ```{ojs result_calc_pyramide}
@@ -546,9 +547,78 @@ Plot.plot({
 ```
 :::
 
+::: {.card title="Etablissements scolaires"}
+
+```{ojs result_calc_ecoles}
+//| output: false
+
+equip_brut3 = isGeoSelected
+? db.query(`
+  SELECT TAB_MEASURE_LABEL, OBS_VALUE
+  FROM read_parquet('https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet')
+  WHERE TIME_PERIOD = '2024'
+    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'EQUIP_T3'
+`)
+: [];
+
+
+function classer_equipements3(label) {
+  if (!label) return null;
+  let txt = label.toLowerCase();
+
+  //if (txt.includes("bibliothèque")) return "Bibliothèque";
+  if (txt.includes("collège")) return "Collège";
+  if (txt.includes("maternelle") || txt.includes("primaire") || txt.includes("élémentaire")) return "École";
+  if (txt.includes("général") || txt.includes("technologique") || txt.includes("professionnel") || txt.includes("agricole")) return "Lycée";
+  
+  return null; 
+}
+
+equip_mutate3 = equip_brut3.map(function(d) {
+  return {
+    OBS_VALUE: d.OBS_VALUE,
+    équipements: classer_equipements3(d.TAB_MEASURE_LABEL)
+  };
+}).filter(d => d.équipements !== null);
+
+equip_groupes3 = d3.rollups(
+  equip_mutate3,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.équipements; }
+);
+
+equip_summarise3 = equip_groupes3.map(function(g) {
+  return { équipements: g[0], total_groupe: g[1] };
+});
+
+total3 = d3.sum(equip_summarise3, function(d) { return d.total_groupe; });
+
+equip3 = equip_summarise3.map(function(d) {
+  return {
+    équipements: d.équipements,
+    total_groupe: d.total_groupe,
+    total3: total3,
+    part_groupe: total3 > 0 ? (d.total_groupe / total3) * 100 : 0
+  };
+});
+```
+
+```{ojs table_ecoles}
+Inputs.table(equip3, {
+  columns: ["équipements", "total_groupe"],
+  header: {
+    équipements: "Établissements scolaires",
+    total_groupe: "Nombre"
+  }
+})
+```
+:::
+
 ### {width="50%"}
 
-::: {.card title="Taux de pauvreté / Carto"}
+::: {.card title="Cartographie du taux de pauvreté"}
 
 
 ```{ojs carto_pauvrete_interactive}
@@ -771,7 +841,7 @@ bouton_export_global = {
 }
 ```
 
-::: {.card title="Naissances/décès"}
+::: {.card title="Naissances et décès"}
 
 ```{ojs result_calc}
 //| output: false
