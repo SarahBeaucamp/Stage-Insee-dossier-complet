@@ -116,7 +116,7 @@ base_pre_filtre <- base_prete_rf %>%
   select(-GEO, -GEO_LABEL, -Population)      
 
 # 1. Identifier les colonnes soumises au secret statistique (Revenus, Salaires, Pauvreté)
-# Le grepl va chercher tous les mots clés liés à l'argent, peu importe la casse
+# Le grepl va chercher tous les mots clés liés à l'argent
 colonnes_secret <- names(base_pre_filtre)[grepl("salaire|pauvret|revenu|niveau.de.vie", names(base_pre_filtre), ignore.case = TRUE)]
 
 print("Colonnes identifiées pour l'imputation mathématique (Secret Statistique) :")

@@ -618,7 +618,7 @@ Inputs.table(equip3, {
 
 ### {width="50%"}
 
-::: {.card title="Taux de pauvreté / Carto"}
+::: {.card title="Taux de pauvreté"}
 
 ```{ojs carto_pauvrete_interactive}
 // 1. Préparation des données
@@ -758,7 +758,7 @@ bouton_export_global = {
   // 1. Création du bouton flottant
   const btn = htl.html`<button style="
     position: fixed;
-    top: 70px;
+    bottom: 10px;
     right: 30px;
     background: #174695;
     color: white;

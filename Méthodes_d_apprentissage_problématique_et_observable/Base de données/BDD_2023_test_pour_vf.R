@@ -221,7 +221,7 @@ base_prete_rf_2023 <- base_large_2023 %>%
     
     Y_GAP_ACT_GLOBAL = TAUX_H - TAUX_F,
     
-    # ! Utilisation de la résidence principale comme base pour les logements
+    # Utilisation de la résidence principale comme base pour les logements
     across(.cols = starts_with("Logements...") | starts_with("Nombre.de.pièces..."), .fns = ~ .x / .data[["Logements...Résidences.principales"]]),
     
     across(.cols = starts_with("Population.des.ménages...") & !matches("^Population.des.ménages$"), .fns = ~ .x / .data[["Population.des.ménages"]]),
@@ -427,7 +427,7 @@ if(length(index_commune) > 0) {
   prediction_nantes_rf <- predict(modele_base, data = X_nantes_rf)$predictions
   print(paste("=> L'écart d'activité prédit par le Random Forest pour", nom_commune, "est de :", round(prediction_nantes_rf, 4)))
   
-  # C. Calcul SHAP allégé (20 lignes de fond pour éliminer tout risque de crash)
+  # C. Calcul shap
   set.seed(42)
   bg_rf <- base_train %>% select(-Y_GAP_ACT_GLOBAL) %>% sample_n(20)
   
@@ -461,7 +461,7 @@ if(length(index_commune) > 0) {
 
 print("--- 1. NORMALISATION ET PRÉPARATION DE LA MATRICE 2023 ---")
 
-# NORMALISATION : On applique la même règle de centrage/réduction sur 2023
+# Normalisation : On applique la même règle de centrage/réduction sur 2023
 base_normalisee_2023 <- base_2023_sans_na %>%
   mutate(across(-Y_GAP_ACT_GLOBAL, ~ scale(.) %>% as.numeric()))
 
@@ -479,7 +479,6 @@ predictions_2023_lasso <- predict(modele_lasso_cv, s = meilleur_lambda, newx = m
 print("--- 3. ÉVALUATION DE LA ROBUSTESSE (DATA DRIFT) ---")
 
 # Calcul du R2 sur les données de 2023
-# (On utilise as.vector pour s'assurer que c'est un format compatible avec cor())
 r2_2023_lasso <- cor(as.vector(predictions_2023_lasso), vecteur_Y_2023)^2
 
 # Calcul de la RMSE sur 2023

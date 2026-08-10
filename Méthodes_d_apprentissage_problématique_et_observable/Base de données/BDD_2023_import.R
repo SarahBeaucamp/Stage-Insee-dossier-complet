@@ -293,10 +293,10 @@ base_finale_2023 <- base_finale_2023 %>% select(all_of(colonnes_communes))
 
 print("--- LANCEMENT DU TEST DE CORRESPONDANCE DES COLONNES ---")
 
-# 1. On récupère les colonnes de référence de 2022 (à partir de la base d'entraînement)
+# 1. On récupère les colonnes de référence de 2022 
 colonnes_2022 <- names(base_sans_na) 
 
-# 2. On récupère les colonnes actuelles de 2023 (juste avant de lancer missForest)
+# 2. On récupère les colonnes actuelles de 2023 
 colonnes_2023 <- names(base_finale_2023) 
 
 # 3. Calcul des différences
@@ -309,33 +309,33 @@ cat("Variables présentes dans la base (2023) :", length(colonnes_2023), "\n\n")
 
 # 5. La condition d'arrêt
 if (length(variables_manquantes_2023) == 0 && length(variables_en_trop_2023) == 0) {
-  print("✅ SUCCÈS : Toutes les variables correspondent parfaitement ! Tu peux lancer missForest l'esprit tranquille.")
+  print("✅ SUCCÈS : Toutes les variables colonnes parfaitement ")
 } else {
   print("❌ ERREUR : La structure des colonnes ne correspond pas. Arrêt immédiat.")
   
   if (length(variables_manquantes_2023) > 0) {
-    cat("\n-> Variables PRÉSENTES en 2022 mais ABSENTES en 2023 (", length(variables_manquantes_2023), ") :\n")
+    cat("\n-> Variables présentes en 2022 mais absentes en 2023 (", length(variables_manquantes_2023), ") :\n")
     print(variables_manquantes_2023)
   }
   
   if (length(variables_en_trop_2023) > 0) {
-    cat("\n-> Variables PRÉSENTES en 2023 mais ABSENTES en 2022 (", length(variables_en_trop_2023), ") :\n")
+    cat("\n-> Variables présentes en 2023 mais absentes en 2022 (", length(variables_en_trop_2023), ") :\n")
     print(variables_en_trop_2023)
   }
   
   # Le stop() coupe l'exécution du script, missForest ne sera pas lancé
-  stop("Vérification échouée. Corrige la nomenclature avant de relancer l'imputation.")
+  stop("Vérification échouée")
 }
 # ==============================================================================
 # ÉTAPE 6A : IMPUTATION DÉFINITIVE AVEC MISSFOREST
 # ==============================================================================
 
-print("--- 1. CONVERSION STRICTE DU FORMAT ---")
+print("--- 1. Conversion du format ---")
 base_finale_propre_2023 <- base_finale_2023 %>% 
   mutate(across(everything(), as.numeric)) %>% 
   as.data.frame()
 
-print("--- 2. APPLICATION DE MISSFOREST ---")
+print("--- 2. Application de MissForest ---")
 imputation_finale_2023 <- missForest(base_finale_propre_2023, ntree = 50, maxiter = 5)
 
 base_2023_sans_na <- imputation_finale_2023$ximp
@@ -389,7 +389,7 @@ print("Entraînement de la forêt aléatoire de base...")
 modele_base <- ranger(
   formula = Y_GAP_ACT_GLOBAL ~ ., 
   data = base_train,
-  num.trees = 400,               # 400 arbres par défaut aprés validation seuil
+  num.trees = 400,               # 400 arbres aprés validation seuil
   importance = 'impurity'        # Pour pouvoir analyser l'importance des variables plus tard
 )
 
@@ -412,7 +412,7 @@ print(modele_base)
 # ETAPE 9 : PRÉDICTION SUR 2023 (INFERENCE)
 #===============================================================================
 
-print("--- 1. PRÉDICTION SUR LE JEU DE DONNÉES 2023 ---")
+print("--- 1. Prédiction sur le jeu de données 2023 ---")
 
 # On applique le modèle entraîné sur les nouvelles données 2023
 predictions_2023 <- predict(modele_base, data = base_2023_sans_na)$predictions 
@@ -433,7 +433,7 @@ print(paste("Erreur RMSE sur 2023 :", round(rmse_2023, 4)))
 # PARTIE 11 : PRÉDICTION SUR 2023 AVEC LE MODÈLE LASSO (INFERENCE)
 # ==============================================================================
 
-print("--- 1. NORMALISATION ET PRÉPARATION DE LA MATRICE 2023 ---")
+print("--- 1. Normalisation et préparation de la matrice 2023 ---")
 
 # Normalisation sur 2023
 base_normalisee_2023 <- base_2023_sans_na %>%
@@ -445,12 +445,12 @@ vecteur_Y_2023 <- base_normalisee_2023$Y_GAP_ACT_GLOBAL
 # Transformation en matrice 
 matrice_X_2023 <- model.matrix(Y_GAP_ACT_GLOBAL ~ . - 1, data = base_normalisee_2023)
 
-print("--- 2. PRÉDICTION SUR LE JEU DE DONNÉES 2023 ---")
+print("--- 2. Prédiction sur le jeu de données 2023 ---")
 
 # On applique le modèle Lasso sur la matrice 2023
 predictions_2023_lasso <- predict(modele_lasso_cv, s = meilleur_lambda, newx = matrice_X_2023)
 
-print("--- 3. ÉVALUATION DE LA ROBUSTESSE (DATA DRIFT) ---")
+print("--- 3. Évaluation de la robustesse ---")
 
 # Calcul du R2 de 2023
 r2_2023_lasso <- cor(as.vector(predictions_2023_lasso), vecteur_Y_2023)^2
