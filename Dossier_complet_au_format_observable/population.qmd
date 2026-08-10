@@ -772,11 +772,22 @@ html`
 ## Carte du département {height="100%"}
 
 ```{ojs carto_interactive}
-// Fonds de carte
+// 1. Calcul d'une échele commune pour toute la France
+stats_france_brutes = db.query(`
+  SELECT 
+    MIN(densite) AS min_global, 
+    MAX(densite) AS max_global,
+    quantile_cont(densite, 0.98) AS plafond
+  FROM read_parquet('https://minio.lab.sspcloud.fr/sarahbeaucamp/densite_communes_km2.parquet')
+`);
+
+stats_france = stats_france_brutes[0] || { min_global: 0, plafond: 1500 };
+
+
+// 2. Préparation des données
 geo_communes = d3.json("https://minio.lab.sspcloud.fr/sarahbeaucamp/geo_communes_obs.geojson")
 geo_deps = d3.json("https://minio.lab.sspcloud.fr/sarahbeaucamp/geo_deps_obs.geojson")
 
-// Code du département
 code_dep = isGeoSelected ? selection_geo.GEO.substring(0, 2) : null;
 
 data_dep = code_dep ? db.query(`
@@ -803,84 +814,99 @@ geo_contour_dep = geo_deps && code_dep ? {
   features: geo_deps.features.filter(f => f.properties.code === code_dep)
 } : null;
 
-// Calcul du centre (x, y) de chaque commune pour la vignette interactive
 data_centroides = geo_communes_dep ? geo_communes_dep.features.map(f => {
   let centre = d3.geoPath().centroid(f); 
   let code = f.properties.code;
   return {
-    code: code,
-    x: centre[0],
-    y: centre[1],
-    nom: map_nom.get(code) || code,
-    densite: map_densite.get(code),
-    pop: map_pop.get(code)
+    code: code, x: centre[0], y: centre[1],
+    nom: map_nom.get(code) || code, densite: map_densite.get(code), pop: map_pop.get(code)
   };
 }).filter(d => !isNaN(d.x) && !isNaN(d.y)) : [];
 
-// Échelle de couleur
-dep_min = data_dep.length > 0 ? d3.min(data_dep, d => d.densite) : 0;
-dep_max = data_dep.length > 0 ? d3.max(data_dep, d => d.densite) : 1;
 
-// Affichage
-htl.html`
-  ${(!isGeoSelected) ? htl.html`<div style="color: gray; font-style: italic; padding: 20px;">Sélectionnez une commune dans le menu pour afficher la cartographie de son département.</div>` : 
+// 3. Création de la carte
+ma_carte_geo = Plot.plot({
+  width: 700,
+  height: 600,
+  projection: { 
+    type: "reflect-y", 
+    domain: geo_communes_dep 
+  },
+  // Echelle de couleur
+  color: { 
+    range: ["#2ca25f", "#fff7bc", "#de2d26"], 
+    legend: true, 
+    domain: [stats_france.min_global, stats_france.plafond], 
+    clamp: true // Permet de traiter les villes qui dépassent l'échelle
+  },
+  marks: [
+    Plot.geo(geo_communes_dep, {
+      fill: d => map_densite.get(d.properties.code),
+      stroke: "white",
+      strokeWidth: 0.5
+    }),
+    Plot.geo(geo_contour_dep, {
+      stroke: "black",
+      strokeWidth: 2,
+      fill: "none",
+      pointerEvents: "none"
+    }),
+    Plot.geo(geo_communes_dep, {
+      filter: d => d.properties.code === selection_geo.GEO,
+      stroke: "red",
+      strokeWidth: 3,
+      fill: "none",
+      pointerEvents: "none"
+    }),
+    Plot.dot(data_centroides, {
+      x: "x", y: "y", r: 10, fill: "transparent", stroke: "none", tip: true, 
+      title: d => `${d.nom}\nDensité : ${d.densite ? Math.round(d.densite) : 'ND'} hab/km²\nPopulation : ${d.pop}`
+    })
+  ]
+});
+
+
+// 4. Création du conteneur et export en pdf
+conteneur_carte_pdf = htl.html`
+  <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+    <h4 style="text-align: center; color: #2c3e50; margin-bottom: 15px;">Densité de population (hab/km²) - Département ${code_dep}</h4>
+    ${ma_carte_geo}
+  </div>
+`;
+
+btn_pdf_carte = {
+  const btn = htl.html`<button style="background: transparent; border: 1px solid #ccc; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #555;">📥 PDF</button>`;
+  btn.onmouseover = () => btn.style.background = "#f0f0f0";
+  btn.onmouseout = () => btn.style.background = "transparent";
   
-  htl.html`
-    <h3 style="text-align: center; margin-bottom: 20px;"> Densité de population - Département ${code_dep}</h3>
+  btn.onclick = async () => {
+    btn.style.display = "none"; // Cache le bouton sur la photo
+    const html2pdf = await require("html2pdf.js");
+    await html2pdf().set({
+      margin: 15,
+      filename: `Carte_Densite_${selection_geo?.GEO_LABEL || 'Territoire'}.pdf`,
+      html2canvas: { scale: 2 }
+    }).from(conteneur_carte_pdf).save();
+    btn.style.display = "inline-block"; // Le remet après
+  };
+  return btn;
+}
 
-      <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <h4 style="text-align: center; color: #2c3e50;">Densité (habitants / km²)</h4>
-        ${Plot.plot({
-          width: 700,
-          height: 600,
-          projection: { 
-            type: "reflect-y", 
-            domain: geo_communes_dep 
-          },
-          // coulleurs
-          color: { 
-            range: ["#2ca25f", "#fff7bc", "#de2d26"], 
-            legend: true, 
-            domain: [dep_min, dep_max]
-          },
-          marks: [
-          //contour communes
-            Plot.geo(geo_communes_dep, {
-              fill: d => map_densite.get(d.properties.code),
-              stroke: "white",
-              strokeWidth: 0.5
-            }),
-            
-            // contour département
-            Plot.geo(geo_contour_dep, {
-              stroke: "black",
-              strokeWidth: 2,
-              fill: "none",
-              pointerEvents: "none"
-            }),
-            
-            // entoure en rouge la commune sélectionnée
-            Plot.geo(geo_communes_dep, {
-              filter: d => d.properties.code === selection_geo.GEO,
-              stroke: "red",
-              strokeWidth: 3,
-              fill: "none",
-              pointerEvents: "none"
-            }),
-            
-            // centre des vignettes interactives
-            Plot.dot(data_centroides, {
-              x: "x",
-              y: "y",
-              r: 10, 
-              fill: "transparent", 
-              stroke: "none",
-              tip: true, 
-              title: d => `${d.nom}\nDensité : ${d.densite ? Math.round(d.densite) : 'ND'} hab/km²\nPopulation : ${d.pop}`
-            })
-          ]
-        })}
+// 5. Affichage final
+htl.html`
+  ${(!isGeoSelected) ? 
+    htl.html`<div style="color: gray; font-style: italic; padding: 20px;">Sélectionnez une commune dans le menu pour afficher la cartographie de son département.</div>` 
+  : 
+    htl.html`
+      <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 20px;">
+        <div>
+          <div style="text-align: right; margin-bottom: 5px;">
+            ${btn_pdf_carte}
+          </div>
+          ${conteneur_carte_pdf}
+        </div>
       </div>
-  `}
+    `
+  }
 `
 ```

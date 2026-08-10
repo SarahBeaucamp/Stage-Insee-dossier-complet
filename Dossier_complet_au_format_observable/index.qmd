@@ -2,6 +2,7 @@
 title: "Index"
 format: 
   dashboard:
+    scrolling: true # Permet d'avoir une page déroulante
     nav-buttons: []
 include-in-header:
   - text: |
@@ -274,18 +275,14 @@ viewof selection_geo = Inputs.table(
 
 # Chiffres clés du territoire
 
-## {height="12%"}
+## {height="70px"}
 
 ```{ojs geo3}
 isGeoSelected = (selection_geo !== null);
 htl.html`<strong>Territoire sélectionné :</strong> ${isGeoSelected ? selection_geo.GEO_LABEL : ""} (${isGeoSelected ? selection_geo.GEO : ""})`
 ```
 
-## {height="88%"}
-
-### {width="60%"}
-
-#### {height="28%" layout-ncol=2}
+## {height="150px" layout-ncol=4}
 
 ::: {.card title="Population en 2022"}
 
@@ -318,7 +315,7 @@ htl.html`
     <div style="font-size: 15px; color: #FB5A5A; margin-top: 5px;">
      soit ${!isGeoSelected || population_valeur1 === null || population_valeur === null 
         ? "" 
-        : `${(((population_valeur1 / population_valeur) - 1) * 100).toFixed(1)} % d'augmentation`}        
+        : `${(((population_valeur1 / population_valeur) - 1) * 100).toFixed(1)} % depuis 2016`}        
     </div>
 
   </div>
@@ -346,7 +343,7 @@ population_valeur = population_brut.length > 0 ? population_brut[0].OBS_VALUE : 
 
 ```{ojs representation2}
 htl.html`
-  <div style="position: absolute; top: 61px; left: 20px; font-family: sans-serif;">
+  <div style="position: absolute; top: 65px; left: 20px; font-family: sans-serif;">
     <div style="font-size: 28px; font-weight: bold; color: #174695; line-height: 1;">
       ${!isGeoSelected ? "—" : (population_valeur !== null ? population_valeur.toLocaleString("fr-FR") : "Non disponible")} habitants
     </div>
@@ -355,7 +352,6 @@ htl.html`
 ```
 :::
 
-#### {height="28%" layout-ncol=2}
 ::: {.card title="Salaire mensuel moyen"}
 
 ```{ojs population3}
@@ -376,7 +372,7 @@ salaire_valeur = salaire_brut.length > 0 ? salaire_brut[0].OBS_VALUE : null;
 
 ```{ojs representation3}
 htl.html`
-  <div style="position: absolute; top: 61px; left: 20px; font-family: sans-serif;">
+  <div style="position: absolute; top: 75px; left: 20px; font-family: sans-serif;">
     <div style="font-size: 28px; font-weight: bold; color: #174695; line-height: 1;">
       ${!isGeoSelected ? "—" : (salaire_valeur !== null ? salaire_valeur.toLocaleString("fr-FR") : "Non disponible")} €
     </div>
@@ -405,7 +401,7 @@ creation_valeur = creation_brut.length > 0 ? creation_brut[0].OBS_VALUE : null;
 
 ```{ojs representation4}
 htl.html`
-  <div style="position: absolute; top: 61px; left: 20px; font-family: sans-serif;">
+  <div style="position: absolute; top: 85px; left: 20px; font-family: sans-serif;">
     <div style="font-size: 28px; font-weight: bold; color: #174695; line-height: 1;">
       ${!isGeoSelected ? "—" : (creation_valeur !== null ? creation_valeur.toLocaleString("fr-FR") : "Non disponible")}
     </div>
@@ -413,80 +409,7 @@ htl.html`
 `
 ```
 :::
-
-#### {height="44%"}
-
-::: {.card title="Etablissements scolaires"}
-
-```{ojs result_calc_ecoles}
-//| output: false
-
-equip_brut3 = isGeoSelected
-? db.query(`
-  SELECT TAB_MEASURE_LABEL, OBS_VALUE
-  FROM read_parquet('${chemin_s3}')
-  WHERE TIME_PERIOD = '2024'
-    AND GEO_OBJECT_LABEL = '${selection_type_geo}'
-    AND GEO = '${selection_geo.GEO}'
-    AND ID_TAB = 'EQUIP_T3'
-`)
-: [];
-
-
-function classer_equipements3(label) {
-  if (!label) return null;
-  let txt = label.toLowerCase();
-
-  //if (txt.includes("bibliothèque")) return "Bibliothèque";
-  if (txt.includes("collège")) return "Collège";
-  if (txt.includes("maternelle") || txt.includes("primaire") || txt.includes("élémentaire")) return "École";
-  if (txt.includes("général") || txt.includes("technologique") || txt.includes("professionnel") || txt.includes("agricole")) return "Lycée";
-  
-  return null; 
-}
-
-equip_mutate3 = equip_brut3.map(function(d) {
-  return {
-    OBS_VALUE: d.OBS_VALUE,
-    équipements: classer_equipements3(d.TAB_MEASURE_LABEL)
-  };
-}).filter(d => d.équipements !== null);
-
-equip_groupes3 = d3.rollups(
-  equip_mutate3,
-  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
-  function(d) { return d.équipements; }
-);
-
-equip_summarise3 = equip_groupes3.map(function(g) {
-  return { équipements: g[0], total_groupe: g[1] };
-});
-
-total3 = d3.sum(equip_summarise3, function(d) { return d.total_groupe; });
-
-equip3 = equip_summarise3.map(function(d) {
-  return {
-    équipements: d.équipements,
-    total_groupe: d.total_groupe,
-    total3: total3,
-    part_groupe: total3 > 0 ? (d.total_groupe / total3) * 100 : 0
-  };
-});
-
-```
-
-```{ojs result_table}
-Inputs.table(equip3, {
-  columns: ["équipements", "total_groupe"],
-  header: {
-    équipements: "Établissements scolaires",
-    total_groupe: "Nombre"
-  }
-})
-```
-:::
-
-### {width="40%"}
+##
 
 ::: {.card title="Pyramide des âges"}
 
@@ -623,6 +546,165 @@ Plot.plot({
 ```
 :::
 
+### {width="50%"}
+
+::: {.card title="Taux de pauvreté / Carto"}
+
+
+```{ojs carto_pauvrete_interactive}
+// 1. Calcul d'une échelle commune (Sécurisé sans comparaison de texte)
+stats_france_pauvrete_brutes = db.query(`
+  SELECT 
+    MIN(TRY_CAST(REPLACE(CAST(OBS_VALUE AS VARCHAR), ',', '.') AS DOUBLE)) AS min_global, 
+    quantile_cont(TRY_CAST(REPLACE(CAST(OBS_VALUE AS VARCHAR), ',', '.') AS DOUBLE), 0.98) AS plafond
+  FROM read_parquet('https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet')
+  WHERE TIME_PERIOD = '2023'
+    AND GEO_OBJECT_LABEL = 'Commune'
+    AND ID_TAB = 'REV_T1'
+    AND TAB_MEASURE_LABEL LIKE 'Taux de pauvreté%'
+    AND OBS_VALUE IS NOT NULL
+`);
+
+// Valeurs par défaut si le calcul échoue (5% à 25% est la norme en France)
+stats_france_pauvrete = stats_france_pauvrete_brutes[0] || { min_global: 5, plafond: 25 };
+
+
+// 2. Préparation des données locales (Extraction brute)
+geo_communes_p = d3.json("https://minio.lab.sspcloud.fr/sarahbeaucamp/geo_communes_obs.geojson")
+geo_deps_p = d3.json("https://minio.lab.sspcloud.fr/sarahbeaucamp/geo_deps_obs.geojson")
+
+code_dep_pauvrete = isGeoSelected ? selection_geo.GEO.substring(0, 2) : null;
+
+// Requête simplifiée au maximum pour éviter les plantages DuckDB
+data_dep_pauvrete_brute = code_dep_pauvrete ? db.query(`
+  SELECT 
+    GEO AS code_insee, 
+    GEO_LABEL AS nom_commune,
+    OBS_VALUE
+  FROM read_parquet('https://minio.lab.sspcloud.fr/sarahbeaucamp/dossier_complet.parquet')
+  WHERE SUBSTR(GEO, 1, 2) = '${code_dep_pauvrete}'
+    AND TIME_PERIOD = '2023'
+    AND GEO_OBJECT_LABEL = 'Commune'
+    AND ID_TAB = 'REV_T1'
+    AND TAB_MEASURE_LABEL LIKE 'Taux de pauvreté%'
+`) : [];
+
+// NETTOYAGE EN JAVASCRIPT (Beaucoup plus robuste !)
+data_dep_pauvrete = data_dep_pauvrete_brute.map(d => {
+  // On remplace la virgule par un point et on force en nombre
+  let val = parseFloat(String(d.OBS_VALUE).replace(',', '.')); 
+  return {
+    code_insee: d.code_insee,
+    nom_commune: d.nom_commune,
+    taux_pauvrete: isNaN(val) ? null : val // Si c'est "NA", ça devient null proprement
+  };
+});
+
+// On ne garde dans le Map QUE les communes qui ont un vrai chiffre
+map_pauvrete = new Map(
+  data_dep_pauvrete
+    .filter(d => d.taux_pauvrete !== null)
+    .map(d => [d.code_insee, d.taux_pauvrete])
+);
+
+map_nom_pauvrete = new Map(data_dep_pauvrete.map(d => [d.code_insee, d.nom_commune]));
+
+geo_communes_dep_pauvrete = geo_communes_p && code_dep_pauvrete ? {
+  type: "FeatureCollection",
+  features: geo_communes_p.features.filter(f => f.properties.code.substring(0, 2) === code_dep_pauvrete)
+} : null;
+
+geo_contour_dep_pauvrete = geo_deps_p && code_dep_pauvrete ? {
+  type: "FeatureCollection",
+  features: geo_deps_p.features.filter(f => f.properties.code === code_dep_pauvrete)
+} : null;
+
+data_centroides_pauvrete = geo_communes_dep_pauvrete ? geo_communes_dep_pauvrete.features.map(f => {
+  let centre = d3.geoPath().centroid(f); 
+  let code = f.properties.code;
+  return {
+    code: code, x: centre[0], y: centre[1],
+    nom: map_nom_pauvrete.get(code) || code, 
+    taux_pauvrete: map_pauvrete.get(code) // Sera undefined si pas dans le Map
+  };
+}).filter(d => !isNaN(d.x) && !isNaN(d.y)) : [];
+
+
+// 3. Création de la carte
+ma_carte_geo_pauvrete = Plot.plot({
+  width: 700,
+  height: 600,
+  projection: { 
+    type: "reflect-y", 
+    domain: geo_communes_dep_pauvrete 
+  },
+  color: { 
+    range: ["#fff7bc", "#fec44f", "#d95f0e"], 
+    legend: true, 
+    domain: [stats_france_pauvrete.min_global, stats_france_pauvrete.plafond], 
+    clamp: true,
+    label: "Taux de pauvreté (%)"
+  },
+  marks: [
+    // Fond gris (communes avec donnée manquante ou secrète)
+    Plot.geo(geo_communes_dep_pauvrete, {
+      fill: "#e0e0e0", 
+      stroke: "white",
+      strokeWidth: 0.5
+    }),
+    
+    // Couleur UNIQUEMENT pour les communes qui ont une donnée valide
+    Plot.geo(geo_communes_dep_pauvrete, {
+      filter: d => map_pauvrete.has(d.properties.code),
+      fill: d => map_pauvrete.get(d.properties.code),
+      stroke: "white",
+      strokeWidth: 0.5
+    }),
+
+    // Contour noir du département
+    Plot.geo(geo_contour_dep_pauvrete, {
+      stroke: "black",
+      strokeWidth: 2,
+      fill: "none",
+      pointerEvents: "none"
+    }),
+
+    // Surbrillance rouge
+    Plot.geo(geo_communes_dep_pauvrete, {
+      filter: d => d.properties.code === selection_geo.GEO,
+      stroke: "red",
+      strokeWidth: 3,
+      fill: "none",
+      pointerEvents: "none"
+    }),
+
+    // Infobulles
+    Plot.dot(data_centroides_pauvrete, {
+      x: "x", y: "y", r: 10, fill: "transparent", stroke: "none", tip: true, 
+      title: d => `${d.nom}\nTaux de pauvreté : ${d.taux_pauvrete !== undefined ? d.taux_pauvrete.toFixed(1) + ' %' : 'ND (Secret stat.)'}`
+    })
+  ]
+});
+
+
+// 4. Affichage final direct
+htl.html`
+  ${(!isGeoSelected) ? 
+    htl.html`<div style="color: gray; font-style: italic; padding: 20px;">Sélectionnez une commune dans le menu pour afficher la cartographie de son département.</div>` 
+  : 
+    htl.html`
+      <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 20px;">
+        <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <h4 style="text-align: center; color: #2c3e50; margin-bottom: 15px;">Taux de pauvreté (en %) - Département ${code_dep_pauvrete}</h4>
+          ${ma_carte_geo_pauvrete}
+        </div>
+      </div>
+    `
+  }
+`
+```
+:::
+
 ```{ojs bouton_export_page_entiere}
 //| output: false
 
@@ -688,3 +770,81 @@ bouton_export_global = {
   return true;
 }
 ```
+
+::: {.card title="Naissances/décès"}
+
+```{ojs result_calc}
+//| output: false
+
+solde_brut = isGeoSelected
+? db.query(`
+  SELECT
+    TAB_MEASURE_LABEL,
+    TIME_PERIOD,
+    CAST(REPLACE(CAST(OBS_VALUE AS VARCHAR), ',', '.') AS DOUBLE) AS OBS_VALUE
+  FROM read_parquet('${chemin_s3}')
+  WHERE GEO_OBJECT_LABEL = '${selection_type_geo}'
+    AND GEO = '${selection_geo.GEO}'
+    AND ID_TAB = 'RFD_G1'
+    AND TAB_MEASURE_LABEL IN ('Nombre de naissances vivantes', 'Nombre de décès')
+  ORDER BY TIME_PERIOD
+`)
+: [];
+
+solde_groupes = d3.rollups(
+  solde_brut,
+  function(v) { return d3.sum(v, function(d) { return d.OBS_VALUE; }); },
+  function(d) { return d.TAB_MEASURE_LABEL; },
+  function(d) { return d.TIME_PERIOD; }
+);
+
+solde_summarise = solde_groupes.flatMap(function(g) {
+  let label = g[0];
+  return g[1].map(function(g2) {
+    return { TAB_MEASURE_LABEL: label, TIME_PERIOD: g2[0], total_groupe: g2[1] };
+  });
+});
+
+
+total_solde = d3.sum(solde_summarise, function(d) { return d.total_groupe; });
+
+solde = solde_summarise.map(function(d) {
+  return {
+    TAB_MEASURE_LABEL: d.TAB_MEASURE_LABEL,
+    TIME_PERIOD: d.TIME_PERIOD,
+    total_groupe: d.total_groupe,
+    total: total_solde,
+    part_groupe: total_solde > 0 ? (d.total_groupe / total_solde) * 100 : 0
+  };
+}).sort((a, b) => d3.ascending(+a.TIME_PERIOD, +b.TIME_PERIOD));
+```
+
+```{ojs result_plot}
+// Génération directe du graphique
+Plot.plot({
+  height: 350,
+  title: isGeoSelected ? `Naissances et décès domiciliés – ${selection_geo.GEO_LABEL}` : "Sélectionnez un territoire",
+  marginBottom: 40,
+  marginLeft: 50,
+  color: {
+    domain: ["Nombre de naissances vivantes", "Nombre de décès"],
+    range: ["#174695", "#FB5A5A"],
+    legend: true
+  },
+  x: { 
+    label: null, 
+    tickFormat: "d",
+    grid: false
+  },
+  y: { 
+    label: "en nombre", 
+    grid: true 
+  },
+  marks: [
+    Plot.lineY(solde, { x: d => +d.TIME_PERIOD, y: "total_groupe", stroke: "TAB_MEASURE_LABEL", strokeWidth: 2 }),
+    Plot.dot(solde, { x: d => +d.TIME_PERIOD, y: "total_groupe", fill: "TAB_MEASURE_LABEL" })
+  ]
+})
+```
+
+:::
