@@ -137,8 +137,6 @@ base_prete_rf <- base_large %>%
     -contains("Retraité", ignore.case = TRUE),
     -contains("Élève", ignore.case = TRUE),
     
-    # 2. Le piège des dénominateurs (Uniquement la démographie par sexe)
-    # L'utilisation de matches() avec "^Population" protège tes variables de Salaires !
     -matches("^Population.*Femme", ignore.case = TRUE),
     -matches("^Population.*Homme", ignore.case = TRUE)
   )
@@ -148,7 +146,7 @@ base_finale <- base_prete_rf %>%
   filter(!is.na(Y_GAP_ACT_GLOBAL)) %>%
   select(-GEO, -GEO_LABEL)
 
-# --- DIAGNOSTIC DES VALEURS MANQUANTES (NAs) ---
+# --- DIAGNOSTIC DES VALEURS MANQUANTES ---
 compte_na <- colSums(is.na(base_finale))
 valeurs_manquantes <- compte_na[compte_na > 0]
 print("--- BILAN DES NAs RESTANTS ---")
@@ -383,7 +381,7 @@ for (seuil in seuils) {
   # 1. Filtrage sur la population
   # On part directement de base_sans_na qui est déjà purgée et sans valeurs manquantes
   base_test_seuil <- base_sans_na %>%
-    filter(Population >= seuil) %>%  # Le filtre magique
+    filter(Population >= seuil) %>%  
     select(-Population)              # On supprime la variable avant l'entraînement
   
   # 2. Découpage Train / Validation / Test (Hold-out simple)

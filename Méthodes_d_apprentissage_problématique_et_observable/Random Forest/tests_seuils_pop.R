@@ -41,7 +41,6 @@ base_filtree <- dossier_complet %>%
   select(GEO, GEO_LABEL, ID_TAB, TAB_MEASURE_LABEL, OBS_VALUE) %>%
   collect()
 
-# Petite vérification du volume récupéré
 print(paste("Nombre de lignes récupérées :", nrow(base_filtree)))
 print(paste("Nombre de variables distinctes :", length(unique(base_filtree$TAB_MEASURE_LABEL))))
 
@@ -131,7 +130,7 @@ base_prete_rf <- base_large %>%
     -TAUX_F, -TAUX_H, -POP_FEMME, -POP_HOMME,
     -Logements, -Population.des.ménages, -Population...Actif, -Nombre.d.emplois,
     
-    # 1. Le piège de la soustraction (Statuts liés à l'activité)
+    # 1. Le piège de la soustraction
     -contains("Actif", ignore.case = TRUE),
     -contains("Chômeur", ignore.case = TRUE),
     -contains("inactif", ignore.case = TRUE),
@@ -139,7 +138,7 @@ base_prete_rf <- base_large %>%
     -contains("Retraité", ignore.case = TRUE),
     -contains("Élève", ignore.case = TRUE),
     
-    # 2. Le piège des dénominateurs (Uniquement la démographie par sexe)
+    # 2. Le piège des dénominateurs
     -matches("^Population.*Femme", ignore.case = TRUE),
     -matches("^Population.*Homme", ignore.case = TRUE)
   )
@@ -149,7 +148,7 @@ base_finale <- base_prete_rf %>%
   filter(!is.na(Y_GAP_ACT_GLOBAL)) %>%
   select(-GEO, -GEO_LABEL)
 
-# --- DIAGNOSTIC DES VALEURS MANQUANTES (NAs) ---
+# --- DIAGNOSTIC DES VALEURS MANQUANTES ---
 compte_na <- colSums(is.na(base_finale))
 valeurs_manquantes <- compte_na[compte_na > 0]
 print("--- BILAN DES NAs RESTANTS ---")
@@ -273,7 +272,7 @@ library(tidyr)
 # La fonction seq() permet de créer des sauts de 50
 seuils_fins <- seq(250, 500, by = 50)
 
-# Un tableau vide pour stocker nos résultats, avec la colonne R2_Estime en plus !
+# Un tableau vide pour stocker nos résultats, avec la colonne R2_Estime en plus
 resultats_seuils_fins <- data.frame(
   Seuil = integer(), 
   Taille_Train = integer(), 
@@ -282,7 +281,7 @@ resultats_seuils_fins <- data.frame(
   R2_Estime_Pct = numeric()
 )
 
-print("Début du test fin des seuils de population...")
+print("Début du test des seuils de population...")
 
 for (seuil in seuils_fins) {
   

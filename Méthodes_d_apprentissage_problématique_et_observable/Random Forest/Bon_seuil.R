@@ -51,7 +51,7 @@ base_filtree <- dossier_complet %>%
   select(GEO, GEO_LABEL, ID_TAB, TAB_MEASURE_LABEL, OBS_VALUE) %>%
   collect()
 
-# Petite vérification du volume récupéré
+# Vérification du volume récupéré
 print(paste("Nombre de lignes récupérées :", nrow(base_filtree)))
 print(paste("Nombre de variables distinctes :", length(unique(base_filtree$TAB_MEASURE_LABEL))))
 

@@ -120,7 +120,7 @@ print(colonnes_secret)
 
 # 2. Le traitement hybride : 0 pour les équipements, NA pour l'argent
 base_finale <- base_pre_filtre %>%
-  # On remplace par 0 TOUTES les colonnes SAUF celles identifiées dans colonnes_secret
+  # On remplace par 0 toutes les colonnes sauf celles identifiées dans colonnes_secret
   mutate(across(-all_of(colonnes_secret), ~ replace_na(., 0)))
 
 compte_na <- colSums(is.na(base_finale))
@@ -215,7 +215,7 @@ for(i in 1:total_modeles) {
     scores_r2_plis <- c(scores_r2_plis, r2_pli)
   }
   
-  # Calcul du vrai R2 moyen (plus robuste)
+  # Calcul du vrai R2 moyen 
   r2_moyen <- mean(scores_r2_plis)
   
   # Ajout au tableau

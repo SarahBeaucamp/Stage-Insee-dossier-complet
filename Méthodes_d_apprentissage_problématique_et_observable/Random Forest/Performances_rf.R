@@ -1,4 +1,4 @@
-# Le modèle 'modele_base' que tu as entraîné contient déjà l'erreur OOB
+# Le modèle modele_base contient déjà l'erreur OOB
 print(modele_base)
 
 library(dplyr)

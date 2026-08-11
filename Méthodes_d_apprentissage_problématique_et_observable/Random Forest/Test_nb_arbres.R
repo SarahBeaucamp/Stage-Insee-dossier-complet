@@ -2,8 +2,7 @@
 # OPTIMISATION DE LA FORÊT ALÉATOIRE : TEST DU NOMBRE D'ARBRES
 # ==============================================================================
 
-# Installation de ranger si nécessaire
-# install.packages("ranger")
+install.packages("ranger")
 library(ranger)
 library(dplyr)
 
@@ -29,7 +28,6 @@ rmse_naif <- sqrt(mean((base_test$Y_GAP_ACT_GLOBAL - moyenne_train)^2))
 for (n in liste_arbres) {
   print(paste("-> Entraînement de la forêt avec", n, "arbres..."))
   
-  # Fixer la graine pour garantir la reproductibilité parfaite de tes résultats
   set.seed(42)
   
   # Entraînement du modèle
@@ -37,7 +35,7 @@ for (n in liste_arbres) {
     formula = Y_GAP_ACT_GLOBAL ~ .,
     data = base_train,
     num.trees = n,
-    importance = 'impurity' # Calcule l'importance Gini en coulisses
+    importance = 'impurity' # Calcule l'importance Gini 
   )
   
   # Prédiction sur l'échantillon test

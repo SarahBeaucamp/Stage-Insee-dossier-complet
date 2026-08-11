@@ -41,7 +41,6 @@ base_filtree <- dossier_complet %>%
   select(GEO, GEO_LABEL, ID_TAB, TAB_MEASURE_LABEL, OBS_VALUE) %>%
   collect()
 
-# Petite vérification du volume récupéré
 print(paste("Nombre de lignes récupérées :", nrow(base_filtree)))
 print(paste("Nombre de variables distinctes :", length(unique(base_filtree$TAB_MEASURE_LABEL))))
 
@@ -49,7 +48,6 @@ print(paste("Nombre de variables distinctes :", length(unique(base_filtree$TAB_M
 library(tidyr)
 
 base_large <- base_filtree %>%
-  # 1. On force un seul nom de ville par code INSEE
   group_by(GEO) %>%
   mutate(GEO_LABEL = first(GEO_LABEL)) %>%
   ungroup() %>%
@@ -143,7 +141,7 @@ base_finale <- base_prete_rf %>%
   # On retire aussi les variables géographiques pour la modélisation
   select(-GEO, -GEO_LABEL)
 
-# Vérification finale (le compteur de NAs sur ton Y devrait disparaître)
+# Vérification finale (le compteur de NAs sur Y devrait disparaître)
 summary(base_finale$Y_GAP_ACT_GLOBAL)
 
 head(base_finale)
@@ -157,9 +155,10 @@ colonnes_suspectes <- base_finale %>%
   select(where(~ max(., na.rm = TRUE) > 1.5)) %>%
   names()
 
-# On retire de cette liste les exceptions qu'on a VOLONTAIREMENT gardées en absolu
+# On retire de cette liste les exceptions qu'on a volontairement gardées en absolu
 colonnes_suspectes <- colonnes_suspectes[!grepl("revenu|salaire|densit.", colonnes_suspectes, ignore.case = TRUE)]
 
 # Affichage du résultat
 print(paste("Nombre de variables suspectes détectées :", length(colonnes_suspectes)))
 print(colonnes_suspectes)
+
