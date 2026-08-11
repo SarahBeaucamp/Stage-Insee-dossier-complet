@@ -123,7 +123,7 @@ print(colonnes_secret)
 
 # 2. Le traitement hybride : 0 pour les équipements, NA pour l'argent
 base_finale <- base_pre_filtre %>%
-  # On remplace par 0 TOUTES les colonnes SAUF celles identifiées dans colonnes_secret
+  # On remplace par 0 toutes les colonnes sauf celles identifiées dans colonnes_secret
   mutate(across(-all_of(colonnes_secret), ~ replace_na(., 0)))
 
 compte_na <- colSums(is.na(base_finale))

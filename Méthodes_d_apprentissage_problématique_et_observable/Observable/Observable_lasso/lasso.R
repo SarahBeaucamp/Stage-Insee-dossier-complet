@@ -15,19 +15,18 @@ base_normalisee <- base_sans_na %>%
 # Séparation de la variable cible (Y)
 vecteur_Y <- base_normalisee$Y_GAP_ACT_GLOBAL
 
-# Transformation du tableau en matrice mathématique pure
+# Transformation du tableau en matrice mathématique
 matrice_X <- model.matrix(Y_GAP_ACT_GLOBAL ~ . - 1, data = base_normalisee)
 
 print(paste("Dimension de la matrice X :", nrow(matrice_X), "lignes et", ncol(matrice_X), "colonnes."))
 
 print("--- 2. ENTRAÎNEMENT ET VALIDATION CROISÉE INTERNE ---")
 
-# On laisse standardize = FALSE car nous l'avons fait nous-mêmes !
 modele_lasso_cv <- cv.glmnet(
   x = matrice_X, 
   y = vecteur_Y, 
   alpha = 1,            
-  standardize = FALSE,   
+  standardize = FALSE,   # Déjà fait 
   nfolds = 5            
 )
 

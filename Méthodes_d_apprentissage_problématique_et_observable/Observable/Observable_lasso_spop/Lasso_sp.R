@@ -1,5 +1,5 @@
 # ==============================================================================
-# PARTIE 3 (CORRIGÉE) : LE MODÈLE LINÉAIRE PÉNALISÉ (GLM LASSO) AVEC NORMALISATION
+# PARTIE 3 : LE MODÈLE LINÉAIRE PÉNALISÉ (GLM LASSO) AVEC NORMALISATION
 # ==============================================================================
 install.packages("glmnet")
 library(glmnet)
@@ -7,7 +7,7 @@ library(dplyr)
 
 print("--- 1. NORMALISATION ET PRÉPARATION DE LA MATRICE ---")
 
-# NORMALISATION : On centre et on réduit toutes les variables (sauf le Y)
+# Normalisation : On centre et on réduit toutes les variables (sauf le Y)
 base_normalisee_sans_pop <- base_sans_na_sans_pop %>%
   mutate(across(-Y_GAP_ACT_GLOBAL, ~ scale(.) %>% as.numeric()))
 
@@ -21,12 +21,12 @@ print(paste("Dimension de la matrice X :", nrow(matrice_X_sans_pop), "lignes et"
 
 print("--- 2. ENTRAÎNEMENT ET VALIDATION CROISÉE INTERNE ---")
 
-# On laisse standardize = FALSE car nous l'avons fait nous-mêmes !
+
 modele_lasso_cv_sans_pop <- cv.glmnet(
   x = matrice_X_sans_pop, 
   y = vecteur_Y_sans_pop, 
   alpha = 1,            
-  standardize = FALSE,   
+  standardize = FALSE,   # Déjà fait 
   nfolds = 5            
 )
 
@@ -60,7 +60,7 @@ print(head(tableau_coefs, 16))
 # POST-LASSO : OBTENTION DES P-VALUES ET TESTS DE STUDENT
 # ==============================================================================
 
-#Nous permet d'avoir les p-values de toutes nos variables. Les variables de tête sont trés significatives avec des p values miniscule et celles avec des pénalités ne le sont pas. 
+# Nous permet d'avoir les p-values de toutes nos variables. Les variables de tête sont trés significatives avec des p values miniscule et celles avec des pénalités ne le sont pas. 
 
 # 1. On récupère les noms des variables sélectionnées par le Lasso (en excluant l'intercept)
 variables_selectionnees_noms <- tableau_coefs %>%

@@ -166,11 +166,11 @@ names(base_large_sans_pop_2023) <- make.names(names(base_large_sans_pop_2023), u
 # CORRECTION DE SCHÉMA : FORCER LES NOMS DE 2023 À COPIER CEUX DE 2022
 # ==============================================================================
 
-# 2. On récupère les noms officiels de ta base 2022 (qui doivent être dans ton environnement)
+# 2. On récupère les noms officiels de la base 2022
 noms_sans_pop_2022_ref <- names(base_large_sans_pop) 
 noms_sans_pop_2023_actuels <- names(base_large_sans_pop_2023)
 
-# 3. Fonction pour extraire l'essence du texte (sans point, sans x de liaison, sans casse)
+# 3. Fonction pour extraire l'essence du texte (sans point, sans x de liaison ect)
 nettoyer_sans_pop_texte <- function(noms) {
   noms <- tolower(noms)
   # On retire les 'x' qui servent de croisements dans les noms R (ex: .x.)
@@ -226,7 +226,7 @@ base_prete_sans_pop_2023 <- base_large_sans_pop_2023 %>%
     
     Y_GAP_ACT_GLOBAL = TAUX_H - TAUX_F,
     
-    # CORRECTION : Utilisation de la résidence principale comme base pour les logements
+    # Utilisation de la résidence principale comme base pour les logements
     across(.cols = starts_with("Logements...") | starts_with("Nombre.de.pièces..."), .fns = ~ .x / .data[["Logements...Résidences.principales"]]),
     
     across(.cols = starts_with("Population.des.ménages...") & !matches("^Population.des.ménages$"), .fns = ~ .x / .data[["Population.des.ménages"]]),
@@ -267,7 +267,7 @@ base_pre_filtre_sans_pop_2023 <- base_prete_sans_pop_2023 %>%
   select(-Population)     
 
 
-# CORRECTION : Remplacement de base_pre_filtre par base_pre_filtre_2023 dans le grepl
+# Remplacement de base_pre_filtre par base_pre_filtre_2023 dans le grepl
 colonnes_secret_sans_pop_2023 <- names(base_pre_filtre_sans_pop_2023)[grepl("salaire|pauvret|revenu|niveau.de.vie", names(base_pre_filtre_sans_pop_2023), ignore.case = TRUE)]
 
 print("Colonnes identifiées pour l'imputation mathématique :")
@@ -285,25 +285,24 @@ referentiel_communes_sans_pop_2023 <- base_finale_sans_pop_2023 %>% select(GEO, 
 summary(base_finale_sans_pop_2023$Y_GAP_ACT_GLOBAL)
 
 # ==============================================================================
-# ÉTAPE 4B : ALIGNEMENT DES COLONNES DU MODÈLE (RETRAIT DES VARIABLES DISPARUES)
+# ÉTAPE 5 : ALIGNEMENT DES COLONNES DU MODÈLE (RETRAIT DES VARIABLES DISPARUES)
 # ==============================================================================
 
 # 1. On identifie les colonnes communes entre l'entraînement (2022) et la prédiction (2023)
 colonnes_communes_sans_pop <- intersect(names(base_sans_na_sans_pop), names(base_finale_sans_pop_2023))
 
-# 2. On regarde ce qui va être retiré pour ton information
+# 2. On regarde ce qui va être retiré
 variables_supprimees_du_modele <- setdiff(names(base_sans_na_sans_pop), colonnes_communes)
 print(paste("Nombre de variables retirées du modèle car disparues en 2023 :", length(variables_supprimees_du_modele)))
 print(variables_supprimees_du_modele)
 
-# 3. On filtre définitivement les deux bases pour qu'elles aient EXACTEMENT les mêmes colonnes
+# 3. On filtre définitivement les deux bases pour qu'elles aient exactement les mêmes colonnes
 base_sans_na_sans_pop <- base_sans_na_sans_pop %>% select(all_of(colonnes_communes_sans_pop))
 base_finale_sans_pop_2023 <- base_finale_sans_pop_2023 %>% select(all_of(colonnes_communes_sans_pop))
 
-# (Ton Étape 5 de test de sécurité commence juste en dessous...)
 
 # ==============================================================================
-# ÉTAPE 6A : IMPUTATION DÉFINITIVE AVEC MISSFOREST
+# ÉTAPE 6 : IMPUTATION DÉFINITIVE AVEC MISSFOREST
 # ==============================================================================
 
 print("--- 1. CONVERSION STRICTE DU FORMAT ---")
@@ -314,7 +313,7 @@ base_finale_propre_sans_pop_2023 <- base_finale_sans_pop_2023 %>%
 print("--- 2. APPLICATION DE MISSFOREST ---")
 imputation_finale_sans_pop_2023 <- missForest(base_finale_propre_sans_pop_2023, ntree = 50, maxiter = 5)
 
-# CORRECTION : Harmonisation du nom de la base finale
+# Harmonisation du nom de la base finale
 base_2023_sans_na_sans_pop <- imputation_finale_sans_pop_2023$ximp
 
 print(paste("Nombre total de NAs restants :", sum(is.na(base_2023_sans_na_sans_pop))))
@@ -323,7 +322,6 @@ print(paste("Nombre total de NAs restants :", sum(is.na(base_2023_sans_na_sans_p
 # ETAPE 7 : VÉRIFICATION DES VARIABLES MANQUANTES
 #===============================================================================
 
-# On suppose que base_sans_na (2022) est toujours dans l'environnement
 variables_manquantes_sans_pop <- setdiff(names(base_sans_na_sans_pop), names(base_2023_sans_na_sans_pop))
 print("Variables présentes en 2022 mais absentes en 2023 :")
 print(variables_manquantes_sans_pop)

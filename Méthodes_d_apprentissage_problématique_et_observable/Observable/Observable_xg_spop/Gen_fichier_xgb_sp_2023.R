@@ -7,7 +7,7 @@ library(arrow)
 library(xgboost)
 
 print("--- 0. PRÉPARATION DE LA MATRICE 2023 ---")
-# AJOUT INDISPENSABLE : Création de la matrice mathématique pour 2023
+# Création de la matrice mathématique pour 2023
 X_2023_sp <- model.matrix(Y_GAP_ACT_GLOBAL ~ . - 1, data = base_2023_sans_na_sans_pop)
 
 
@@ -16,13 +16,13 @@ print("--- 1. CONVERSION ET CALCUL SHAP GLOBAL ---")
 modele_pur <- modele_xgb_sp
 class(modele_pur) <- "xgb.Booster"
 
-# 2. On transforme TOUTE la base 2023 en DMatrix d'un coup
+# 2. On transforme toute la base 2023 en DMatrix d'un coup
 matrice_globale_dmatrix <- xgb.DMatrix(data = as.matrix(X_2023_sp))
 
 # 3. Prédictions classiques pour toutes les communes
 predictions_2023 <- predict(modele_pur, newdata = matrice_globale_dmatrix)
 
-# 4. Calcul SHAP natif sur TOUTES les communes
+# 4. Calcul SHAP natif sur toutes les communes
 shap_brut_global <- predict(modele_pur, newdata = matrice_globale_dmatrix, predcontrib = TRUE)
 
 # 5. On sépare les variables explicatives de la colonne "Biais" (la dernière colonne)
@@ -32,7 +32,7 @@ noms_variables_xgb <- colnames(X_train_sp)
 
 
 print("--- 2. EXTRACTION DU TOP 5 ET DES VALEURS RÉELLES POUR CHAQUE COMMUNE ---")
-# On convertit X_2023_sp en matrice pour un accès ultra-rapide par index
+# On convertit X_2023_sp en matrice pour un accès rapide par index
 matrice_valeurs_reelles <- as.matrix(X_2023_sp)
 
 # La fonction prend l'index "i" pour accéder aux SHAP ET aux Valeurs Réelles

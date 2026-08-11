@@ -60,7 +60,6 @@ noms_variables_lasso_sp <- names(coefs_modele_sp)
 # On isole les vraies valeurs des communes 2023 uniquement pour les variables du Lasso
 matrice_valeurs_reelles_sp <- as.matrix(base_2023_sans_na_sans_pop[, noms_variables_lasso_sp])
 
-# --- LA MAGIE EST ICI ---
 # On calcule les moyennes nationales de 2022 (l'année d'apprentissage)
 moyennes_nationales_sp <- colMeans(as.matrix(base_sans_na_sans_pop[, noms_variables_lasso_sp]))
 
@@ -75,7 +74,7 @@ print("--- 2C. EXTRACTION DU TOP 5 POUR CHAQUE COMMUNE ---")
 extraire_top_5_lasso_sp <- function(i) {
   ligne_impact <- matrice_impacts_sp[i, ]
   
-  # Très important : on garde les "VRAIES" valeurs brutes pour l'affichage dans le curseur du simulateur
+  # On garde les "vraies" valeurs brutes pour l'affichage dans le curseur du simulateur
   ligne_valeurs <- matrice_valeurs_reelles_sp[i, ]
   
   indices_top <- order(abs(ligne_impact), decreasing = TRUE)[1:5]
@@ -117,12 +116,12 @@ base_dashboard_lasso_sp <- data.frame(
   Y_PREDIT_LASSO = predictions_2023_lasso_sp
 )
 
-# On y colle les 5 variables impacts ET leurs valeurs (VAL_)
+# On y colle les 5 variables impacts et leurs valeurs
 base_dashboard_lasso_sp <- bind_cols(base_dashboard_lasso_sp, tableau_top5_lasso_sp)
 
-# On sauvegarde sur la machine
+# On sauvegarde sur le pc
 nom_fichier_export_lasso_sp <- "predictions_lasso_sp_2023.parquet"
 write_parquet(base_dashboard_lasso_sp, nom_fichier_export_lasso_sp)
 
-print(paste("✅ SUCCÈS ! Le fichier", nom_fichier_export_lasso_sp, "a été généré avec succès."))
+print(paste(" Le fichier", nom_fichier_export_lasso_sp, "a été généré avec succès."))
 

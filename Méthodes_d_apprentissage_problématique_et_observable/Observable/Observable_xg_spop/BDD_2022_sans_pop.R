@@ -2,7 +2,6 @@
 # PRÉPARATION DE LA BASE DE DONNÉES ET GESTION EXPERTE DES VALEURS MANQUANTES
 # ==============================================================================
 
-# Installation des packages manquants si nécessaire
 # install.packages(c("missForest", "VIM", "Metrics"))
 
 library(DBI)
@@ -11,9 +10,9 @@ library(dplyr)
 library(stringr)
 library(tidyr)
 install.packages("missForest")
-library(missForest) # Pour l'Option A
+library(missForest) 
 install.packages("Metrics")
-library(Metrics)    # Pour le calcul de la RMSE
+library(Metrics)    
 
 # ------------------------------------------------------------------------------
 # ÉTAPE 1 : CONNEXION ET EXTRACTION DES DONNÉES
@@ -125,7 +124,7 @@ print(colonnes_secret)
 
 # 2. Le traitement hybride : 0 pour les équipements, NA pour l'argent
 base_finale_sans_pop <- base_pre_filtre_sans_pop %>%
-  # On remplace par 0 TOUTES les colonnes SAUF celles identifiées dans colonnes_secret
+  # On remplace par 0 toutes les colonnes sauf celles identifiées dans colonnes_secret
   mutate(across(-all_of(colonnes_secret), ~ replace_na(., 0)))
 
 compte_na_sans_pop <- colSums(is.na(base_finale_sans_pop))

@@ -1,5 +1,5 @@
 # ==============================================================================
-# EXPORT DE LA BASE LASSO POUR LE DASHBOARD (LE VRAI ÉQUIVALENT SHAP CENTRÉ)
+# EXPORT DE LA BASE LASSO POUR LE DASHBOARD (L'ÉQUIVALENT SHAP CENTRÉ)
 # ==============================================================================
 
 library(dplyr)
@@ -14,14 +14,14 @@ variables_selectionnees_noms <- tableau_coefs %>%
 # 2. On reconstruit la formule
 formule_post_lasso <- as.formula(paste("Y_GAP_ACT_GLOBAL ~", paste(variables_selectionnees_noms, collapse = " + ")))
 
-# 3. On entraîne le modèle linéaire sur les VRAIES données de 2022 (non normalisées)
+# 3. On entraîne le modèle linéaire sur les données de 2022 (non normalisées)
 modele_dashboard <- lm(formule_post_lasso, data = base_sans_na)
 
-# 4. On calcule les prédictions finales pour toutes les communes (sur 2023)
+# 4. On calcule les prédictions finales pour toutes les communes sur 2023
 predictions_2023_lasso <- predict(modele_dashboard, newdata = base_2023_sans_na)
 
 
-print("--- 2. CALCUL DES CONTRIBUTIONS LOCALES (LE VRAI ÉQUIVALENT SHAP) ---")
+print("--- 2. CALCUL DES CONTRIBUTIONS LOCALES (L'ÉQUIVALENT SHAP) ---")
 # On extrait les coefficients du modèle (en enlevant l'Intercept)
 coefs_modele <- coef(modele_dashboard)[-1] 
 noms_variables_lasso <- names(coefs_modele)
@@ -29,13 +29,13 @@ noms_variables_lasso <- names(coefs_modele)
 # On isole les vraies valeurs des communes en 2023
 matrice_valeurs_reelles <- as.matrix(base_2023_sans_na[, noms_variables_lasso])
 
-# LA MAGIE EST ICI : On calcule les moyennes nationales de 2022 (l'année d'apprentissage)
+# On calcule les moyennes nationales de 2022 (l'année d'apprentissage)
 moyennes_nationales <- colMeans(as.matrix(base_sans_na[, noms_variables_lasso]))
 
 # On centre les valeurs : Valeur de la commune - Moyenne nationale
 matrice_valeurs_centrees <- sweep(matrice_valeurs_reelles, 2, moyennes_nationales, "-")
 
-# L'impact devient l'écart à la moyenne multiplié par le coefficient !
+# L'impact devient l'écart à la moyenne multiplié par le coefficient 
 matrice_impacts <- sweep(matrice_valeurs_centrees, 2, coefs_modele, "*")
 
 
@@ -43,7 +43,7 @@ print("--- 3. EXTRACTION DU TOP 5 POUR CHAQUE COMMUNE ---")
 extraire_top_5_lasso <- function(i) {
   ligne_impact <- matrice_impacts[i, ]
   
-  # Très important : on récupère les "VRAIES" valeurs pour l'affichage dans le dashboard
+  # On récupère les vraies valeurs pour l'affichage dans le dashboard
   ligne_valeurs <- matrice_valeurs_reelles[i, ]
   
   # On trouve les 5 plus gros impacts (en valeur absolue)
@@ -86,12 +86,12 @@ base_dashboard_lasso <- data.frame(
   Y_PREDIT_LASSO = predictions_2023_lasso
 )
 
-# On y colle les 5 variables impacts ET leurs valeurs (VAL_)
+# On y colle les 5 variables impacts et leurs valeurs
 base_dashboard_lasso <- bind_cols(base_dashboard_lasso, tableau_top5_lasso)
 
 # On sauvegarde sur la machine
 nom_fichier_export_lasso <- "predictions_lasso_2023.parquet"
 write_parquet(base_dashboard_lasso, nom_fichier_export_lasso)
 
-print(paste("✅ SUCCÈS ! Le fichier", nom_fichier_export_lasso, "a été généré avec succès."))
+print(paste("Le fichier", nom_fichier_export_lasso, "a été généré avec succès."))
 
