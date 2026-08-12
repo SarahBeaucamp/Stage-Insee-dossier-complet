@@ -1,5 +1,5 @@
 # ==============================================================================
-# PARTIE 6 : OUVERTURE CAUSALE - DOUBLE MACHINE LEARNING (DML)
+# OUVERTURE CAUSALE - DOUBLE MACHINE LEARNING (DML)
 # ==============================================================================
 
 install.packages("DoubleML")

@@ -57,7 +57,7 @@ include-in-header:
 // 1. Initialisation de DuckDB
 db = DuckDBClient.of({})
 
-// 2. Connexion à la base 2023 contenant tes prédictions ET tes SHAP values
+// 2. Connexion à la base 2023 contenant les prédictions et les SHAP values
 chemin_s3 = 'https://minio.lab.sspcloud.fr/sarahbeaucamp/predictions_xgb_sp_2023.parquet'
 ```
 
@@ -93,7 +93,6 @@ viewof selection_geo = Inputs.table(
 //| output: false
 isGeoSelected = (selection_geo !== null);
 
-// Requête DuckDB MODIFIÉE : On extrait Y_OBSERVE, Y_PREDIT et le Top 5 SHAP
 resultat_commune = isGeoSelected ? 
   db.queryRow(`
     SELECT Y_OBSERVE, Y_PREDIT_XGB, 
@@ -125,7 +124,7 @@ htl.html`
 ## Explication du modèle (Valeurs SHAP) {height="60%"}
 
 ```{ojs affichage_shap}
-// Fonction miracle qui remplace les points par des espaces et supprime les espaces en trop
+// Fonction qui remplace les points par des espaces et supprime les espaces en trop
 nettoyerNom = (nom) => nom ? String(nom).replace(/\./g, ' ').replace(/\s+/g, ' ').trim() : "";
 
 // 1. On déclare data_shap de manière GLOBALE pour que le simulateur y ait accès !
@@ -139,20 +138,17 @@ data_shap = (isGeoSelected && resultat_commune && resultat_commune.VAR_1) ? [
 
 // 2. Affichage réactif du graphique
 affichage_graphique_shap = {
-  // Si aucune commune sélectionnée ou données manquantes
+  // Si on a une commune de moins de 500 habitants
   if (!isGeoSelected || !resultat_commune) {
     return htl.html`<div style="color: gray; font-style: italic; padding: 20px;">Par souci de significativité statistique, les résultats ne sont pas présentés pour les communes de moins de 500 habitants.</div>`;
   }
-
-  // Si la commune n'a pas de données SHAP
   if (data_shap.length === 0) {
     return htl.html`<div style="color: gray; font-style: italic; padding: 20px;">Par souci de significativité statistique, les résultats détaillés ne sont pas présentés pour cette commune.</div>`;
   }
 
-// Création du graphique avec largeur fixe (width: 800) pour éviter la disparition
   return Plot.plot({
     title: `Top 5 des variables expliquant la prédiction (en points)`,
-    height: 190,          // <--- ICI : Hauteur réduite
+    height: 190,          
     width: 800,
     marginLeft: 220,
     x: { 
@@ -284,7 +280,7 @@ subplot(
 ## Carte du département {height="100%"}
 
 ```{ojs carto_interactive}
-// 1. On déduit le département depuis le code INSEE
+// 1. On déduit le département depuis le code insee
 code_dep = isGeoSelected ? selection_geo.GEO.substring(0, 2) : null;
 
 // 2. Requête DuckDB brute
@@ -305,7 +301,7 @@ FROM read_parquet('https://minio.lab.sspcloud.fr/sarahbeaucamp/predictions_xgb_s
     AND c.latitude_centre IS NOT NULL
 `) : [];
 
-// 3. Nettoyage absolu des coordonnées (au cas où il y aurait des virgules)
+// 3. Nettoyage absolu des coordonnées
 data_dep = data_dep_brute.map(d => ({
   ...d,
   lat: Number(String(d.lat).replace(',', '.')),
@@ -332,7 +328,7 @@ htl.html`
         ${Plot.plot({
           width: 350,
           height: 300,
-          axis: null, // MAGIE : Supprime complètement le quadrillage et les axes (X et Y)
+          axis: null, // Supprime complètement le quadrillage et les axes (X et Y)
           x: { inset: 20 }, // Ajoute une marge pour que les points ne touchent pas les bords
           y: { inset: 20 },
           r: { range: [3, 15] },

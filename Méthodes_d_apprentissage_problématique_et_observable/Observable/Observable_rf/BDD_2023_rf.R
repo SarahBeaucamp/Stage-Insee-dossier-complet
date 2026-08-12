@@ -167,7 +167,7 @@ noms_2023_actuels <- names(base_large_2023)
 # 3. Fonction pour extraire l'essence du texte
 nettoyer_texte <- function(noms) {
   noms <- tolower(noms)
-  # On retire les 'x' qui servent de croisements dans les noms R (ex: .x.)
+  # On retire les 'x' qui servent de croisements dans les noms 
   noms <- gsub("\\.x\\.", "", noms)
   # On retire absolument toute la ponctuation et les espaces
   noms <- gsub("[^a-z0-9éèàâêîôû]", "", noms)
@@ -221,7 +221,7 @@ base_prete_rf_2023 <- base_large_2023 %>%
     
     Y_GAP_ACT_GLOBAL = TAUX_H - TAUX_F,
     
-    # ! Utilisation de la résidence principale comme base pour les logements
+    # Utilisation de la résidence principale comme base pour les logements
     across(.cols = starts_with("Logements...") | starts_with("Nombre.de.pièces..."), .fns = ~ .x / .data[["Logements...Résidences.principales"]]),
     
     across(.cols = starts_with("Population.des.ménages...") & !matches("^Population.des.ménages$"), .fns = ~ .x / .data[["Population.des.ménages"]]),
@@ -314,7 +314,6 @@ print(paste("Nombre total de NAs restants :", sum(is.na(base_2023_sans_na))))
 # ETAPE 7 : VÉRIFICATION DES VARIABLES MANQUANTES
 #===============================================================================
 
-# On suppose que base_sans_na est toujours dans l'environnement
 variables_manquantes <- setdiff(names(base_sans_na), names(base_2023_sans_na))
 print("Variables présentes en 2022 mais absentes en 2023 :")
 print(variables_manquantes)

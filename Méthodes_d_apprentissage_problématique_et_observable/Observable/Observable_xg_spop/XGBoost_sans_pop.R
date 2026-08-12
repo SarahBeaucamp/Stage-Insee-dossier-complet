@@ -1,5 +1,5 @@
 # ==============================================================================
-# PARTIE 4 : L'EXTREME GRADIENT BOOSTING (XGBOOST)
+# L'EXTREME GRADIENT BOOSTING (XGBOOST)
 # ==============================================================================
 
 install.packages("xgboost")
@@ -26,7 +26,7 @@ X_train_sp <- model.matrix(Y_GAP_ACT_GLOBAL ~ . - 1, data = base_train_sp)
 Y_test_sp <- base_test_sp$Y_GAP_ACT_GLOBAL
 X_test_sp <- model.matrix(Y_GAP_ACT_GLOBAL ~ . - 1, data = base_test_sp)
 
-# Création des objets "DMatrix" : un format ultra-optimisé et compressé propre à XGBoost
+# Création des objets "DMatrix" : un format optimisé et compressé propre à XGBoost
 dtrain_sp <- xgb.DMatrix(data = X_train_sp, label = Y_train_sp)
 dtest_sp  <- xgb.DMatrix(data = X_test_sp, label = Y_test_sp)
 
@@ -37,7 +37,7 @@ params_xgb_sp <- list(
   objective = "reg:squarederror", # Fonction de perte pour la régression (RMSE)
   eta = 0.1,                      # Taux d'apprentissage (Learning rate)
   max_depth = 6,                  # Profondeur maximale de chaque arbre
-  subsample = 0.8,                # Tirage au sort de 80% des lignes à chaque arbre (anti-surapprentissage)
+  subsample = 0.8,                # Tirage au sort de 80% des lignes à chaque arbre
   colsample_bytree = 0.8          # Tirage au sort de 80% des colonnes à chaque arbre
 )
 
@@ -71,7 +71,7 @@ print(paste("-> RMSE du XGBoost (Erreur absolue) :", round(rmse_xgb_sp, 5)))
 print(paste("-> R2 du XGBoost (Score final)      :", round(r2_xgb_sp, 2), "%"))
 
 # ==============================================================================
-# PARTIE 5B (CORRIGÉE) : LES VALEURS SHAP
+# LES VALEURS SHAP
 # ==============================================================================
 install.packages("shapviz")
 library(shapviz)

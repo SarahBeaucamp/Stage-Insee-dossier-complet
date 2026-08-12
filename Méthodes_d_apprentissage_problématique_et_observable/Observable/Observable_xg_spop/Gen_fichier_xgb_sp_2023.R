@@ -76,7 +76,7 @@ base_dashboard <- data.frame(
   GEO = referentiel_communes_sans_pop_2023$GEO,
   GEO_LABEL = referentiel_communes_sans_pop_2023$GEO_LABEL,
   Y_OBSERVE = base_2023_sans_na_sans_pop$Y_GAP_ACT_GLOBAL,
-  Y_PREDIT_XGB = predictions_2023 # Je laisse le nom Y_PREDIT_XGB pour ne pas casser ton code Observable
+  Y_PREDIT_XGB = predictions_2023 # Je laisse le nom Y_PREDIT_XGB pour ne pas casser le code Observable
 )
 
 # On y colle les 5 variables SHAP ET leurs valeurs (VAL_)
@@ -86,5 +86,5 @@ base_dashboard <- bind_cols(base_dashboard, tableau_top5)
 nom_fichier_export <- "predictions_xgb_sp_2023.parquet"
 write_parquet(base_dashboard, nom_fichier_export)
 
-print(paste("✅ SUCCÈS ! Le fichier", nom_fichier_export, "a été généré avec succès."))
+print(paste("Le fichier", nom_fichier_export, "a été généré avec succès."))
 

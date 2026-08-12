@@ -1,5 +1,5 @@
 # ==============================================================================
-# ETAPE 9 : DOUBLE MACHINE LEARNING (INFÉRENCE CAUSALE)
+# DOUBLE MACHINE LEARNING (INFÉRENCE CAUSALE)
 # ==============================================================================
 library(ranger)
 library(dplyr)
@@ -56,7 +56,7 @@ modele_causal <- lm(residus_Y ~ residus_T)
 summary(modele_causal)
 
 # ==============================================================================
-# ETAPE 9-B : DOUBLE MACHINE LEARNING SUR LE TAUX DE PAUVRETÉ
+# DOUBLE MACHINE LEARNING SUR LE TAUX DE PAUVRETÉ
 # ==============================================================================
 library(ranger)
 library(dplyr)
@@ -103,7 +103,7 @@ modele_causal_pauvrete <- lm(residus_Y_pauvrete ~ residus_T_pauvrete)
 summary(modele_causal_pauvrete)
 
 # ==============================================================================
-# ETAPE 9-C : DOUBLE MACHINE LEARNING (FAMILLES NOMBREUSES & SALAIRES HOMMES)
+# DOUBLE MACHINE LEARNING (FAMILLES NOMBREUSES & SALAIRES HOMMES)
 # ==============================================================================
 library(ranger)
 library(dplyr)

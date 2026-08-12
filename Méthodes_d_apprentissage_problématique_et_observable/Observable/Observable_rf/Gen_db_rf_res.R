@@ -1,5 +1,5 @@
 # ==============================================================================
-# PARTIE 11 : CALCUL MASSIF DES SHAP VALUES ET GÉNÉRATION DU FICHIER FINAL (SANS CRASH)
+# CALCUL MASSIF DES SHAP VALUES ET GÉNÉRATION DU FICHIER FINAL 
 # ==============================================================================
 install.packages("treeshap")
 library(treeshap)
@@ -29,7 +29,6 @@ extraire_top_5 <- function(shaps_row, vals_row, noms_vars) {
   # Trouve les indices des 5 plus fortes contributions (en valeur absolue)
   idx <- order(abs(shaps_row), decreasing = TRUE)[1:5]
   
-  # Retourne une liste bien formatée
   list(
     VAR_1 = noms_vars[idx[1]], VAL_1 = vals_row[idx[1]], SHAP_1 = shaps_row[idx[1]],
     VAR_2 = noms_vars[idx[2]], VAL_2 = vals_row[idx[2]], SHAP_2 = shaps_row[idx[2]],
@@ -85,7 +84,7 @@ for (i in 1:nb_lots) {
   # On colle les informations top 5
   resultats_lot <- bind_cols(resultats_lot, df_top5)
   
-  # 6. Sauvegarde du lot en fichier Parquet (sprintf pour garder un bon ordre alphabétique)
+  # 6. Sauvegarde du lot en fichier Parquet 
   nom_fichier <- paste0("chunks_rf_2023/lot_", sprintf("%04d", i), ".parquet")
   write_parquet(resultats_lot, nom_fichier)
   
@@ -106,4 +105,4 @@ write_parquet(dataset_final, "predictions_rf_2023.parquet")
 # Nettoyage du dossier temporaire
 unlink("chunks_rf_2023", recursive = TRUE)
 
-print("✅ SUCCÈS ! Le fichier 'predictions_rf_2023.parquet' a été généré et formaté pour le simulateur Quarto.")
+print("Le fichier 'predictions_rf_2023.parquet' a été généré et formaté pour le simulateur Quarto.")

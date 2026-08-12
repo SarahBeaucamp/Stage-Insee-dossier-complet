@@ -10,9 +10,9 @@ library(dplyr)
 library(stringr)
 library(tidyr)
 install.packages("missForest")
-library(missForest) # Pour l'Option A
+library(missForest) 
 install.packages("Metrics")
-library(Metrics)    # Pour le calcul de la RMSE
+library(Metrics)  
 
 # ------------------------------------------------------------------------------
 # ÉTAPE 1 : CONNEXION ET EXTRACTION DES DONNÉES
@@ -123,7 +123,7 @@ print(colonnes_secret)
 
 # 2. Le traitement hybride : 0 pour les équipements, NA pour l'argent
 base_finale <- base_pre_filtre %>%
-  # On remplace par 0 TOUTES les colonnes SAUF celles identifiées dans colonnes_secret
+  # On remplace par 0 toutes les colonnes sauf celles identifiées dans colonnes_secret
   mutate(across(-all_of(colonnes_secret), ~ replace_na(., 0)))
 
 compte_na <- colSums(is.na(base_finale))
@@ -140,7 +140,7 @@ base_finale_propre <- base_finale %>%
   as.data.frame()
 
 print("--- 2. APPLICATION DE MISSFOREST SUR LA BASE COMPLÈTE ---")
-# On lance l'imputation sur la base "propre"
+# On lance l'imputation sur la base propre
 imputation_finale <- missForest(base_finale_propre, ntree = 50, maxiter = 5)
 
 # On récupère le tableau final nettoyé
