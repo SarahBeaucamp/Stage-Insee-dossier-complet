@@ -1,10 +1,10 @@
-# Read me
+# Read Me
 
 Dans ce dépôt, il y a trois principaux dossiers :
 - Prise_en_main,
 - Dossier_complet_au_format_observable,
 - Methodes_d_apprentissage_problématique_et_observable.
-- 
+  
 Dans le premier dossier « Prise_en_main », il y a dix sous-dossiers qui sont chacun nommés selon l’un des grands titres du dossier complet de l'INSEE. Dans ces sous-dossiers, se trouve pour de nombreuses tables du dossier complet le code en R qui permet de reproduire la table et le graphe, ainsi que le code pour avoir cette même représentation sous Observable. Ensuite, il y a également des sous-dossiers appelés « TOTAL » qui contiennent le code pour générer la page Observable de toute une catégorie entière du dossier complet.
 Ce dossier « « Prise_en_main a été créé au début du stage et a permis une familiarisation avec Observable et le dossier complet. Le fait d’avoir le code en R et le code pour générer l'Observable du même graphique en parallèle aide grandement à la compréhension de la technologie pour une personne qui n’y est pas familière.
 Le dossier « Dossier_complet_au_format_observable » contient tous les fichiers nécessaires à la reproductibilité du dashboard Observable, consultable en ligne via ce lien : https://sarahbeaucamp.github.io/Stage-Insee-dossier-complet/Dossier_complet_au_format_observable/. Dans ce dashboard, un premier menu déroulant en haut à gauche permet de naviguer entre plusieurs des grands thèmes du dossier complet. Le second menu déroulant sert à naviguer entre les sous-thèmes du grand thème sélectionné au préalable.
