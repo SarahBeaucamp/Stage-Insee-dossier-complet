@@ -1,4 +1,4 @@
-# Read Me
+# Read me
 
 Dans ce dépôt, il y a trois principaux dossiers :
 - Prise_en_main,
