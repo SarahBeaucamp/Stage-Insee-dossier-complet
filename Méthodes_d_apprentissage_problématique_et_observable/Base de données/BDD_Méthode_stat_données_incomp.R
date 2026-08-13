@@ -1,6 +1,8 @@
 # ==============================================================================
 # PRÉPARATION DE LA BASE DE DONNÉES ET GESTION EXPERTE DES VALEURS MANQUANTES
 # ==============================================================================
+#Tests de deux méthodes différentes de gestion des na qui ne sont pas des 0
+
 
 install.packages(c("missForest", "VIM", "Metrics"))
 
