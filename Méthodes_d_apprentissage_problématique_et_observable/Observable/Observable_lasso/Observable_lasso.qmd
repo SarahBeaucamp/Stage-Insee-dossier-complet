@@ -110,7 +110,7 @@ htl.html`
       </div>
       
       <div class="kpi-card pred-card">
-        <p class="kpi-title">Prédiction du Modèle XGBoost</p>
+        <p class="kpi-title">Prédiction du Modèle Lasso</p>
         <p class="kpi-value pred-value">${(resultat_commune.Y_PREDIT_LASSO * 100).toFixed(2)} %</p>
       </div>
     </div>
@@ -256,7 +256,7 @@ p2 <- ggplot(df_carte, aes(x = lon, y = lat,
   scale_color_viridis_c(option = "plasma", limits = c(min_val, max_val), name = "Taux") +
   coord_quickmap() +
   theme_void() +
-  labs(title = "Prédiction XGBoost") +
+  labs(title = "Prédiction Lasso") +
   theme(plot.title = element_text(hjust = 0.5, face = "bold"))
 
 
@@ -412,9 +412,9 @@ htl.html`
         })}
       </div>
 
-      <!-- Carte : Prédiction XGBoost -->
+      <!-- Carte : Prédiction Lasso -->
       <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <h4 style="text-align: center; color: #2c3e50;">Prédiction XGBoost</h4>
+        <h4 style="text-align: center; color: #2c3e50;">Prédiction Lasso</h4>
         ${Plot.plot({
           width: 350,
           height: 300,
